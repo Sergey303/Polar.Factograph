@@ -2,7 +2,4 @@
   <ItemGroup>
     <ProjectReference Include="../Polar.Factograph.Domain/Polar.Factograph.Domain.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.10" />
-  </ItemGroup>
 </Project>
