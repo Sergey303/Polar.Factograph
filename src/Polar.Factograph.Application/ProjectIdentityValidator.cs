@@ -28,28 +28,6 @@ internal static class ProjectIdentityValidator
             throw new InvalidDataException($"Duplicate project member: {duplicateMember}.");
         }
 
-        foreach (MemberDefinition member in project.Members)
-        {
-            ValidateMemberRoles(project, member);
-        }
-
         return cassetteIds;
-    }
-
-    private static void ValidateMemberRoles(
-        ProjectDefinition project,
-        MemberDefinition member)
-    {
-        ProjectConfigurationValidation.RejectDuplicates(
-            member.Roles,
-            $"roles for user '{member.UserId}'");
-        foreach (string roleName in member.Roles)
-        {
-            if (!project.Roles.ContainsKey(roleName))
-            {
-                throw new InvalidDataException(
-                    $"Unknown role '{roleName}' for user '{member.UserId}'.");
-            }
-        }
     }
 }
