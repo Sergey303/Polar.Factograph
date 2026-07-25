@@ -18,7 +18,8 @@ public sealed class ProjectResourceSearchService
         ArgumentNullException.ThrowIfNull(searchStore);
         ArgumentNullException.ThrowIfNull(rdfStore);
 
-        ProjectSearchResultEnricher enricher = new(rdfStore, ontology);
+        ProjectResourceSummaryReader summaryReader = new(rdfStore, searchStore, ontology);
+        ProjectSearchResultEnricher enricher = new(summaryReader);
         _nameSearch = new ProjectNameSearchExecutor(searchStore, enricher);
         _wordSearch = new ProjectWordSearchExecutor(searchStore, enricher);
     }
