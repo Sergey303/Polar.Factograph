@@ -20,6 +20,7 @@ public sealed class ProjectConfigurationLoader
             Path.GetDirectoryName(fullPath)!);
         IReadOnlySet<string> cassetteIds = ProjectIdentityValidator.Validate(project);
         ProjectRightsValidator.Validate(project, cassetteIds);
+        ProjectMemberValidator.Validate(project, cassetteIds);
         ProjectWriteRoutingValidator.Validate(project);
         return project;
     }
