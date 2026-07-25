@@ -19,17 +19,9 @@ internal static class ProjectRightsValidator
                 cassetteIds,
                 $"role '{roleName}' cassette rights");
         }
-
-        foreach (MemberDefinition member in project.Members)
-        {
-            ValidateCassetteMap(
-                member.CassetteOverrides,
-                cassetteIds,
-                $"cassette overrides for user '{member.UserId}'");
-        }
     }
 
-    private static void ValidateCassetteMap(
+    internal static void ValidateCassetteMap(
         IReadOnlyDictionary<string, string[]> configured,
         IReadOnlySet<string> cassetteIds,
         string location)
