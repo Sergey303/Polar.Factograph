@@ -37,8 +37,8 @@ public sealed class FileSystemFogSourceScannerTests
         Assert.False(source.Writable);
         Assert.True(source.IsCassetteMetadata);
         Assert.True(source.Length > 1_000);
-        Assert.True(source.FogPath.EndsWith(
+        Assert.EndsWith(
             Path.Combine("meta", "SypCassete_current.fog"),
-            StringComparison.OrdinalIgnoreCase));
+            source.FogPath);
     }
 }
