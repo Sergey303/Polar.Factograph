@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -7,21 +6,6 @@ namespace Polar.Factograph.Fog;
 
 internal static class FogXmlRecordStream
 {
-    private static readonly XmlReaderSettings ReaderSettings = new()
-    {
-        Async = true,
-        DtdProcessing = DtdProcessing.Prohibit,
-        XmlResolver = null,
-        IgnoreComments = true,
-        IgnoreWhitespace = true,
-        CloseInput = true
-    };
-
-    static FogXmlRecordStream()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    }
-
     public static async IAsyncEnumerable<XElement> ReadAsync(
         string fogPath,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -33,7 +17,7 @@ internal static class FogXmlRecordStream
             FileShare.ReadWrite | FileShare.Delete,
             bufferSize: 64 * 1024,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
-        using XmlReader reader = XmlReader.Create(stream, ReaderSettings);
+        using XmlReader reader = FogXmlReaderFactory.Create(stream);
 
         while (await ReadNextAsync(reader, fogPath))
         {
