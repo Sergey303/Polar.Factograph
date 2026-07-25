@@ -14,18 +14,19 @@ The first product version preserves the existing cassette directory structure, F
 
 ## Repository state
 
-The current scaffold contains:
+The current compatibility increment contains:
 
-- the project configuration model and validation;
-- project-relative cassette paths, roles, permissions, and write routing;
-- a read-only filesystem scanner for current and additional Fog sources;
-- streaming inspection of Fog root metadata without loading a complete Fog file into memory;
-- project-level RDF storage contracts with cassette and Fog provenance;
-- a Minimal API host;
-- an integration test against the real `cassetes/SypCassete` compatibility fixture;
-- architecture and legacy-equivalent UX documentation.
+- project JSON configuration and project-relative path resolution;
+- compatible cassette/Fog source discovery;
+- streaming Fog record parsing and canonicalization;
+- project-wide `delete`, `substitute`, and latest-`mT` resolution;
+- substitution rewriting for RDF object references;
+- source provenance for every current resource;
+- synthetic `cassetterootcollection` when the sources do not define one;
+- Minimal API diagnostics for sources and materialization statistics;
+- integration tests against the unchanged `SypCassete_current.fog` fixture.
 
-RDF record materialization, `delete`/`substitute`/`mT` resolution, the Polar.DB-backed index, editor, authentication, and React client remain follow-up increments.
+The Polar.DB-backed index, search/portrait API, editor, authentication, and React client remain focused follow-up increments.
 
 ## Start
 
@@ -34,14 +35,15 @@ dotnet restore Polar.Factograph.slnx
 dotnet run --project src/Polar.Factograph.Api
 ```
 
-The API uses `examples/syp.project.json` by default. Available initial endpoints:
+Useful diagnostic endpoints:
 
 ```text
 GET /api/system/health
 GET /api/project
 GET /api/project/sources
+GET /api/project/materialization-summary
 ```
 
-A generic multi-cassette example is stored in `examples/project.sample.json`.
+The configured compatibility project is stored in `examples/syp.project.json`.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the architecture and [docs/UX.md](docs/UX.md) for the target user experience.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/UX.md](docs/UX.md), and [docs/LEGACY_SOURCES.md](docs/LEGACY_SOURCES.md).

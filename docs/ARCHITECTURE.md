@@ -12,10 +12,10 @@ The initial version does not replace or migrate cassette data. Existing Fog/XML 
 project.json
   -> enabled cassettes
   -> cassette meta Fog and additional Fog documents
-  -> XML canonicalization
-  -> delete/substitute resolution
+  -> streaming XML canonicalization
+  -> global delete/substitute resolution
   -> latest definition selection by mT
-  -> current RDF triples with provenance
+  -> current RDF records with provenance
   -> project-level Polar.DB indexes
   -> Minimal API
   -> web client
@@ -30,12 +30,25 @@ project.json
 5. Writes are routed to a cassette and writable Fog allowed for the authenticated user.
 6. Existing identifiers, namespaces, `owner`, `prefix`, `counter`, `mT`, `xml:lang`, `rdf:resource`, `delete`, `substitute`, and `iiss://` behavior are preserved.
 7. A failed index update must never invalidate a successfully written Fog file; the index is repaired from the source.
+8. The compatibility pipeline reopens and streams Fog files for each analysis pass instead of holding the complete project cloud in memory.
+
+## Compatibility pipeline
+
+The legacy resolver requires three logical passes:
+
+1. collect deletes, substitutions, and duplicate identifier candidates;
+2. select the first definition having the maximum `mT` for every duplicated identifier;
+3. emit current resources, omit deleted/substituted subjects, and rewrite object references through closed substitution chains.
+
+A direct reference to a deleted identifier remains a dangling reference, matching the existing `UpiAdapter` behavior. A substitution cycle is rejected explicitly rather than causing unbounded recursion.
+
+The synthetic resource `cassetterootcollection` is emitted only when no current source definition exists. This gives old collection memberships a root while preventing duplicate current identifiers.
 
 ## Layers
 
 - `Polar.Factograph.Domain` — project configuration and stable contracts.
 - `Polar.Factograph.Application` — configuration loading, validation, authorization, and use cases.
-- `Polar.Factograph.Fog` — compatible cassette discovery, Fog reading/writing, canonicalization, revision resolution, and file path resolution.
+- `Polar.Factograph.Fog` — compatible cassette discovery, streaming Fog reading, canonicalization, revision resolution, future writing, and file path resolution.
 - `Polar.Factograph.Storage` — project RDF store contracts and the future Polar.DB implementation.
 - `Polar.Factograph.Api` — Minimal API host.
 - `web` — future React/TypeScript client.
@@ -65,11 +78,12 @@ The current triple representation must carry provenance so that diagnostics, rig
 
 ## Delivery order
 
-1. Configuration and contracts.
-2. Read-only Fog scanner and compatibility fixtures.
-3. Full project materialization into Polar.DB.
-4. Read-only API and legacy-equivalent search/portrait UX.
-5. Compatible metadata editing.
-6. Documents, previews, collection management, delete, and substitute.
-7. Administration, diagnostics, authentication, and incremental rebuilds.
-8. Only after proven compatibility: discussion of a cassette v2 format.
+1. Configuration and contracts — complete.
+2. Read-only Fog scanner and compatibility fixtures — complete.
+3. Streaming record canonicalization and legacy revision resolution — complete.
+4. Full project materialization into Polar.DB.
+5. Read-only search/portrait API and legacy-equivalent UX.
+6. Compatible metadata editing.
+7. Documents, previews, collection management, delete, and substitute.
+8. Administration, diagnostics, authentication, and incremental rebuilds.
+9. Only after proven compatibility: discussion of a cassette v2 format.
