@@ -63,10 +63,7 @@ public sealed class OntologyResourcePortraitPresenter
                 field.Predicate,
                 PropertyLabel(field.Predicate, preferredLanguage),
                 field.Value,
-                _ontology.EnumerationLabel(
-                    field.Predicate,
-                    field.Value,
-                    preferredLanguage) ?? field.Value,
+                DisplayLiteralValue(field, preferredLanguage),
                 field.Language,
                 field.DataType))
             .ToArray();
@@ -125,6 +122,16 @@ public sealed class OntologyResourcePortraitPresenter
             .Select((property, index) => new { property.Id, Index = index })
             .ToDictionary(item => item.Id, item => item.Index, StringComparer.Ordinal);
     }
+
+    private string DisplayLiteralValue(
+        ResourceLiteralField field,
+        string preferredLanguage) =>
+        string.IsNullOrWhiteSpace(field.Value)
+            ? field.Value
+            : _ontology.EnumerationLabel(
+                field.Predicate,
+                field.Value,
+                preferredLanguage) ?? field.Value;
 
     private string PropertyLabel(string predicate, string preferredLanguage) =>
         _ontology.LabelOf(predicate, preferredLanguage) ?? predicate;
