@@ -1,3 +1,4 @@
+using Polar.Factograph.Api.Authentication;
 using Polar.Factograph.Api.Documents;
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Application;
@@ -8,8 +9,11 @@ namespace Polar.Factograph.Api;
 
 public static class FactographApiServices
 {
-    public static IServiceCollection AddFactographApi(this IServiceCollection services)
+    public static IServiceCollection AddFactographApi(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        services.AddFactographAuthentication(configuration);
         services.AddSingleton<ProjectConfigurationLoader>();
         services.AddSingleton<ProjectAccessService>();
         services.AddSingleton<IFogSourceScanner, FileSystemFogSourceScanner>();
