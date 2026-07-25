@@ -79,7 +79,7 @@ public sealed class ProjectResourceSearchServiceTests
         Assert.Equal(new[] { 2, 1 }, results.Select(result => result.Score));
         Assert.Equal("resource-1", results[0].DisplayName);
         Assert.Equal("Bob", results[1].DisplayName);
-        Assert.Equal(2, results[0].Matches.Count);
+        Assert.Single(results[0].Matches);
     }
 
     [Fact]
