@@ -77,6 +77,7 @@ public sealed class OntologyCatalog
             result.Add(current.Id);
         }
 
+        result.Reverse();
         return result;
     }
 
