@@ -68,7 +68,7 @@ public sealed class ProjectResourceSearchService
                 return new NameCandidate(
                     group.Key,
                     resourceHits.Max(hit => NameScore(hit.Value, searchKey)),
-                    SelectDisplayName(resourceHits, preferredLanguage),
+                    SelectDisplayName(resourceHits, preferredLanguage, group.Key),
                     resourceHits
                         .Select(ToEvidence)
                         .OrderBy(evidence => evidence.Predicate, StringComparer.Ordinal)
@@ -132,7 +132,8 @@ public sealed class ProjectResourceSearchService
         List<RankedCandidate> ranked = new();
         foreach (WordCandidateBuilder candidate in candidates.Values
                      .OrderByDescending(candidate => candidate.Score)
-                     .ThenBy(candidate => candidate.ResourceId, StringComparer.Ordinal))
+                     .ThenBy(candidate => candidate.ResourceId, StringComparer.Ordinal)
+                     .Take(limit * 10))
         {
             IReadOnlyList<NameSearchHit> names = await _searchStore.FindNamesByResourceAsync(
                 candidate.ResourceId,
@@ -140,7 +141,7 @@ public sealed class ProjectResourceSearchService
                 cancellationToken);
             ranked.Add(new RankedCandidate(
                 candidate.ResourceId,
-                SelectDisplayName(names, preferredLanguage),
+                SelectDisplayName(names, preferredLanguage, candidate.ResourceId),
                 candidate.Score,
                 candidate.Matches));
         }
@@ -258,7 +259,8 @@ public sealed class ProjectResourceSearchService
 
     private static string SelectDisplayName(
         IReadOnlyList<NameSearchHit> names,
-        string preferredLanguage)
+        string preferredLanguage,
+        string fallbackResourceId)
     {
         NameSearchHit? selected = names
             .OrderBy(hit => string.Equals(
@@ -269,7 +271,7 @@ public sealed class ProjectResourceSearchService
             .ThenBy(hit => hit.Value, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault();
 
-        return selected?.Value ?? names.FirstOrDefault()?.ResourceId ?? string.Empty;
+        return selected?.Value ?? fallbackResourceId;
     }
 
     private static int LanguagePriority(string? language, string preferredLanguage)
