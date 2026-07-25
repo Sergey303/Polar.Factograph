@@ -14,7 +14,18 @@ The first product version preserves the existing cassette directory structure, F
 
 ## Repository state
 
-This initial scaffold contains the project configuration model, compatibility boundaries, storage contracts, Minimal API host, and architecture/UX documentation. The Fog reader, Polar.DB-backed index, editor, and React client are intentionally left for focused follow-up increments.
+The current scaffold contains:
+
+- the project configuration model and validation;
+- project-relative cassette paths, roles, permissions, and write routing;
+- a read-only filesystem scanner for current and additional Fog sources;
+- streaming inspection of Fog root metadata without loading a complete Fog file into memory;
+- project-level RDF storage contracts with cassette and Fog provenance;
+- a Minimal API host;
+- an integration test against the real `cassetes/SypCassete` compatibility fixture;
+- architecture and legacy-equivalent UX documentation.
+
+RDF record materialization, `delete`/`substitute`/`mT` resolution, the Polar.DB-backed index, editor, authentication, and React client remain follow-up increments.
 
 ## Start
 
@@ -23,6 +34,14 @@ dotnet restore Polar.Factograph.slnx
 dotnet run --project src/Polar.Factograph.Api
 ```
 
-The sample project configuration is stored in `examples/project.sample.json`.
+The API uses `examples/syp.project.json` by default. Available initial endpoints:
+
+```text
+GET /api/system/health
+GET /api/project
+GET /api/project/sources
+```
+
+A generic multi-cassette example is stored in `examples/project.sample.json`.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the architecture and [docs/UX.md](docs/UX.md) for the target user experience.
