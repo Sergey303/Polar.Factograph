@@ -24,10 +24,10 @@
           Link="Fixtures/syp.project.json"
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../cassetes/SypCassete/cassette.finfo"
-          Link="Fixtures/cassetes/SypCassete/cassette.finfo"
+          Link="cassetes/SypCassete/cassette.finfo"
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../cassetes/SypCassete/meta/*.fog"
-          Link="Fixtures/cassetes/SypCassete/meta/%(Filename)%(Extension)"
+          Link="cassetes/SypCassete/meta/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
