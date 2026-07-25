@@ -8,8 +8,6 @@ namespace Polar.Factograph.Storage;
 /// </summary>
 public sealed class PolarDbTypedIndexGenerationWriter : IProjectIndexGenerationWriter
 {
-    private const string IndexBuildSentinel = "__polar_factograph_build_external_index__";
-
     private readonly FileSystemIndexGeneration _generation;
     private DbSet<PolarDbResourceHeadRow>? _resourceHeads;
     private DbSet<PolarDbTripleRow>? _triples;
@@ -129,7 +127,11 @@ public sealed class PolarDbTypedIndexGenerationWriter : IProjectIndexGenerationW
         ThrowIfFinished();
         cancellationToken.ThrowIfCancellationRequested();
 
-        BuildExternalIndexes();
+        PolarDbTypedExternalIndexBuilder.Build(
+            RequireResourceHeads(),
+            RequireTriples(),
+            RequireNameSearch(),
+            RequireWordSearch());
         DisposeSets();
         await _generation.CommitAsync(cancellationToken);
         _committed = true;
@@ -156,30 +158,6 @@ public sealed class PolarDbTypedIndexGenerationWriter : IProjectIndexGenerationW
         }
 
         await _generation.DisposeAsync();
-    }
-
-    private void BuildExternalIndexes()
-    {
-        DbSet<PolarDbResourceHeadRow> resourceHeads = RequireResourceHeads();
-        _ = resourceHeads.Find(row => row.SourceCassetteId, IndexBuildSentinel);
-
-        DbSet<PolarDbTripleRow> triples = RequireTriples();
-        _ = triples.Find(row => row.Subject, IndexBuildSentinel);
-        _ = triples.Find(row => row.Predicate, IndexBuildSentinel);
-        _ = triples.Find(row => row.ObjectValue, IndexBuildSentinel);
-        _ = triples.Find(row => row.SourceCassetteId, IndexBuildSentinel);
-        _ = triples.Find(row => row.SubjectPredicateKey, IndexBuildSentinel);
-        _ = triples.Find(row => row.PredicateObjectKey, IndexBuildSentinel);
-
-        DbSet<PolarDbNameSearchRow> names = RequireNameSearch();
-        _ = names.Find(row => row.SearchKey, IndexBuildSentinel);
-        _ = names.Find(row => row.ResourceId, IndexBuildSentinel);
-        _ = names.Find(row => row.SourceCassetteId, IndexBuildSentinel);
-
-        DbSet<PolarDbWordSearchRow> words = RequireWordSearch();
-        _ = words.Find(row => row.Word, IndexBuildSentinel);
-        _ = words.Find(row => row.ResourceId, IndexBuildSentinel);
-        _ = words.Find(row => row.SourceCassetteId, IndexBuildSentinel);
     }
 
     private void DisposeSets()
