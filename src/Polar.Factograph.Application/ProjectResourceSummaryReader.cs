@@ -22,21 +22,39 @@ internal sealed class ProjectResourceSummaryReader(
         string preferredLanguage,
         CancellationToken cancellationToken)
     {
+        IReadOnlyList<NameSearchHit> names = await searchStore.FindNamesByResourceAsync(
+            resourceId,
+            cassetteIds,
+            cancellationToken);
+        string displayName = ProjectSearchRules.SelectDisplayName(
+            names,
+            preferredLanguage,
+            resourceId);
+        return await ReadAsync(
+            resourceId,
+            displayName,
+            cassetteIds,
+            preferredLanguage,
+            cancellationToken);
+    }
+
+    public async Task<ProjectResourceSummary?> ReadAsync(
+        string resourceId,
+        string displayName,
+        IReadOnlySet<string> cassetteIds,
+        string preferredLanguage,
+        CancellationToken cancellationToken)
+    {
         ResourceHead? head = await rdfStore.GetResourceHeadAsync(resourceId, cancellationToken);
         if (head is null || head.IsDeleted || !cassetteIds.Contains(head.SourceCassetteId))
         {
             return null;
         }
 
-        IReadOnlyList<NameSearchHit> names = await searchStore.FindNamesByResourceAsync(
-            resourceId,
-            cassetteIds,
-            cancellationToken);
         string? type = await ReadTypeAsync(resourceId, cassetteIds, cancellationToken);
-
         return new ProjectResourceSummary(
             resourceId,
-            ProjectSearchRules.SelectDisplayName(names, preferredLanguage, resourceId),
+            displayName,
             type,
             type is null ? null : ontology?.LabelOf(type, preferredLanguage) ?? type,
             head.SourceCassetteId);
