@@ -18,7 +18,9 @@ project.json
   -> current RDF records with provenance
   -> logical resource heads and RDF triples
   -> resource/triple/search physical rows
+  -> Polar.DB.Typed generation writer
   -> atomic project index generation
+  -> Polar.DB.Typed RDF/search store
   -> storage ports for RDF, portraits, and search
   -> ontology-aware application models
   -> Minimal API
@@ -35,9 +37,10 @@ project.json
 6. Existing identifiers, namespaces, `owner`, `prefix`, `counter`, `mT`, `xml:lang`, `rdf:resource`, `delete`, `substitute`, and `iiss://` behavior are preserved.
 7. A failed index update must never invalidate a successfully written Fog file; the index is repaired from the source.
 8. The compatibility pipeline reopens and streams Fog files for each analysis pass instead of holding the complete project cloud in memory.
-9. A rebuilt index becomes visible only after every resource, triple, name-search row, and word-search row has been written successfully.
+9. A rebuilt index becomes visible only after every resource, triple, name-search row, and word-search row has been written and indexed successfully.
 10. Application services depend on logical storage ports and do not know the concrete `DbSet<T>` layout.
 11. Ontology presentation never replaces raw RDF identifiers or values; it adds display labels and ordering while preserving fallbacks.
+12. A read-store instance is bound to one immutable completed generation and never observes a partially rebuilt generation.
 
 ## Compatibility pipeline
 
@@ -91,9 +94,21 @@ The legacy `UpiAdapter` behavior is represented by two materialized indexes:
 - `Polar.Factograph.Domain` — project configuration and stable contracts.
 - `Polar.Factograph.Application` — configuration loading, validation, authorization boundaries, portraits, ontology presentation, search ranking, and future write use cases.
 - `Polar.Factograph.Fog` — compatible cassette discovery, streaming Fog reading, canonicalization, revision resolution, future writing, and document path resolution.
-- `Polar.Factograph.Storage` — logical RDF/search contracts, Polar.DB-compatible physical rows, index-generation lifecycle, and future concrete `DbSet<T>` adapters.
+- `Polar.Factograph.Storage` — logical RDF/search contracts, physical rows, atomic generation lifecycle, concrete `Polar.DB.Typed.DbSet<T>` writer, and concrete RDF/search store.
 - `Polar.Factograph.Api` — Minimal API host.
 - `web` — future React/TypeScript client.
+
+## Polar.DB source dependency
+
+Polar.Factograph uses the existing `Polar.DB.Typed` project directly and does not copy or fork `DbSet<T>`.
+
+The solution-level external reference is:
+
+```text
+../../Polar.DB/src/Polar.DB.Typed/Polar.DB.Typed.csproj
+```
+
+The Storage project reaches that same checkout through its project-relative path. CI reads the exact Polar.DB commit from `eng/PolarDb.version`, fetches that commit into the external path, and then restores the combined solution. This keeps CI reproducible while retaining a normal sibling-repository workflow for local development.
 
 ## Storage model
 
@@ -129,7 +144,7 @@ Because a `DbSet` external index addresses one field, exact compound lookups use
 - `SubjectPredicateKey` for `(subject, predicate)`;
 - `PredicateObjectKey` for `(predicate, object kind, object value)`.
 
-The intended physical sets are:
+The physical sets are:
 
 ```text
 resource-heads
@@ -169,7 +184,9 @@ A rebuild starts in:
 {indexRoot}/generation-{guid}.building/
 ```
 
-After all four physical sets are written and their `DbSet<T>` indexes are built, the directory is renamed to:
+`PolarDbTypedIndexGenerationWriter` opens four existing `DbSet<T>` instances in that staging directory. It appends the projected rows and, during commit, forces every declared external index to build before closing the sets.
+
+After all four sets and their indexes are complete, the directory is renamed to:
 
 ```text
 {indexRoot}/generation-{guid}/
@@ -178,6 +195,19 @@ After all four physical sets are written and their `DbSet<T>` indexes are built,
 Only then is the `CURRENT` pointer atomically replaced. Readers continue using the preceding generation until that final switch. An aborted or disposed incomplete generation deletes only its `.building` directory. Previously completed generations remain available for rollback and later cleanup.
 
 `ProjectIndexRebuilder` enforces this sequence through `IProjectIndexGenerationWriter`: write resource heads, triples, name-search rows, and word-search rows; commit after the full stream succeeds; abort on any exception.
+
+### Completed-generation reads
+
+`PolarDbTypedProjectStore.OpenCurrent` resolves `CURRENT`, verifies that the completed generation exists, and opens the same four physical sets read-only by convention. It implements:
+
+- primary-key resource-head lookup;
+- indexed triple lookup by subject, predicate, object value, subject+predicate, and predicate+object;
+- exact name-prefix lookup;
+- name lookup by resource;
+- exact word lookup;
+- cassette filtering before logical rows leave Storage.
+
+The store remains bound to the generation path captured during opening. A later rebuild produces a new store instance rather than mutating readers that may already be serving requests.
 
 ## Write transaction
 
@@ -195,7 +225,7 @@ Only then is the `CURRENT` pointer atomically replaced. Readers continue using t
 3. Streaming record canonicalization and legacy revision resolution — complete.
 4. Logical RDF projection, physical rows, and atomic generation lifecycle — complete.
 5. Raw portraits, ontology catalog/presentation, compatible document path resolution, and indexed-search contracts — complete.
-6. Concrete `Polar.DB.Typed.DbSet<T>` generation writer, RDF store, and search store.
+6. Concrete `Polar.DB.Typed.DbSet<T>` generation writer, RDF store, and search store — complete.
 7. Read-only portrait/search/document API endpoints.
 8. Legacy-equivalent React UX.
 9. Compatible metadata editing and write routing.
