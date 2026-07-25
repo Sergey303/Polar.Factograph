@@ -19,6 +19,8 @@ public sealed class PolarDbPhysicalRowsTests
     {
         AssertSupportedConstructorTypes(typeof(PolarDbResourceHeadRow));
         AssertSupportedConstructorTypes(typeof(PolarDbTripleRow));
+        AssertSupportedConstructorTypes(typeof(PolarDbNameSearchRow));
+        AssertSupportedConstructorTypes(typeof(PolarDbWordSearchRow));
     }
 
     [Fact]
