@@ -15,7 +15,7 @@ public static class SearchEndpoints
 
     private static async Task<IResult> SearchNamesAsync(
         string q,
-        int limit,
+        int? limit,
         string? lang,
         HttpContext httpContext,
         ProjectRequestContextFactory contextFactory,
@@ -36,7 +36,7 @@ public static class SearchEndpoints
 
     private static async Task<IResult> SearchWordsAsync(
         string q,
-        int limit,
+        int? limit,
         string? lang,
         HttpContext httpContext,
         ProjectRequestContextFactory contextFactory,
@@ -55,7 +55,7 @@ public static class SearchEndpoints
         return Results.Ok(results);
     }
 
-    private static int NormalizeLimit(int limit) => limit == 0 ? 50 : limit;
+    private static int NormalizeLimit(int? limit) => limit ?? 50;
 
     private static string NormalizeLanguage(string? language) =>
         string.IsNullOrWhiteSpace(language) ? "ru" : language;
