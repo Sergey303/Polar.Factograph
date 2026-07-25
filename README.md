@@ -26,7 +26,7 @@ The current compatibility increment contains:
 - a concrete RDF/search store bound to one completed generation;
 - raw resource portraits with direct and inverse relations;
 - ontology catalog and ontology-aware presentation contracts;
-- safe resolution of `iiss://` document paths;
+- safe `iiss://` resolution plus authorized metadata and streamed original/preview content;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
 - production identity from standard claims and a development-only configured identity;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
@@ -73,6 +73,8 @@ GET  /api/project
 GET  /api/resources/portrait?id={rdf-id}
 GET  /api/search/names?q={text}
 GET  /api/search/words?q={text}
+GET  /api/documents/location?uri={iiss-uri}
+GET  /api/documents/content?uri={iiss-uri}&variant={variant}
 GET  /api/admin/project/sources
 GET  /api/admin/project/materialization-summary
 POST /api/admin/index/rebuild
