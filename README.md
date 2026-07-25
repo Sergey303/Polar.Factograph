@@ -12,4 +12,17 @@ The first product version preserves the existing cassette directory structure, F
 - Reads operate over the unified cloud; writes are routed to a cassette and writable Fog allowed for the current user.
 - The web UX preserves the established workflows: search, resource portrait, direct and inverse links, collection tree, documents, previews, and editing.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the initial architecture.
+## Repository state
+
+This initial scaffold contains the project configuration model, compatibility boundaries, storage contracts, Minimal API host, and architecture/UX documentation. The Fog reader, Polar.DB-backed index, editor, and React client are intentionally left for focused follow-up increments.
+
+## Start
+
+```bash
+dotnet restore Polar.Factograph.slnx
+dotnet run --project src/Polar.Factograph.Api
+```
+
+The sample project configuration is stored in `examples/project.sample.json`.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the architecture and [docs/UX.md](docs/UX.md) for the target user experience.

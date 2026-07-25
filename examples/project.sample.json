@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "projectId": "sample-archive",
+  "name": "Sample Factographic Archive",
+  "ontology": {
+    "path": "./ontology.xml"
+  },
+  "index": {
+    "path": "./project-data/index",
+    "rebuildMode": "whenSourcesChanged"
+  },
+  "cassettes": [
+    {
+      "id": "archive-history",
+      "name": "ArchiveHistory",
+      "path": "D:/FactographProjects/ArchiveHistory",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "archive-current",
+      "name": "ArchiveCurrent",
+      "path": "D:/FactographProjects/ArchiveCurrent",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": true
+    }
+  ],
+  "roles": {
+    "viewer": {
+      "projectRights": ["read", "search"],
+      "cassetteRights": {}
+    },
+    "editor": {
+      "projectRights": ["read", "search"],
+      "cassetteRights": {
+        "archive-current": ["read", "writeMetadata", "addDocuments", "replaceDocuments"]
+      }
+    },
+    "administrator": {
+      "projectRights": ["read", "search", "export", "manageUsers", "manageCassettes", "rebuildIndex"],
+      "cassetteRights": {
+        "*": ["read", "writeMetadata", "addDocuments", "replaceDocuments", "delete", "substitute", "manage"]
+      }
+    }
+  },
+  "members": [
+    {
+      "userId": "admin",
+      "roles": ["administrator"],
+      "cassetteOverrides": {}
+    },
+    {
+      "userId": "editor",
+      "roles": ["editor"],
+      "cassetteOverrides": {}
+    }
+  ],
+  "writeRouting": {
+    "defaultCassetteByRole": {
+      "editor": "archive-current",
+      "administrator": "archive-current"
+    }
+  }
+}

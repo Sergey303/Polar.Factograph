@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../Polar.Factograph.Domain/Polar.Factograph.Domain.csproj" />
+    <ProjectReference Include="../Polar.Factograph.Application/Polar.Factograph.Application.csproj" />
+  </ItemGroup>
+</Project>
