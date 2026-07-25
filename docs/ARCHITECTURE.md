@@ -16,7 +16,9 @@ project.json
   -> global delete/substitute resolution
   -> latest definition selection by mT
   -> current RDF records with provenance
-  -> project-level Polar.DB indexes
+  -> logical resource heads and RDF triples
+  -> Polar.DB-compatible physical rows
+  -> atomic project index generation
   -> Minimal API
   -> web client
 ```
@@ -31,6 +33,7 @@ project.json
 6. Existing identifiers, namespaces, `owner`, `prefix`, `counter`, `mT`, `xml:lang`, `rdf:resource`, `delete`, `substitute`, and `iiss://` behavior are preserved.
 7. A failed index update must never invalidate a successfully written Fog file; the index is repaired from the source.
 8. The compatibility pipeline reopens and streams Fog files for each analysis pass instead of holding the complete project cloud in memory.
+9. A rebuilt index becomes visible only after every resource and triple has been written successfully.
 
 ## Compatibility pipeline
 
@@ -49,13 +52,13 @@ The synthetic resource `cassetterootcollection` is emitted only when no current 
 - `Polar.Factograph.Domain` — project configuration and stable contracts.
 - `Polar.Factograph.Application` — configuration loading, validation, authorization, and use cases.
 - `Polar.Factograph.Fog` — compatible cassette discovery, streaming Fog reading, canonicalization, revision resolution, future writing, and file path resolution.
-- `Polar.Factograph.Storage` — project RDF store contracts and the future Polar.DB implementation.
+- `Polar.Factograph.Storage` — logical RDF rows, Polar.DB-compatible physical rows, index-generation lifecycle, and the future concrete DbSet writer.
 - `Polar.Factograph.Api` — Minimal API host.
 - `web` — future React/TypeScript client.
 
 ## Storage model
 
-The future Polar.DB implementation should expose at least these logical sets:
+The project index should expose at least these logical sets:
 
 - source files and their fingerprints;
 - all source records, including delete and substitute operations;
@@ -65,7 +68,62 @@ The future Polar.DB implementation should expose at least these logical sets:
 - search terms;
 - document locations.
 
-The current triple representation must carry provenance so that diagnostics, rights filtering, and write routing remain possible.
+The current triple representation carries provenance so that diagnostics, rights filtering, and write routing remain possible.
+
+### Logical and physical rows
+
+The Fog pipeline produces logical `ResourceHead` and `TripleRow` values. A separate mapping converts them to `PolarDbResourceHeadRow` and `PolarDbTripleRow`.
+
+Physical rows intentionally use only CLR types supported automatically by the current `Polar.DB.Typed.DbSet` schema builder:
+
+- `int`;
+- `long`;
+- `Guid`;
+- `string`;
+- `bool`.
+
+`DateTimeOffset` is stored as UTC ticks. Nullable language and datatype values use an empty physical string and are restored to `null` in the logical model. The RDF object enum is stored as an integer and validated while reading.
+
+Because a `DbSet` external index addresses one field, exact compound lookups use collision-free length-prefixed synthetic fields:
+
+- `SubjectPredicateKey` for `(subject, predicate)`;
+- `PredicateObjectKey` for `(predicate, object kind, object value)`.
+
+The intended physical sets are:
+
+```text
+resource-heads
+  primary key: ResourceId
+  external key: SourceCassetteId
+
+triples
+  primary key: TripleId
+  external keys:
+    Subject
+    Predicate
+    ObjectValue
+    SourceCassetteId
+    SubjectPredicateKey
+    PredicateObjectKey
+```
+
+### Atomic generations
+
+A rebuild starts in:
+
+```text
+{indexRoot}/generation-{guid}.building/
+```
+
+After all physical rows are written and their DbSet indexes are built, the directory is renamed to:
+
+```text
+{indexRoot}/generation-{guid}/
+```
+
+Only then is the `CURRENT` pointer atomically replaced. Readers continue using the preceding generation until that final switch. An aborted or disposed incomplete generation deletes only its `.building` directory. Previously completed generations remain available for rollback and later cleanup.
+
+`ProjectIndexRebuilder` enforces this sequence through `IProjectIndexGenerationWriter`: write resources and triples, commit after the full stream succeeds, and abort on any exception.
 
 ## Write transaction
 
@@ -81,9 +139,10 @@ The current triple representation must carry provenance so that diagnostics, rig
 1. Configuration and contracts — complete.
 2. Read-only Fog scanner and compatibility fixtures — complete.
 3. Streaming record canonicalization and legacy revision resolution — complete.
-4. Full project materialization into Polar.DB.
-5. Read-only search/portrait API and legacy-equivalent UX.
-6. Compatible metadata editing.
-7. Documents, previews, collection management, delete, and substitute.
-8. Administration, diagnostics, authentication, and incremental rebuilds.
-9. Only after proven compatibility: discussion of a cassette v2 format.
+4. Logical RDF projection, Polar.DB-compatible physical rows, and atomic generation lifecycle — complete.
+5. Concrete `Polar.DB.Typed.DbSet` generation writer and query adapter.
+6. Read-only search/portrait API and legacy-equivalent UX.
+7. Compatible metadata editing.
+8. Documents, previews, collection management, delete, and substitute.
+9. Administration, diagnostics, authentication, and incremental rebuilds.
+10. Only after proven compatibility: discussion of a cassette v2 format.
