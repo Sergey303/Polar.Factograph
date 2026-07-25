@@ -41,7 +41,7 @@ public sealed class OntologyCatalog
         ValidateClassHierarchy();
     }
 
-    public IReadOnlyCollection<OntologyTerm> Terms => _terms.Values;
+    public IReadOnlyCollection<OntologyTerm> Terms => _terms.Values.ToArray();
 
     public bool TryGetTerm(string id, out OntologyTerm? term)
     {
