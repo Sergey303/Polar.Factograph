@@ -19,6 +19,10 @@ public sealed class ProjectIndexRebuilderTests
         Assert.Equal(4, statistics.Triples);
         Assert.Equal(2, writer.Resources.Count);
         Assert.Equal(4, writer.Triples.Count);
+        Assert.Equal(writer.NameSearchRows.Count, statistics.NameSearchRows);
+        Assert.Equal(writer.WordSearchRows.Count, statistics.WordSearchRows);
+        Assert.NotEmpty(writer.NameSearchRows);
+        Assert.NotEmpty(writer.WordSearchRows);
         Assert.True(writer.Committed);
         Assert.False(writer.Aborted);
     }
@@ -78,6 +82,10 @@ public sealed class ProjectIndexRebuilderTests
 
         public List<PolarDbTripleRow> Triples { get; } = new();
 
+        public List<PolarDbNameSearchRow> NameSearchRows { get; } = new();
+
+        public List<PolarDbWordSearchRow> WordSearchRows { get; } = new();
+
         public bool Committed { get; private set; }
 
         public bool Aborted { get; private set; }
@@ -104,6 +112,24 @@ public sealed class ProjectIndexRebuilderTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             Triples.AddRange(triples);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask WriteNameSearchRowsAsync(
+            IReadOnlyList<PolarDbNameSearchRow> rows,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            NameSearchRows.AddRange(rows);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask WriteWordSearchRowsAsync(
+            IReadOnlyList<PolarDbWordSearchRow> rows,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            WordSearchRows.AddRange(rows);
             return ValueTask.CompletedTask;
         }
 
