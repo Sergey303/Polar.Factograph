@@ -14,6 +14,7 @@ public static class FactographEndpointMapping
         app.MapIndexEndpoints();
         app.MapResourceEndpoints();
         app.MapSearchEndpoints();
+        app.MapDocumentEndpoints();
         return app;
     }
 }
