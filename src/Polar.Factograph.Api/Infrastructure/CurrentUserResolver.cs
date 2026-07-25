@@ -10,8 +10,8 @@ public sealed class CurrentUserResolver(
     {
         ArgumentNullException.ThrowIfNull(httpContext);
 
-        string? userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? httpContext.User.FindFirstValue("sub")
+        string? userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.User.FindFirst("sub")?.Value
             ?? httpContext.User.Identity?.Name;
 
         if (!string.IsNullOrWhiteSpace(userId))
