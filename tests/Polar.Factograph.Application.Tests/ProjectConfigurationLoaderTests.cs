@@ -17,7 +17,8 @@ public sealed class ProjectConfigurationLoaderTests
         Assert.Equal("project", definition.ProjectId);
         Assert.True(Path.IsPathRooted(definition.Ontology.Path));
         Assert.True(Path.IsPathRooted(definition.Index.Path));
-        Assert.True(Path.IsPathRooted(Assert.Single(definition.Cassettes).Path));
+        Assert.Equal(2, definition.Cassettes.Length);
+        Assert.All(definition.Cassettes, cassette => Assert.True(Path.IsPathRooted(cassette.Path)));
         Assert.Equal("current", definition.WriteRouting.DefaultCassetteByRole["editor"]);
     }
 
