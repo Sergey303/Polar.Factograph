@@ -8,6 +8,8 @@ public sealed class ApiExceptionMiddleware(
     RequestDelegate next,
     ILogger<ApiExceptionMiddleware> logger)
 {
+    private const int ClientClosedRequest = 499;
+
     public async Task InvokeAsync(HttpContext context)
     {
         try
@@ -16,7 +18,7 @@ public sealed class ApiExceptionMiddleware(
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
-            context.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+            context.Response.StatusCode = ClientClosedRequest;
         }
         catch (ApiAuthenticationException exception)
         {
