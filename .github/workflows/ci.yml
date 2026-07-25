@@ -14,6 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Checkout pinned Polar.DB dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          polar_db_sha="$(tr -d '[:space:]' < eng/PolarDb.version)"
+          rm -rf ../../Polar.DB
+          git init ../../Polar.DB
+          git -C ../../Polar.DB remote add origin https://github.com/Sergey303/Polar.DB.git
+          git -C ../../Polar.DB fetch --depth=1 origin "$polar_db_sha"
+          git -C ../../Polar.DB checkout --detach FETCH_HEAD
+          echo "Polar.DB dependency: $(git -C ../../Polar.DB rev-parse HEAD)"
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
