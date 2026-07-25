@@ -33,6 +33,7 @@ internal static class PolarDbTypedSetFactory
         new(rootPath, options => options
             .Name(PolarDbSearchPhysicalSchema.WordSearch.StorageName)
             .UseKey(row => row.SearchRowId)
+            .UseExternalKey(row => row.Word)
             .UseExternalKey(row => row.ResourceId)
             .UseExternalKey(row => row.SourceCassetteId));
 }
