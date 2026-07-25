@@ -3,5 +3,6 @@
     <ProjectReference Include="../Polar.Factograph.Domain/Polar.Factograph.Domain.csproj" />
     <ProjectReference Include="../Polar.Factograph.Application/Polar.Factograph.Application.csproj" />
     <ProjectReference Include="../Polar.Factograph.Fog/Polar.Factograph.Fog.csproj" />
+    <ProjectReference Include="../Polar.Factograph.Storage/Polar.Factograph.Storage.csproj" />
   </ItemGroup>
 </Project>
