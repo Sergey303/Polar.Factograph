@@ -1,0 +1,27 @@
+using Polar.Factograph.Api.Infrastructure;
+using Polar.Factograph.Application;
+using Polar.Factograph.Fog;
+using Polar.Factograph.Storage;
+
+namespace Polar.Factograph.Api;
+
+public static class FactographApiServices
+{
+    public static IServiceCollection AddFactographApi(this IServiceCollection services)
+    {
+        services.AddSingleton<ProjectConfigurationLoader>();
+        services.AddSingleton<ProjectAccessService>();
+        services.AddSingleton<IFogSourceScanner, FileSystemFogSourceScanner>();
+        services.AddSingleton<IFogRecordReader, FileSystemFogRecordReader>();
+        services.AddSingleton<FogProjectRecordSource>();
+        services.AddSingleton<LegacyFogProjectMaterializer>();
+        services.AddSingleton<ProjectIndexRebuilder>();
+
+        services.AddSingleton<ProjectPathResolver>();
+        services.AddSingleton<CurrentUserResolver>();
+        services.AddSingleton<ProjectStoreProvider>();
+        services.AddSingleton<ProjectRequestContextFactory>();
+        services.AddSingleton<ProjectIndexCoordinator>();
+        return services;
+    }
+}

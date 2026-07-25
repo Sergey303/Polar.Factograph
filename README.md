@@ -17,49 +17,31 @@ The first product version preserves the existing cassette directory structure, F
 
 The current compatibility increment contains:
 
-- project JSON configuration, validation, and project-relative path resolution;
-- deterministic role/member/cassette access calculation and default write routing;
-- compatible cassette/Fog source discovery;
-- streaming Fog record parsing and canonicalization;
+- validated project configuration, roles, members, cassette rights, and write routing;
+- compatible cassette/Fog discovery and streaming record parsing;
 - project-wide `delete`, `substitute`, and latest-`mT` resolution;
-- substitution rewriting for RDF object references;
-- source provenance for every current resource and triple;
-- synthetic `cassetterootcollection` when the sources do not define one;
-- deterministic projection into logical resource heads and RDF triples;
-- four physical `Polar.DB.Typed.DbSet<T>` sets: resource heads, triples, name search, and word search;
-- collision-free synthetic compound lookup keys;
-- legacy-compatible materialization of name prefixes and searchable words;
-- a concrete generation writer that builds all external indexes before commit;
-- atomic generation directories and the `CURRENT` pointer;
-- a concrete RDF/search store bound to one completed immutable generation;
-- exact indexed lookup by resource, subject, predicate, object, compound RDF keys, name prefixes, and words;
-- raw resource portraits with literal, direct, and inverse relations;
-- an XML ontology catalog with inheritance, labels, inverse labels, priorities, domain/range, and enumeration values;
-- ontology-aware portrait presentation with raw-value fallbacks;
-- safe resolution of `iiss://` URIs to originals and three preview sizes;
-- cassette visibility, language-aware display names, type enrichment, and bounded search results;
-- Minimal API diagnostics for sources and materialization statistics;
-- integration tests against the unchanged `SypCassete_current.fog` fixture and against the real `Polar.DB.Typed` persistence implementation.
+- deterministic resource, RDF-triple, name-search, and word-search projection;
+- four concrete `Polar.DB.Typed.DbSet<T>` sets in one atomic generation;
+- external RDF and search indexes built before `CURRENT` is switched;
+- a concrete RDF/search store bound to one completed generation;
+- raw resource portraits with direct and inverse relations;
+- ontology catalog and ontology-aware presentation contracts;
+- safe resolution of `iiss://` document paths;
+- authorized project overview, portrait, search, diagnostics, and index rebuild routes;
+- production identity from standard claims and a development-only configured identity;
+- integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Public portrait/search/document endpoints, authentication identity extraction, compatible editing, and the React client remain focused follow-up increments.
+Compatible editing, document upload operations, authenticated provider setup, and the React client remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
 The solution uses the existing `Polar.DB.Typed` project from `Sergey303/Polar.DB`; no `DbSet<T>` implementation is copied into this repository.
 
-The external project path introduced by the repository layout is:
-
 ```text
 ../../Polar.DB/src/Polar.DB.Typed/Polar.DB.Typed.csproj
 ```
 
-`Polar.Factograph.Storage` references the same project from its own directory. CI checks out the exact Polar.DB commit recorded in:
-
-```text
-eng/PolarDb.version
-```
-
-This keeps source builds reproducible while allowing local development against the sibling Polar.DB checkout.
+CI checks out the exact Polar.DB commit recorded in `eng/PolarDb.version`. This keeps source builds reproducible while allowing local development against the sibling Polar.DB checkout.
 
 ## Physical index layout
 
@@ -70,7 +52,7 @@ name-search
 word-search
 ```
 
-All four sets belong to one atomic generation. `PolarDbTypedIndexGenerationWriter` writes the rows, builds the declared external indexes, closes all sets, and only then switches `CURRENT`. `PolarDbTypedProjectStore` opens the completed generation and implements both RDF and search storage ports.
+All four sets belong to one atomic generation. Readers switch only after all rows and external indexes are complete.
 
 ## Start
 
@@ -81,15 +63,19 @@ dotnet restore Polar.Factograph.slnx
 dotnet run --project src/Polar.Factograph.Api
 ```
 
-Useful diagnostic endpoints:
+Development configuration selects `examples/syp.project.json` and its existing `admin` member. Production requests require an authenticated identity claim.
+
+Useful routes:
 
 ```text
-GET /api/system/health
-GET /api/project
-GET /api/project/sources
-GET /api/project/materialization-summary
+GET  /api/system/health
+GET  /api/project
+GET  /api/resources/portrait?id={rdf-id}
+GET  /api/search/names?q={text}
+GET  /api/search/words?q={text}
+GET  /api/admin/project/sources
+GET  /api/admin/project/materialization-summary
+POST /api/admin/index/rebuild
 ```
 
-The configured compatibility project is stored in `examples/syp.project.json`.
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PROJECT_CONFIGURATION.md](docs/PROJECT_CONFIGURATION.md), [docs/UX.md](docs/UX.md), and [docs/LEGACY_SOURCES.md](docs/LEGACY_SOURCES.md).
+See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).

@@ -18,25 +18,29 @@ public sealed class ProjectAuthorizationException : UnauthorizedAccessException
 
 public static class ProjectAuthorization
 {
-    public static IReadOnlySet<string> RequireRead(ProjectAccessSnapshot access) =>
-        Require(access, ProjectRights.Read);
+    public static IReadOnlySet<string> RequireRead(ProjectAccessSnapshot access)
+    {
+        RequireProjectRight(access, ProjectRights.Read);
+        return access.ReadableCassetteIds;
+    }
 
     public static IReadOnlySet<string> RequireSearch(ProjectAccessSnapshot access)
     {
-        _ = Require(access, ProjectRights.Read);
-        return Require(access, ProjectRights.Search);
+        RequireProjectRight(access, ProjectRights.Read);
+        RequireProjectRight(access, ProjectRights.Search);
+        return access.ReadableCassetteIds;
     }
 
-    private static IReadOnlySet<string> Require(
+    public static void RequireProjectRight(
         ProjectAccessSnapshot access,
         string projectRight)
     {
         ArgumentNullException.ThrowIfNull(access);
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectRight);
+
         if (!access.IsMember || !access.HasProjectRight(projectRight))
         {
             throw new ProjectAuthorizationException(access.UserId, projectRight);
         }
-
-        return access.ReadableCassetteIds;
     }
 }
