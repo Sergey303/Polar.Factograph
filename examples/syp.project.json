@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "projectId": "syp-test",
+  "name": "SypCassete compatibility project",
+  "ontology": {
+    "path": "./ontology.xml"
+  },
+  "index": {
+    "path": "./project-data/syp-test/index",
+    "rebuildMode": "whenSourcesChanged"
+  },
+  "cassettes": [
+    {
+      "id": "syp-cassette",
+      "name": "SypCassete",
+      "path": "cassetes/SypCassete",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    }
+  ],
+  "roles": {
+    "viewer": {
+      "projectRights": ["read", "search"],
+      "cassetteRights": {
+        "syp-cassette": ["read"]
+      }
+    },
+    "administrator": {
+      "projectRights": ["read", "search", "export", "manageUsers", "manageCassettes", "rebuildIndex"],
+      "cassetteRights": {
+        "*": ["read", "manage"]
+      }
+    }
+  },
+  "members": [
+    {
+      "userId": "admin",
+      "roles": ["administrator"],
+      "cassetteOverrides": {}
+    }
+  ],
+  "writeRouting": {
+    "defaultCassetteByRole": {}
+  }
+}
