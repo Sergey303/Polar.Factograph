@@ -21,12 +21,19 @@ The current compatibility increment contains:
 - streaming Fog record parsing and canonicalization;
 - project-wide `delete`, `substitute`, and latest-`mT` resolution;
 - substitution rewriting for RDF object references;
-- source provenance for every current resource;
+- source provenance for every current resource and triple;
 - synthetic `cassetterootcollection` when the sources do not define one;
+- deterministic projection into logical `ResourceHead` and `TripleRow` values;
+- Polar.DB-compatible physical rows using only supported automatic CLR types;
+- collision-free synthetic compound lookup keys;
+- transactional project-index rebuild contracts;
+- atomic generation directories and the `CURRENT` pointer;
 - Minimal API diagnostics for sources and materialization statistics;
 - integration tests against the unchanged `SypCassete_current.fog` fixture.
 
-The Polar.DB-backed index, search/portrait API, editor, authentication, and React client remain focused follow-up increments.
+The concrete `Polar.DB.Typed.DbSet` generation writer depends on packaging `Polar.DB.Typed` for external consumers. That package boundary is prepared in [Sergey303/Polar.DB PR #20](https://github.com/Sergey303/Polar.DB/pull/20).
+
+The search/portrait API, editor, authentication, and React client remain focused follow-up increments.
 
 ## Start
 
