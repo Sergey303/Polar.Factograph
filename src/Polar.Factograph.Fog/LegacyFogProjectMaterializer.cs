@@ -237,5 +237,5 @@ public sealed class LegacyFogProjectMaterializer
         SourceOrdinal: null,
         IsSynthetic: true);
 
-    private sealed record DefinitionWinner(DateTime ModifiedAt, FogRecordKey Key);
+    private readonly record struct DefinitionWinner(DateTime ModifiedAt, FogRecordKey Key);
 }
