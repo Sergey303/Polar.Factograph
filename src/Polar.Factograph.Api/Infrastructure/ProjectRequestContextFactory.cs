@@ -9,7 +9,8 @@ public sealed class ProjectRequestContextFactory(
     ProjectConfigurationLoader projectLoader,
     CurrentUserResolver userResolver,
     ProjectAccessService accessService,
-    ProjectStoreProvider storeProvider)
+    ProjectStoreProvider storeProvider,
+    OntologyCatalogProvider ontologyProvider)
 {
     public async Task<ProjectAccessContext> CreateAccessAsync(
         HttpContext httpContext,
@@ -28,14 +29,21 @@ public sealed class ProjectRequestContextFactory(
     {
         ProjectAccessContext context = await CreateAccessAsync(httpContext, cancellationToken);
         PolarDbTypedProjectStore store = storeProvider.GetCurrent(context.Project.Index.Path);
-        ProjectResourcePortraitService portraits = new(store);
+        OntologyCatalog ontology = await ontologyProvider.GetAsync(
+            context.Project.Ontology.Path,
+            cancellationToken);
+        ProjectResourcePortraitService rawPortraits = new(store);
         ProjectResourceSearchService search = new(store, store);
-        AuthorizedProjectReadService reads = new(portraits, search);
+        AuthorizedProjectReadService reads = new(rawPortraits, search);
+        AuthorizedPresentedPortraitService portraits = new(
+            reads,
+            new OntologyResourcePortraitPresenter(ontology));
 
         return new ProjectReadContext(
             context.Project,
             context.Access,
             store,
-            reads);
+            reads,
+            portraits);
     }
 }
