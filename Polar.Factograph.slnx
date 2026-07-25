@@ -6,4 +6,7 @@
     <Project Path="src/Polar.Factograph.Storage/Polar.Factograph.Storage.csproj" />
     <Project Path="src/Polar.Factograph.Api/Polar.Factograph.Api.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Polar.Factograph.Fog.Tests/Polar.Factograph.Fog.Tests.csproj" />
+  </Folder>
 </Solution>
