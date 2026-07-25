@@ -13,6 +13,7 @@ public static class ResourceEndpoints
 
     private static async Task<IResult> GetPortraitAsync(
         string id,
+        string? lang,
         HttpContext httpContext,
         ProjectRequestContextFactory contextFactory,
         CancellationToken cancellationToken)
@@ -20,9 +21,10 @@ public static class ResourceEndpoints
         ProjectReadContext context = await contextFactory.CreateReadAsync(
             httpContext,
             cancellationToken);
-        ProjectResourcePortrait? portrait = await context.Reads.GetPortraitAsync(
+        PresentedProjectResourcePortrait? portrait = await context.Portraits.GetAsync(
             id,
             context.Access,
+            string.IsNullOrWhiteSpace(lang) ? "ru" : lang,
             cancellationToken);
 
         return portrait is null

@@ -23,12 +23,14 @@ For local development only, `appsettings.Development.json` may provide:
 ```text
 GET /api/system/health
 GET /api/project
-GET /api/resources/portrait?id={rdf-id}
+GET /api/resources/portrait?id={rdf-id}&lang=ru
 GET /api/search/names?q={text}&limit=50&lang=ru
 GET /api/search/words?q={text}&limit=50&lang=ru
 GET /api/documents/location?uri={iiss-uri}
 GET /api/documents/content?uri={iiss-uri}&variant={variant}
 ```
+
+The portrait route returns ontology labels, inverse labels, enumeration display values, and ontology property order while preserving raw RDF identifiers and literal values. `lang` defaults to `ru`.
 
 Document variants are `original`, `small`, `medium`, and `normal`. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests.
 
