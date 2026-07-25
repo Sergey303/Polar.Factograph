@@ -18,15 +18,58 @@ public sealed class ProjectConfigurationLoader
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
-        await using FileStream stream = File.OpenRead(path);
+        string fullPath = Path.GetFullPath(path);
+        await using FileStream stream = File.OpenRead(fullPath);
         ProjectDefinition project = await JsonSerializer.DeserializeAsync<ProjectDefinition>(
             stream,
             JsonOptions,
             cancellationToken)
             ?? throw new InvalidDataException("Project configuration is empty.");
 
+        project = ResolvePaths(project, Path.GetDirectoryName(fullPath)!);
         Validate(project);
         return project;
+    }
+
+    private static ProjectDefinition ResolvePaths(ProjectDefinition project, string baseDirectory)
+    {
+        return project with
+        {
+            Ontology = project.Ontology with
+            {
+                Path = ResolvePath(baseDirectory, project.Ontology.Path)
+            },
+            Index = project.Index with
+            {
+                Path = ResolvePath(baseDirectory, project.Index.Path)
+            },
+            Cassettes = project.Cassettes
+                .Select(cassette => cassette with
+                {
+                    Path = ResolvePath(baseDirectory, cassette.Path)
+                })
+                .ToArray()
+        };
+    }
+
+    private static string ResolvePath(string baseDirectory, string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+        if (Path.IsPathRooted(path) || IsWindowsDrivePath(path))
+        {
+            return path;
+        }
+
+        return Path.GetFullPath(path, baseDirectory);
+    }
+
+    private static bool IsWindowsDrivePath(string path)
+    {
+        return path.Length >= 3 &&
+               char.IsLetter(path[0]) &&
+               path[1] == ':' &&
+               (path[2] == '/' || path[2] == '\\');
     }
 
     private static void Validate(ProjectDefinition project)
