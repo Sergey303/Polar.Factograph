@@ -6,11 +6,15 @@ public sealed record FogSourceDescriptor(
     string CassetteId,
     string CassetteName,
     string FogPath,
+    string? DatabaseId,
+    string? CassetteUri,
     string? Owner,
     string? Prefix,
     long? Counter,
     bool Writable,
-    bool IsCassetteMetadata);
+    bool IsCassetteMetadata,
+    long Length,
+    DateTime LastWriteTimeUtc);
 
 public interface IFogSourceScanner
 {
