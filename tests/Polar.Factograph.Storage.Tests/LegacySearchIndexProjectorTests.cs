@@ -28,7 +28,8 @@ public sealed class LegacySearchIndexProjectorTests
         SearchIndexProjection first = projector.Project(resource);
         SearchIndexProjection second = projector.Project(resource);
 
-        Assert.Equal(first, second);
+        Assert.Equal(first.NameRows, second.NameRows);
+        Assert.Equal(first.WordRows, second.WordRows);
         Assert.Contains(first.NameRows, row => row.SearchKey == "ANNA MARIA SMITH");
         Assert.Contains(first.NameRows, row => row.SearchKey == "MARIA");
         Assert.Contains(first.NameRows, row => row.SearchKey == "SMI");
