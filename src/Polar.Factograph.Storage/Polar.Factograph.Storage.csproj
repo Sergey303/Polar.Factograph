@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="../Polar.Factograph.Domain/Polar.Factograph.Domain.csproj" />
+    <ProjectReference Include="../Polar.Factograph.Fog/Polar.Factograph.Fog.csproj" />
   </ItemGroup>
 </Project>

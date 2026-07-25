@@ -8,5 +8,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Polar.Factograph.Fog.Tests/Polar.Factograph.Fog.Tests.csproj" />
+    <Project Path="tests/Polar.Factograph.Storage.Tests/Polar.Factograph.Storage.Tests.csproj" />
   </Folder>
 </Solution>
