@@ -33,17 +33,20 @@ public sealed class ProjectRequestContextFactory(
             context.Project.Ontology.Path,
             cancellationToken);
         ProjectResourcePortraitService rawPortraits = new(store);
-        ProjectResourceSearchService search = new(store, store);
+        ProjectResourceSearchService search = new(store, store, ontology);
         AuthorizedProjectReadService reads = new(rawPortraits, search);
         AuthorizedPresentedPortraitService portraits = new(
             reads,
             new OntologyResourcePortraitPresenter(ontology));
+        AuthorizedProjectCollectionService collections = new(
+            new ProjectCollectionService(store, store, ontology));
 
         return new ProjectReadContext(
             context.Project,
             context.Access,
             store,
             reads,
-            portraits);
+            portraits,
+            collections);
     }
 }
