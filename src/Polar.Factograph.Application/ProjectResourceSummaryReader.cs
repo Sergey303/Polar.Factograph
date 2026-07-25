@@ -2,12 +2,23 @@ using Polar.Factograph.Storage;
 
 namespace Polar.Factograph.Application;
 
-internal sealed class ProjectResourceSummaryReader(
-    IProjectRdfStore rdfStore,
-    IProjectSearchStore searchStore,
-    OntologyCatalog? ontology)
+internal sealed class ProjectResourceSummaryReader
 {
-    private const string RdfType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+    private readonly IProjectRdfStore _rdfStore;
+    private readonly IProjectSearchStore _searchStore;
+    private readonly OntologyCatalog? _ontology;
+    private readonly ProjectResourceTypeReader _typeReader;
+
+    public ProjectResourceSummaryReader(
+        IProjectRdfStore rdfStore,
+        IProjectSearchStore searchStore,
+        OntologyCatalog? ontology)
+    {
+        _rdfStore = rdfStore;
+        _searchStore = searchStore;
+        _ontology = ontology;
+        _typeReader = new ProjectResourceTypeReader(rdfStore);
+    }
 
     public async Task<ProjectResourceSummary?> ReadAsync(
         string resourceId,
@@ -18,7 +29,7 @@ internal sealed class ProjectResourceSummaryReader(
         ResourceHead? head = await GetVisibleHeadAsync(resourceId, cassetteIds, cancellationToken);
         if (head is null) return null;
 
-        IReadOnlyList<NameSearchHit> names = await searchStore.FindNamesByResourceAsync(
+        IReadOnlyList<NameSearchHit> names = await _searchStore.FindNamesByResourceAsync(
             resourceId,
             cassetteIds,
             cancellationToken);
@@ -49,12 +60,12 @@ internal sealed class ProjectResourceSummaryReader(
         string preferredLanguage,
         CancellationToken cancellationToken)
     {
-        string? type = await ReadTypeAsync(head.ResourceId, cassetteIds, cancellationToken);
+        string? type = await _typeReader.ReadAsync(head.ResourceId, cassetteIds, cancellationToken);
         return new ProjectResourceSummary(
             head.ResourceId,
             displayName,
             type,
-            type is null ? null : ontology?.LabelOf(type, preferredLanguage) ?? type,
+            type is null ? null : _ontology?.LabelOf(type, preferredLanguage) ?? type,
             head.SourceCassetteId);
     }
 
@@ -63,30 +74,9 @@ internal sealed class ProjectResourceSummaryReader(
         IReadOnlySet<string> cassetteIds,
         CancellationToken cancellationToken)
     {
-        ResourceHead? head = await rdfStore.GetResourceHeadAsync(resourceId, cancellationToken);
+        ResourceHead? head = await _rdfStore.GetResourceHeadAsync(resourceId, cancellationToken);
         return head is null || head.IsDeleted || !cassetteIds.Contains(head.SourceCassetteId)
             ? null
             : head;
-    }
-
-    private async Task<string?> ReadTypeAsync(
-        string resourceId,
-        IReadOnlySet<string> cassetteIds,
-        CancellationToken cancellationToken)
-    {
-        List<string> types = new();
-        await foreach (TripleRow triple in rdfStore.FindAsync(
-                           new TriplePattern(
-                               Subject: resourceId,
-                               Predicate: RdfType,
-                               ObjectKind: TripleObjectKind.Iri),
-                           cassetteIds,
-                           cancellationToken)
-                           .WithCancellation(cancellationToken))
-        {
-            types.Add(triple.ObjectValue);
-        }
-
-        return types.Order(StringComparer.Ordinal).FirstOrDefault();
     }
 }
