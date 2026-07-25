@@ -13,6 +13,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+
       - name: Restore
         shell: bash
         run: |
@@ -27,5 +28,33 @@ jobs:
         with:
           name: restore-log
           path: restore.log
-      - run: dotnet build Polar.Factograph.slnx --configuration Release --no-restore
-      - run: dotnet test Polar.Factograph.slnx --configuration Release --no-build
+
+      - name: Build
+        shell: bash
+        run: |
+          set +e
+          dotnet build Polar.Factograph.slnx --configuration Release --no-restore > build.log 2>&1
+          exit_code=$?
+          cat build.log
+          exit $exit_code
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+
+      - name: Test
+        shell: bash
+        run: |
+          set +e
+          dotnet test Polar.Factograph.slnx --configuration Release --no-build > test.log 2>&1
+          exit_code=$?
+          cat test.log
+          exit $exit_code
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test.log
