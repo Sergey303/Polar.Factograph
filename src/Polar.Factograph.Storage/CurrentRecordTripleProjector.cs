@@ -116,7 +116,7 @@ public sealed class CurrentRecordTripleProjector
 
     private static Guid StableGuid(params string?[] parts)
     {
-        string canonical = string.Join('\u001F', parts.Select(part => part ?? "\u0000"));
+        string canonical = string.Join("\u001F", parts.Select(part => part ?? "\u0000"));
         byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(canonical));
         return new Guid(hash.AsSpan(0, 16));
     }
