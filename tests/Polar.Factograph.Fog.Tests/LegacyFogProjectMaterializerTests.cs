@@ -15,7 +15,9 @@ public sealed class LegacyFogProjectMaterializerTests
 
         List<FogSourceRecord> records = await ReadAllAsync(reader.ReadAsync(fog.Source));
 
-        FogSourceRecord old = records.Single(record => record.ResourceId == "oldid");
+        FogSourceRecord old = records.Single(record =>
+            record.Kind == FogRecordKind.Resource &&
+            record.ResourceId == "oldid");
         Assert.Equal(FogRecordKind.Resource, old.Kind);
         Assert.Equal("http://fogid.net/o/person", old.Type);
         Assert.Contains(old.Properties, property =>
