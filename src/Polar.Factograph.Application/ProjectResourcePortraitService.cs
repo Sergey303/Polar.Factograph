@@ -85,13 +85,13 @@ public sealed class ProjectResourcePortraitService
                 triple.ObjectKind == TripleObjectKind.Iri &&
                 string.Equals(triple.Predicate, RdfType, StringComparison.Ordinal))
             .Select(triple => triple.ObjectValue)
-            .Order(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
             .FirstOrDefault();
 
         ResourceLiteralField[] literals = outgoing
             .Where(triple => triple.ObjectKind == TripleObjectKind.Literal)
             .OrderBy(triple => triple.Predicate, StringComparer.Ordinal)
-            .ThenBy(triple => triple.Language, StringComparer.Ordinal)
+            .ThenBy(triple => triple.Language ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(triple => triple.ObjectValue, StringComparer.Ordinal)
             .ThenBy(triple => triple.TripleId)
             .Select(triple => new ResourceLiteralField(
