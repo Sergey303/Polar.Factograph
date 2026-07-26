@@ -21,7 +21,7 @@ interface ResourceEditorProps {
 
 export function ResourceEditor(props: ResourceEditorProps) {
   const editor = useResourceDraft(props.initialDraft);
-  const writer = useResourceWrite(props.token, props.onSaved);
+  const writer = useResourceWrite(props.token, props.schema, props.onSaved);
   const type = findWriteClass(props.schema, editor.draft.typeId);
 
   return (
