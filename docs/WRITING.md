@@ -1,6 +1,6 @@
 # Fog writing
 
-Polar.Factograph now has the filesystem foundation for compatible metadata writes. It is intentionally separate from HTTP endpoints and Polar.DB refresh orchestration.
+Polar.Factograph provides compatible append-only metadata writing through a guarded HTTP use case and a validated filesystem transaction.
 
 ## Routing
 
@@ -48,6 +48,19 @@ The monotonic timestamp rule is required because equal maximum `mT` values inten
 
 The original Fog remains unchanged until validation succeeds.
 
+## Project transaction
+
+`ProjectResourceWriteCoordinator` serializes writes and administrative rebuilds for one project index.
+
+1. Repair a preceding `DIRTY` index before accepting another write.
+2. Select the authorized cassette and writable Fog.
+3. Create `DIRTY` before changing the source of truth.
+4. Commit the validated Fog transaction.
+5. Rebuild the complete Polar.DB generation without request cancellation.
+6. Clear `DIRTY` only after the new generation becomes current.
+
+Reads started after `DIRTY` appears return `503` instead of silently using stale derived data. Requests already holding an immutable completed generation may finish normally.
+
 ## Compatibility
 
 Identifier generation, counter updates, UTC timestamps, empty literal removal, language values, datatype values, and resource links follow the legacy `FDataService.PutItem` behavior.
@@ -59,4 +72,6 @@ Two deliberate corrections are applied:
 
 ## Current boundary
 
-The writer is not yet exposed through the API. A write changes the source of truth but does not incrementally update the active Polar.DB generation. The API write use case must trigger a successful rebuild before new reads are expected to observe the change.
+`POST /api/resources` now exposes complete metadata definitions. Successful source write plus rebuild returns `201`. When source writing succeeds but rebuild fails, the API returns `202`, keeps `DIRTY`, and requires a successful rebuild before reads resume.
+
+Document uploads, collection mutation, delete/substitute commands, and incremental index updates remain separate later increments.
