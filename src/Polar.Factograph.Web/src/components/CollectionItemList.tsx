@@ -3,7 +3,7 @@ import type { CollectionItem } from "../api/collectionModels";
 interface CollectionItemListProps {
   items: CollectionItem[];
   selectedId: string | null;
-  canRemove: boolean;
+  canRemove: (item: CollectionItem) => boolean;
   busy: boolean;
   onSelect: (resourceId: string) => void;
   onOpenCollection: (resourceId: string) => void;
@@ -30,7 +30,10 @@ export function CollectionItemList({
           key={item.membershipResourceId}
           className={item.resourceId === selectedId ? "selected" : undefined}
         >
-          <button className="collection-item-main" onClick={() => onSelect(item.resourceId)}>
+          <button
+            className="collection-item-main"
+            onClick={() => onSelect(item.resourceId)}
+          >
             <strong>{item.displayName}</strong>
             <span className="muted">{item.typeLabel ?? item.type ?? "Ресурс"}</span>
             <span className="muted mono">{item.resourceId}</span>
@@ -42,7 +45,7 @@ export function CollectionItemList({
             >
               Открыть как коллекцию
             </button>
-            {canRemove && (
+            {canRemove(item) && (
               <button
                 className="button danger compact"
                 onClick={() => onRemove(item)}
