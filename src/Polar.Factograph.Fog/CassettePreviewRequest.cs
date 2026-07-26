@@ -1,6 +1,6 @@
 namespace Polar.Factograph.Fog;
 
-internal sealed record CassettePreviewRequestEnvelope(
+public sealed record CassettePreviewRequest(
     string RequestId,
     DateTimeOffset RequestedAtUtc,
     string CassetteId,
@@ -11,4 +11,7 @@ internal sealed record CassettePreviewRequestEnvelope(
     string OriginalFileName,
     long OriginalLength,
     string OriginalSha256,
-    bool Replaced);
+    bool Replaced,
+    int Attempt = 0,
+    DateTimeOffset? NotBeforeUtc = null,
+    string? LastError = null);

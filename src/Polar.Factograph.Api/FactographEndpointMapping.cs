@@ -14,6 +14,7 @@ public static class FactographEndpointMapping
         app.MapProjectEndpoints();
         app.MapProjectDiagnosticsEndpoints();
         app.MapIndexEndpoints();
+        app.MapPreviewQueueEndpoints();
         app.MapResourceEndpoints();
         app.MapResourceWriteEndpoints();
         app.MapResourceDirectiveEndpoints();

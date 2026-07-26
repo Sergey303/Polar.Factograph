@@ -92,6 +92,16 @@ Every successful add or replacement attempts to write one atomic JSON request un
 documents/preview-queue/{folder}-{document}-{requestId}.json
 ```
 
-The request contains logical cassette/document identifiers, original file metadata, length, SHA-256, replacement flag, and request time. It never contains a server filesystem path. A preview worker can claim these files and generate the compatible `small`, `medium`, and `normal` variants.
+The request contains logical cassette/document identifiers, original file metadata, length, SHA-256, replacement flag, request time, completed attempt count, optional retry time, and the last renderer error. It never contains a server filesystem path.
 
-The queue is now produced by Polar.Factograph, but image/PDF rendering and worker lifecycle remain separate follow-up work. Existing preview reads continue to use generated files in the established cassette directories.
+A queue processor atomically moves one request to `documents/preview-processing` before invoking a renderer. On success it removes the request. A retryable failure increments the attempt, records the error, schedules `notBeforeUtc`, and returns the request to the queue. A permanent failure or exhausted retry limit moves the request to `documents/preview-failed`. Invalid JSON is isolated there with an error note instead of blocking later requests.
+
+Processing claims older than the configured lease timeout are returned to the queue. This recovers requests left in `preview-processing` after a worker crash. Renderers must be idempotent because a crash can happen after preview files are committed but before the queue request is removed.
+
+Administrators with `rebuildIndex` may inspect aggregate queue state without filesystem paths:
+
+```text
+GET /api/admin/previews/status
+```
+
+The response contains queued, processing, and failed counts per enabled cassette plus the oldest queued timestamp. A concrete image/PDF renderer and continuously hosted processing loop remain follow-up work. Existing preview reads continue to use generated files in the established cassette directories.

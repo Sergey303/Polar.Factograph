@@ -33,11 +33,12 @@ The current compatibility increment contains:
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
 - atomic streamed document original upload and replacement with independent cassette rights;
 - durable preview-generation requests created after document add and replacement;
+- atomic preview queue claiming, retry scheduling, stale-lease recovery, dead-letter isolation, and administrative diagnostics;
 - index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Incremental index refresh, the preview rendering worker, the React client, and final production hardening remain focused follow-up increments.
+Incremental index refresh, a concrete preview renderer and hosted processing loop, the React client, and final production hardening remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -93,6 +94,7 @@ GET  /api/admin/project/sources
 GET  /api/admin/project/materialization-summary
 GET  /api/admin/index/status
 POST /api/admin/index/rebuild
+GET  /api/admin/previews/status
 ```
 
 See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
