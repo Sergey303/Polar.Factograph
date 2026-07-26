@@ -7,6 +7,7 @@ internal static class FogWrittenFileValidator
         FogSourceDescriptor source,
         string resourceId,
         long expectedCounter,
+        DateTime expectedModifiedAtUtc,
         CancellationToken cancellationToken)
     {
         FogRootMetadata metadata = await new FogRootMetadataReader()
@@ -25,22 +26,23 @@ internal static class FogWrittenFileValidator
             LastWriteTimeUtc = file.LastWriteTimeUtc
         };
 
-        FogSourceRecord? written = null;
+        bool found = false;
         await foreach (FogSourceRecord record in new FileSystemFogRecordReader()
                            .ReadAsync(temporarySource, cancellationToken)
                            .WithCancellation(cancellationToken))
         {
             if (record.Kind == FogRecordKind.Resource &&
-                string.Equals(record.ResourceId, resourceId, StringComparison.Ordinal))
+                string.Equals(record.ResourceId, resourceId, StringComparison.Ordinal) &&
+                record.ModifiedAt == expectedModifiedAtUtc)
             {
-                written = record;
+                found = true;
             }
         }
 
-        if (written is null)
+        if (!found)
         {
             throw new InvalidDataException(
-                $"Rewritten Fog does not contain resource '{resourceId}': {temporaryPath}");
+                $"Rewritten Fog does not contain the new revision of '{resourceId}': {temporaryPath}");
         }
     }
 }
