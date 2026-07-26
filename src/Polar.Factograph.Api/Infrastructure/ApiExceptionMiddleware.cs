@@ -2,8 +2,6 @@ using Polar.Factograph.Application;
 
 namespace Polar.Factograph.Api.Infrastructure;
 
-public sealed record ApiError(string Code, string Message);
-
 public sealed class ApiExceptionMiddleware(
     RequestDelegate next,
     ILogger<ApiExceptionMiddleware> logger)
@@ -22,58 +20,47 @@ public sealed class ApiExceptionMiddleware(
         }
         catch (ApiAuthenticationException exception)
         {
-            await WriteAsync(context, StatusCodes.Status401Unauthorized, "authentication_required", exception.Message);
+            await ApiErrorWriter.WriteAsync(
+                context, 401, "authentication_required", exception.Message);
         }
-        catch (ProjectAuthorizationException exception)
+        catch (UnauthorizedAccessException exception) when (
+            exception is ProjectAuthorizationException or CassetteAuthorizationException)
         {
-            await WriteAsync(context, StatusCodes.Status403Forbidden, "forbidden", exception.Message);
+            await ApiErrorWriter.WriteAsync(context, 403, "forbidden", exception.Message);
         }
         catch (ProjectWriteCommittedException exception)
         {
             logger.LogError(exception, "Fog write committed but index refresh failed.");
-            await WriteAsync(
+            await ApiErrorWriter.WriteAsync(
                 context,
-                StatusCodes.Status503ServiceUnavailable,
+                503,
                 "write_committed_index_refresh_failed",
                 exception.Message);
         }
         catch (ProjectRuntimeUnavailableException exception)
         {
-            await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "project_unavailable", exception.Message);
+            await ApiErrorWriter.WriteAsync(
+                context, 503, "project_unavailable", exception.Message);
         }
-        catch (Exception exception) when (exception is InvalidDataException or ArgumentException)
+        catch (Exception exception) when (
+            exception is InvalidDataException or ArgumentException)
         {
-            await WriteAsync(context, StatusCodes.Status400BadRequest, "invalid_request", exception.Message);
+            await ApiErrorWriter.WriteAsync(
+                context, 400, "invalid_request", exception.Message);
         }
         catch (IOException exception)
         {
-            await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "storage_unavailable", exception.Message);
+            await ApiErrorWriter.WriteAsync(
+                context, 503, "storage_unavailable", exception.Message);
         }
         catch (Exception exception)
         {
             logger.LogError(exception, "Unhandled API request failure.");
-            await WriteAsync(
+            await ApiErrorWriter.WriteAsync(
                 context,
-                StatusCodes.Status500InternalServerError,
+                500,
                 "internal_error",
                 "An unexpected server error occurred.");
         }
-    }
-
-    private static async Task WriteAsync(
-        HttpContext context,
-        int statusCode,
-        string code,
-        string message)
-    {
-        if (context.Response.HasStarted)
-        {
-            return;
-        }
-
-        context.Response.StatusCode = statusCode;
-        await context.Response.WriteAsJsonAsync(
-            new ApiError(code, message),
-            context.RequestAborted);
     }
 }
