@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Options;
 using Polar.Factograph.Api.Infrastructure;
+using Polar.Factograph.Api.Previews;
 using Polar.Factograph.Application;
 using Polar.Factograph.Domain;
 using Polar.Factograph.Fog;
@@ -18,6 +20,8 @@ public static class PreviewQueueEndpoints
         HttpContext httpContext,
         ProjectRequestContextFactory contextFactory,
         CassettePreviewQueueStatusReader statusReader,
+        PreviewWorkerRuntimeState runtime,
+        IOptions<PreviewWorkerOptions> options,
         CancellationToken cancellationToken)
     {
         ProjectAccessContext context = await contextFactory.CreateAccessAsync(
@@ -26,6 +30,14 @@ public static class PreviewQueueEndpoints
         ProjectAuthorization.RequireProjectRight(
             context.Access,
             ProjectRights.RebuildIndex);
-        return Results.Ok(statusReader.Read(context.Project));
+        PreviewWorkerRuntimeSnapshot worker = runtime.Read();
+        PreviewWorkerHealth health = PreviewWorkerHealthEvaluator.Evaluate(
+            worker,
+            options.Value,
+            DateTimeOffset.UtcNow);
+        return Results.Ok(new PreviewSubsystemStatus(
+            statusReader.Read(context.Project),
+            worker,
+            health));
     }
 }
