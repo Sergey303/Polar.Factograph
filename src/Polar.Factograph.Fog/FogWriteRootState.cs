@@ -5,7 +5,8 @@ namespace Polar.Factograph.Fog;
 
 internal sealed record FogWriteRootState(
     string ResourceId,
-    long NextCounter)
+    long NextCounter,
+    string WrittenCounter)
 {
     public static FogWriteRootState Read(
         XmlReader reader,
@@ -37,11 +38,14 @@ internal sealed record FogWriteRootState(
         {
             return new FogWriteRootState(
                 FogIdentifier.Clean(request.ResourceId),
-                counter);
+                counter,
+                counterText);
         }
 
+        long nextCounter = checked(counter + 1);
         return new FogWriteRootState(
             FogIdentifier.Clean(prefix + counter.ToString(CultureInfo.InvariantCulture)),
-            checked(counter + 1));
+            nextCounter,
+            nextCounter.ToString(CultureInfo.InvariantCulture));
     }
 }
