@@ -10,7 +10,7 @@ public sealed class ProjectResourceWriteValidationIntegrationTests
     {
         await using WritableApiProjectFixture fixture =
             await WritableApiProjectFixture.CreateAsync();
-        WritableApiMutationHarness harness = new();
+        using WritableApiMutationHarness harness = new();
         string fogPath = Path.Combine(
             fixture.Root,
             "Cassette",
