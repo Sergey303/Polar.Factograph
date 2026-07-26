@@ -10,6 +10,8 @@ internal static class WritableApiProjectOntology
             <SubClassOf rdf:resource="agent" />
           </Class>
           <Class rdf:about="organization" />
+          <Class rdf:about="collection" />
+          <Class rdf:about="collection-member" />
           <DatatypeProperty rdf:about="name">
             <domain rdf:resource="person" />
           </DatatypeProperty>
@@ -20,6 +22,14 @@ internal static class WritableApiProjectOntology
           <ObjectProperty rdf:about="employer">
             <domain rdf:resource="person" />
             <range rdf:resource="organization" />
+          </ObjectProperty>
+          <ObjectProperty rdf:about="in-collection">
+            <domain rdf:resource="collection-member" />
+            <range rdf:resource="collection" />
+          </ObjectProperty>
+          <ObjectProperty rdf:about="collection-item">
+            <domain rdf:resource="collection-member" />
+            <range rdf:resource="agent" />
           </ObjectProperty>
         </Ontology>
         """;

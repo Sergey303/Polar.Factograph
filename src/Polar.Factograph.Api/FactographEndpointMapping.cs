@@ -19,6 +19,7 @@ public static class FactographEndpointMapping
         app.MapResourceDirectiveEndpoints();
         app.MapSearchEndpoints();
         app.MapCollectionEndpoints();
+        app.MapCollectionMutationEndpoints();
         app.MapDocumentEndpoints();
         return app;
     }
