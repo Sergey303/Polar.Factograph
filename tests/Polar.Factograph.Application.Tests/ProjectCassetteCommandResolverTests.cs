@@ -21,6 +21,20 @@ public sealed class ProjectCassetteCommandResolverTests
     }
 
     [Fact]
+    public void Resolve_SeparatesDocumentAddAndReplaceRights()
+    {
+        ProjectAccessSnapshot access = Access(
+            new HashSet<string>([CassetteRights.AddDocuments], StringComparer.Ordinal));
+        ProjectCassetteCommandResolver resolver = new();
+
+        Assert.Equal(
+            "current",
+            resolver.Resolve(access, CassetteRights.AddDocuments));
+        Assert.Throws<UnauthorizedAccessException>(() =>
+            resolver.Resolve(access, CassetteRights.ReplaceDocuments));
+    }
+
+    [Fact]
     public void Resolve_RejectsExplicitCassetteWithoutRight()
     {
         ProjectAccessSnapshot access = Access(
