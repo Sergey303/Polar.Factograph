@@ -16,9 +16,11 @@ public static class FactographApiServices
         services.AddFactographAuthentication(configuration);
         services.AddSingleton<ProjectConfigurationLoader>();
         services.AddSingleton<ProjectAccessService>();
+        services.AddSingleton<ProjectWriteCassetteResolver>();
         services.AddSingleton<XmlOntologyCatalogLoader>();
         services.AddSingleton<IFogSourceScanner, FileSystemFogSourceScanner>();
         services.AddSingleton<IFogRecordReader, FileSystemFogRecordReader>();
+        services.AddSingleton<IFogResourceWriter, FileSystemFogResourceWriter>();
         services.AddSingleton<FogProjectRecordSource>();
         services.AddSingleton<LegacyFogProjectMaterializer>();
         services.AddSingleton<CassetteDocumentPathResolver>();
@@ -26,10 +28,13 @@ public static class FactographApiServices
 
         services.AddSingleton<ProjectPathResolver>();
         services.AddSingleton<CurrentUserResolver>();
+        services.AddSingleton<ProjectOperationGate>();
+        services.AddSingleton<ProjectIndexDirtyMarker>();
         services.AddSingleton<ProjectStoreProvider>();
         services.AddSingleton<OntologyCatalogProvider>();
         services.AddSingleton<ProjectRequestContextFactory>();
         services.AddSingleton<ProjectIndexCoordinator>();
+        services.AddSingleton<ProjectResourceWriteCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();
         return services;
     }
