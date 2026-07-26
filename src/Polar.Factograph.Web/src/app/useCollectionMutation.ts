@@ -24,7 +24,9 @@ export function useCollectionMutation(
         cassetteId,
         token
       );
-      setMessage(result.indexReady ? "Элемент добавлен." : "Элемент записан, индекс требует восстановления.");
+      setMessage(result.indexReady
+        ? "Элемент добавлен."
+        : "Элемент записан, индекс требует восстановления.");
     });
   }
 
@@ -37,10 +39,12 @@ export function useCollectionMutation(
         item.membershipResourceId,
         collectionId,
         item.resourceId,
-        cassetteId,
+        item.membershipCassetteId,
         token
       );
-      setMessage(result.indexReady ? "Элемент удалён." : "Удаление записано, индекс требует восстановления.");
+      setMessage(result.indexReady
+        ? "Элемент удалён."
+        : "Удаление записано, индекс требует восстановления.");
     });
   }
 
