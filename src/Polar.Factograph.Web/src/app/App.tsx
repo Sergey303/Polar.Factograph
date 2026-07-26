@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { readAccessToken, writeAccessToken } from "../api/tokenStore";
-import { ProjectScope } from "../components/ProjectScope";
+import { NavigationPanel } from "../components/NavigationPanel";
 import { ResourcePortraitView } from "../components/ResourcePortraitView";
 import { SearchPanel } from "../components/SearchPanel";
 import { SearchResultList } from "../components/SearchResultList";
@@ -34,10 +34,13 @@ export function App() {
       />
 
       <main className="workspace">
-        <ProjectScope
+        <NavigationPanel
           project={project.project}
           loading={project.loading}
           error={project.error}
+          token={token}
+          selectedResourceId={selectedId}
+          onSelect={setSelectedId}
         />
 
         <section className="panel results-panel">
@@ -67,6 +70,7 @@ export function App() {
             loading={portrait.loading}
             error={portrait.error}
             token={token}
+            project={project.project}
             onSelect={setSelectedId}
           />
         </section>

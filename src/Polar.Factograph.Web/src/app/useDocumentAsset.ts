@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
 import type { DocumentLocation, DocumentVariant } from "../api/models";
@@ -16,6 +16,8 @@ export function useDocumentAsset(uri: string, token: string) {
   const [contentType, setContentType] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  const reload = useCallback(() => setRevision(value => value + 1), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -55,7 +57,7 @@ export function useDocumentAsset(uri: string, token: string) {
       controller.abort();
       if (createdUrl !== null) URL.revokeObjectURL(createdUrl);
     };
-  }, [uri, token]);
+  }, [uri, token, revision]);
 
-  return { location, objectUrl, contentType, loading, error };
+  return { location, objectUrl, contentType, loading, error, reload };
 }

@@ -1,4 +1,4 @@
-import type { ResourcePortrait } from "../api/models";
+import type { ProjectOverview, ResourcePortrait } from "../api/models";
 import { resourceDocumentUris } from "../app/resourceDocuments";
 import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
@@ -9,6 +9,7 @@ interface ResourcePortraitViewProps {
   loading: boolean;
   error: string | null;
   token: string;
+  project: ProjectOverview | null;
   onSelect: (resourceId: string) => void;
 }
 
@@ -57,7 +58,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
       </header>
 
       <LiteralFields fields={portrait.literals} />
-      <DocumentSection uris={documents} token={props.token} />
+      <DocumentSection uris={documents} token={props.token} project={props.project} />
       <RelationSection
         direct={portrait.directLinks}
         inverse={portrait.inverseLinks}

@@ -35,19 +35,51 @@ async function throwResponseError(response: Response): Promise<never> {
   );
 }
 
+async function readJson<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    return throwResponseError(response);
+  }
+  return (await response.json()) as T;
+}
+
 export async function requestJson<T>(
   path: string,
   token: string,
   signal?: AbortSignal
 ): Promise<T> {
+  return readJson<T>(await fetch(path, { headers: headers(token), signal }));
+}
+
+export async function requestJsonBody<T>(
+  path: string,
+  method: "POST" | "PUT",
+  body: unknown,
+  token: string,
+  signal?: AbortSignal
+): Promise<T> {
   const response = await fetch(path, {
-    headers: headers(token),
+    method,
+    headers: headers(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(body),
     signal
   });
-  if (!response.ok) {
-    return throwResponseError(response);
-  }
-  return (await response.json()) as T;
+  return readJson<T>(response);
+}
+
+export async function requestBinaryBody<T>(
+  path: string,
+  method: "POST" | "PUT",
+  body: Blob,
+  token: string,
+  signal?: AbortSignal
+): Promise<T> {
+  const response = await fetch(path, {
+    method,
+    headers: headers(token),
+    body,
+    signal
+  });
+  return readJson<T>(response);
 }
 
 export async function requestBlob(

@@ -1,0 +1,85 @@
+.navigation-section + .navigation-section {
+  border-top: 1px solid var(--line);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.compact-heading {
+  margin-bottom: 0.75rem;
+}
+
+.collection-open-form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.collection-open-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.collection-open-form input {
+  min-width: 0;
+  width: 100%;
+}
+
+.current-collection-id {
+  display: block;
+  margin: 0.75rem 0;
+  overflow-wrap: anywhere;
+}
+
+.collection-mutation-panel {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.collection-item-list {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.collection-item-list li {
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.collection-item-list li.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.collection-item-main {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.7rem;
+  text-align: left;
+  width: 100%;
+}
+
+.collection-item-actions {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.button.compact {
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.button.danger {
+  color: var(--danger, #a33);
+}

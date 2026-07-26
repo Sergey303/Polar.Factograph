@@ -8,7 +8,7 @@ interface ProjectScopeProps {
 
 export function ProjectScope({ project, loading, error }: ProjectScopeProps) {
   return (
-    <aside className="panel navigation-panel">
+    <section className="navigation-section">
       <div className="panel-heading">
         <span className="eyebrow">Область данных</span>
         <h2>Кассеты</h2>
@@ -45,6 +45,6 @@ export function ProjectScope({ project, loading, error }: ProjectScopeProps) {
           )}
         </>
       )}
-    </aside>
+    </section>
   );
 }
