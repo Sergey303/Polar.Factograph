@@ -21,9 +21,9 @@ public sealed class ExternalProcessPreviewRenderer(
                 retryable: false);
         }
 
-        using PreviewOutputPlan plan = PreviewOutputPlan.Create(cassette, request, settings);
+        string originalPath = PreviewOutputPlan.ResolveOriginalPath(cassette, request);
         if (!await PreviewOriginalVersion.MatchesAsync(
-                plan.OriginalPath,
+                originalPath,
                 request,
                 cancellationToken))
         {
@@ -34,6 +34,11 @@ public sealed class ExternalProcessPreviewRenderer(
             return;
         }
 
+        using PreviewOutputPlan plan = PreviewOutputPlan.Create(
+            cassette,
+            request,
+            settings,
+            originalPath);
         ExternalPreviewProcessResult result = await ExternalPreviewProcess.RunAsync(
             settings,
             plan,
@@ -62,7 +67,7 @@ public sealed class ExternalProcessPreviewRenderer(
         }
 
         if (!await PreviewOriginalVersion.MatchesAsync(
-                plan.OriginalPath,
+                originalPath,
                 request,
                 cancellationToken))
         {
