@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Api.Writes;
 using Polar.Factograph.Application;
+using Polar.Factograph.Domain;
 using Polar.Factograph.Fog;
 using Polar.Factograph.Storage;
 
@@ -10,6 +11,7 @@ namespace Polar.Factograph.Api.Tests;
 internal sealed class WritableApiMutationHarness : IDisposable
 {
     private readonly ProjectStoreProvider _stores;
+    private readonly ProjectIndexCoordinator _indexCoordinator;
 
     public WritableApiMutationHarness()
     {
@@ -17,7 +19,7 @@ internal sealed class WritableApiMutationHarness : IDisposable
         ProjectOperationGate gate = new();
         DirtyMarker = new ProjectIndexDirtyMarker();
         _stores = new ProjectStoreProvider(DirtyMarker);
-        ProjectIndexCoordinator indexCoordinator = new(
+        _indexCoordinator = new ProjectIndexCoordinator(
             scanner,
             new FogProjectRecordSource(new FileSystemFogRecordReader()),
             new LegacyFogProjectMaterializer(),
@@ -25,7 +27,7 @@ internal sealed class WritableApiMutationHarness : IDisposable
             gate,
             DirtyMarker);
         ProjectWriteIndexRefresher refresher = new(
-            indexCoordinator,
+            _indexCoordinator,
             DirtyMarker,
             NullLogger<ProjectWriteIndexRefresher>.Instance);
         ProjectFogMutationRunner runner = new(
@@ -55,6 +57,9 @@ internal sealed class WritableApiMutationHarness : IDisposable
     public ProjectIndexDirtyMarker DirtyMarker { get; }
     public ProjectResourceWriteCoordinator Resources { get; }
     public ProjectDirectiveWriteCoordinator Directives { get; }
+
+    public Task RebuildAsync(ProjectDefinition project) =>
+        _indexCoordinator.RebuildAsync(project);
 
     public void Dispose() => _stores.Dispose();
 }
