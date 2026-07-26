@@ -22,10 +22,12 @@ internal sealed class WritableApiProjectFixture(
         string cassettePath = Path.Combine(root, "Cassette");
         string metaPath = Path.Combine(cassettePath, "meta");
         Directory.CreateDirectory(metaPath);
-        await File.WriteAllTextAsync(
+        await WriteAsync(
             Path.Combine(metaPath, "Cassette_current.fog"),
-            WritableApiProjectFog.Xml,
-            new UTF8Encoding(false));
+            WritableApiProjectFog.Xml);
+        await WriteAsync(
+            Path.Combine(root, "ontology.xml"),
+            WritableApiProjectOntology.Xml);
 
         ProjectDefinition project =
             WritableApiProjectDefinitionFactory.CreateProject(root, cassettePath);
@@ -44,4 +46,7 @@ internal sealed class WritableApiProjectFixture(
 
         return ValueTask.CompletedTask;
     }
+
+    private static Task WriteAsync(string path, string content) =>
+        File.WriteAllTextAsync(path, content, new UTF8Encoding(false));
 }

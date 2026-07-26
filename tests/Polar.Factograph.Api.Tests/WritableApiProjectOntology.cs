@@ -1,0 +1,14 @@
+namespace Polar.Factograph.Api.Tests;
+
+internal static class WritableApiProjectOntology
+{
+    public const string Xml = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <Ontology xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+          <Class rdf:about="person" />
+          <DatatypeProperty rdf:about="name">
+            <domain rdf:resource="person" />
+          </DatatypeProperty>
+        </Ontology>
+        """;
+}

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Polar.Factograph.Api.Infrastructure;
+using Polar.Factograph.Api.Writes;
 using Polar.Factograph.Application;
 using Polar.Factograph.Fog;
 using Polar.Factograph.Storage;
@@ -29,10 +30,14 @@ internal sealed class WritableApiMutationHarness
             gate,
             DirtyMarker,
             refresher);
+        ProjectResourceWriteValidationService validation = new(
+            new OntologyCatalogProvider(new XmlOntologyCatalogLoader()),
+            new OntologyResourceWriteValidator());
 
         Resources = new ProjectResourceWriteCoordinator(
             new FileSystemFogResourceWriter(),
             new ProjectWriteCassetteResolver(),
+            validation,
             runner);
         Directives = new ProjectDirectiveWriteCoordinator(
             new FileSystemFogDirectiveWriter(),

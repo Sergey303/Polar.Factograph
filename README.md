@@ -30,10 +30,11 @@ The current compatibility increment contains:
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
 - production JWT identity plus a development-only configured identity;
 - atomic append-only resource, delete, and substitute Fog mutations;
+- ontology-aware resource-write validation for class, domain, property kind, and enumeration values;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Document upload operations, collection mutation, ontology-aware edit validation, incremental index refresh, and the React client remain focused follow-up increments.
+Document upload operations, collection mutation, object-range target validation, incremental index refresh, and the React client remain focused follow-up increments.
 
 ## Polar.DB source dependency
 

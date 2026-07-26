@@ -35,6 +35,21 @@ The writer also:
 
 The monotonic timestamp rule is required because equal maximum `mT` values intentionally resolve to the first definition.
 
+## Ontology validation
+
+After `writeMetadata` authorization and before project locking, resource definitions are checked against the cached current ontology.
+
+The validator checks:
+
+- class existence;
+- property existence;
+- inherited property domains;
+- datatype versus object-property value kind;
+- enumeration state values;
+- absence of language/datatype metadata on resource links.
+
+Local names and full Fog namespace identifiers resolve to the same ontology term. Failed validation raises an invalid-request response before `DIRTY`, temporary files, or Fog changes. Object target existence and target-class range compatibility remain later checks.
+
 ## Delete and substitute
 
 `FileSystemFogDirectiveWriter` appends one directive and never rewrites prior logical history.
@@ -83,4 +98,4 @@ Two deliberate corrections are applied:
 
 Resource, delete, and substitute mutations are exposed through the API and rebuild Polar.DB before reporting an index-ready result. A committed Fog mutation with failed rebuild returns `202`, keeps `DIRTY`, and blocks stale reads.
 
-Document uploads, collection mutation, ontology-aware edit validation, and incremental index updates remain separate later increments.
+Document uploads, collection mutation, object-range target validation, and incremental index updates remain separate later increments.

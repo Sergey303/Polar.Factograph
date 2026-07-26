@@ -63,6 +63,16 @@ The request contains a complete append-only resource definition:
 
 `kind` is `literal` by default and may be `resource`. When `cassetteId` is omitted, the effective default write cassette is used. The authenticated member must have `writeMetadata` for the selected cassette.
 
+After authorization and before project locking or `DIRTY`, the request is checked against the current ontology:
+
+- `typeId` must identify a class;
+- every property must be available for that class through its domain or an inherited domain;
+- datatype properties require literal values;
+- object properties require resource values and cannot carry language/datatype metadata;
+- values backed by an ontology enumeration must be declared states.
+
+Local Fog names and full `http://fogid.net/o/` identifiers are both accepted. Target-resource existence and target-class compatibility with an object-property range are not yet validated by this step.
+
 ## Delete and substitute
 
 ```text
