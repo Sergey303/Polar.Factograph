@@ -9,11 +9,19 @@ public static class PreviewWorkerHealthEvaluator
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(options);
-        if (!snapshot.Enabled)
+        if (!options.Enabled)
         {
             return new PreviewWorkerHealth(
                 PreviewWorkerStates.Disabled,
                 Enabled: false,
+                Degraded: false);
+        }
+
+        if (!snapshot.Enabled)
+        {
+            return new PreviewWorkerHealth(
+                PreviewWorkerStates.Starting,
+                Enabled: true,
                 Degraded: false);
         }
 
