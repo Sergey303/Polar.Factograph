@@ -35,6 +35,10 @@ ScaffoldingReadMe.txt
 *.nupkg
 *.snupkg
 
+# JavaScript dependencies and builds
+node_modules/
+src/Polar.Factograph.Web/dist/
+
 # dotenv environment variables file
 .env
 
