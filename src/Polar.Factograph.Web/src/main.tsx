@@ -5,6 +5,8 @@ import "./styles/base.css";
 import "./styles/layout.css";
 import "./styles/components.css";
 import "./styles/portrait.css";
+import "./styles/collections.css";
+import "./styles/document-actions.css";
 
 const root = document.getElementById("root");
 if (root === null) {
