@@ -31,6 +31,7 @@ internal static class CassettePreviewRequestValidator
         }
 
         if (request.OriginalLength <= 0 ||
+            string.IsNullOrWhiteSpace(request.OriginalSha256) ||
             request.OriginalSha256.Length != 64 ||
             request.OriginalSha256.Any(character => !Uri.IsHexDigit(character)) ||
             request.Attempt < 0)
@@ -39,9 +40,10 @@ internal static class CassettePreviewRequestValidator
         }
     }
 
-    private static void ValidateSlot(string value, string description)
+    private static void ValidateSlot(string? value, string description)
     {
-        if (value.Length != 4 ||
+        if (value is null ||
+            value.Length != 4 ||
             value.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
             value.Contains(Path.DirectorySeparatorChar) ||
             value.Contains(Path.AltDirectorySeparatorChar))
