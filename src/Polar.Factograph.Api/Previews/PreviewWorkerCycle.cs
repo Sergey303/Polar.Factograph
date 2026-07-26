@@ -9,50 +9,60 @@ public sealed class PreviewWorkerCycle(
     ICassettePreviewRenderer renderer,
     IOptions<PreviewWorkerOptions> options)
 {
+    private readonly object _cursorLock = new();
+    private int _nextCassetteIndex;
+
     public async Task<int> RunAsync(
         ProjectDefinition project,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
         PreviewWorkerOptions settings = options.Value;
+        CassetteDefinition[] cassettes = project.Cassettes
+            .Where(cassette => cassette.Enabled)
+            .OrderBy(cassette => cassette.Id, StringComparer.Ordinal)
+            .ToArray();
+        if (cassettes.Length == 0)
+        {
+            return 0;
+        }
+
         CassettePreviewProcessingOptions processing = new()
         {
             MaxAttempts = settings.MaxAttempts,
             RetryDelay = TimeSpan.FromSeconds(settings.RetryDelaySeconds),
             LeaseTimeout = TimeSpan.FromSeconds(settings.LeaseTimeoutSeconds)
         };
-        CassetteDefinition[] cassettes = project.Cassettes
-            .Where(cassette => cassette.Enabled)
-            .OrderBy(cassette => cassette.Id, StringComparer.Ordinal)
-            .ToArray();
         int handled = 0;
-        bool foundWork;
-        do
+        int consecutiveEmpty = 0;
+        while (handled < settings.MaxItemsPerCycle && consecutiveEmpty < cassettes.Length)
         {
-            foundWork = false;
-            foreach (CassetteDefinition cassette in cassettes)
+            CassetteDefinition cassette = cassettes[TakeNextIndex(cassettes.Length)];
+            CassettePreviewProcessResult result = await processor.ProcessNextAsync(
+                cassette,
+                renderer,
+                processing,
+                cancellationToken);
+            if (result.State == PreviewProcessStates.Empty)
             {
-                if (handled >= settings.MaxItemsPerCycle)
-                {
-                    return handled;
-                }
-
-                CassettePreviewProcessResult result = await processor.ProcessNextAsync(
-                    cassette,
-                    renderer,
-                    processing,
-                    cancellationToken);
-                if (result.State == PreviewProcessStates.Empty)
-                {
-                    continue;
-                }
-
-                handled++;
-                foundWork = true;
+                consecutiveEmpty++;
+                continue;
             }
+
+            handled++;
+            consecutiveEmpty = 0;
         }
-        while (foundWork && handled < settings.MaxItemsPerCycle);
 
         return handled;
+    }
+
+    private int TakeNextIndex(int count)
+    {
+        lock (_cursorLock)
+        {
+            int index = _nextCassetteIndex % count;
+            _nextCassetteIndex = (index + 1) % count;
+            return index;
+        }
     }
 }
