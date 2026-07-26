@@ -6,7 +6,8 @@ namespace Polar.Factograph.Api.Endpoints;
 
 public static class IndexEndpoints
 {
-    public static IEndpointRouteBuilder MapIndexEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapIndexEndpoints(
+        this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/admin/index/rebuild", RebuildAsync);
         return endpoints;
@@ -15,7 +16,8 @@ public static class IndexEndpoints
     private static async Task<IResult> RebuildAsync(
         HttpContext httpContext,
         ProjectRequestContextFactory contextFactory,
-        ProjectIndexCoordinator coordinator,
+        IProjectIndexRefresher refresher,
+        ProjectMutationGate mutationGate,
         CancellationToken cancellationToken)
     {
         ProjectAccessContext context = await contextFactory.CreateAccessAsync(
@@ -24,8 +26,11 @@ public static class IndexEndpoints
         ProjectAuthorization.RequireProjectRight(
             context.Access,
             ProjectRights.RebuildIndex);
+        await using ProjectMutationLease lease = await mutationGate.AcquireAsync(
+            context.Project.Index.Path,
+            cancellationToken);
 
-        ProjectIndexRebuildResult result = await coordinator.RebuildAsync(
+        ProjectIndexRebuildResult result = await refresher.RebuildAsync(
             context.Project,
             cancellationToken);
         return Results.Ok(result);
