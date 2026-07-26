@@ -149,10 +149,13 @@ Mutation responses never expose local Fog paths.
 ```text
 GET  /api/admin/project/sources
 GET  /api/admin/project/materialization-summary
+GET  /api/admin/index/status
 POST /api/admin/index/rebuild
 ```
 
 All administrative routes above require `rebuildIndex`.
+
+The index status response does not expose filesystem paths. It reports `ready`, `dirty`, `missing`, or `invalid`, the `DIRTY` timestamp when parseable, the current generation id and availability, and counts of completed and `.building` generations. An invalid or missing `CURRENT` pointer is returned as diagnostic state instead of causing an unhandled error.
 
 A rebuild streams Fog/XML, resolves current records, writes all four Polar.DB sets, builds their external indexes, switches `CURRENT` only after the complete generation succeeds, and clears `DIRTY` only after success.
 
