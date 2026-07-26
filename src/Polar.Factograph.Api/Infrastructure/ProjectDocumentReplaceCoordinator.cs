@@ -11,6 +11,7 @@ public sealed class ProjectDocumentReplaceCoordinator(
     ProjectCassetteCommandResolver cassetteResolver,
     ProjectOperationGate operationGate,
     ICassetteDocumentWriter writer,
+    ICassettePreviewRequestWriter previewWriter,
     IOptions<DocumentUploadOptions> options)
 {
     public async Task<DocumentBinaryWriteResponse> ReplaceAsync(
@@ -52,6 +53,10 @@ public sealed class ProjectDocumentReplaceCoordinator(
             fileName,
             maxBytes,
             cancellationToken);
-        return DocumentBinaryWriteMapper.Map(result);
+        CassettePreviewQueueResult preview = await previewWriter.QueueAsync(
+            cassette,
+            result,
+            cancellationToken);
+        return DocumentBinaryWriteMapper.Map(result, preview);
     }
 }
