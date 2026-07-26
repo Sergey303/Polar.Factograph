@@ -11,7 +11,7 @@ public sealed class PreviewWorkerRuntimeStateTests
         DateTimeOffset started = new(2026, 7, 26, 12, 0, 0, TimeSpan.Zero);
         PreviewWorkerRuntimeState runtime = new();
         runtime.MarkStarted(started);
-        runtime.MarkFailure(started.AddSeconds(1), "cycle-failed");
+        runtime.MarkCycleFailure(started.AddSeconds(1));
         runtime.MarkCycleStarted(started.AddSeconds(2));
         runtime.MarkCycleCompleted(started.AddSeconds(3), handled: 4);
 
@@ -33,7 +33,7 @@ public sealed class PreviewWorkerRuntimeStateTests
         PreviewWorkerRuntimeState runtime = new();
         runtime.MarkStarted(now);
         runtime.MarkCycleStarted(now);
-        runtime.MarkFailure(now.AddSeconds(1), "cycle-failed");
+        runtime.MarkCycleFailure(now.AddSeconds(1));
 
         PreviewWorkerRuntimeSnapshot snapshot = runtime.Read();
         PreviewWorkerHealth health = PreviewWorkerHealthEvaluator.Evaluate(
@@ -41,7 +41,7 @@ public sealed class PreviewWorkerRuntimeStateTests
             EnabledOptions(),
             now.AddSeconds(2));
 
-        Assert.Equal("cycle-failed", snapshot.LastFailureCode);
+        Assert.Equal(PreviewWorkerFailureCodes.CycleFailed, snapshot.LastFailureCode);
         Assert.Equal(1, snapshot.ConsecutiveFailures);
         Assert.Equal(PreviewWorkerStates.Degraded, health.State);
         Assert.True(health.Degraded);
@@ -76,6 +76,15 @@ public sealed class PreviewWorkerRuntimeStateTests
         Assert.Equal(PreviewWorkerStates.Disabled, health.State);
         Assert.False(health.Enabled);
         Assert.False(health.Degraded);
+    }
+
+    [Fact]
+    public void CompletedCycle_RejectsNegativeHandledCount()
+    {
+        PreviewWorkerRuntimeState runtime = new();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            runtime.MarkCycleCompleted(DateTimeOffset.UtcNow, handled: -1));
     }
 
     private static PreviewWorkerOptions EnabledOptions() => new()
