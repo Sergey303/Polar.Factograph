@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Polar.Factograph.Domain;
 
 namespace Polar.Factograph.Fog;
@@ -43,9 +44,35 @@ public sealed class CassettePreviewQueueStatusReader
             queued.Length,
             Enumerate(paths.Processing).Length,
             Enumerate(paths.Failed).Length,
-            queued.Length == 0
-                ? null
-                : queued.Min(path => new DateTimeOffset(File.GetLastWriteTimeUtc(path))));
+            OldestRequestedAt(queued));
+    }
+
+    private static DateTimeOffset? OldestRequestedAt(IEnumerable<string> paths)
+    {
+        DateTimeOffset[] timestamps = paths
+            .Select(ReadRequestedAt)
+            .Where(value => value.HasValue)
+            .Select(value => value!.Value)
+            .ToArray();
+        return timestamps.Length == 0 ? null : timestamps.Min();
+    }
+
+    private static DateTimeOffset? ReadRequestedAt(string path)
+    {
+        try
+        {
+            using FileStream stream = File.OpenRead(path);
+            using JsonDocument document = JsonDocument.Parse(stream);
+            return document.RootElement.TryGetProperty("requestedAtUtc", out JsonElement value) &&
+                   value.TryGetDateTimeOffset(out DateTimeOffset timestamp)
+                ? timestamp
+                : null;
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
     }
 
     private static string[] Enumerate(string directory) =>
