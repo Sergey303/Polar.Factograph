@@ -53,10 +53,11 @@ public sealed class ProjectDocumentReplaceCoordinator(
             fileName,
             maxBytes,
             cancellationToken);
+        // The replacement is committed; finish the durable handoff even if the client disconnects.
         CassettePreviewQueueResult preview = await previewWriter.QueueAsync(
             cassette,
             result,
-            cancellationToken);
+            CancellationToken.None);
         return DocumentBinaryWriteMapper.Map(result, preview);
     }
 }
