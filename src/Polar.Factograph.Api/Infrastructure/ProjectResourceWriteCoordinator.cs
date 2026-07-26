@@ -26,6 +26,9 @@ public sealed class ProjectResourceWriteCoordinator(
         await using IAsyncDisposable lease = await operationGate.AcquireAsync(
             context.Project.Index.Path,
             cancellationToken);
+        await indexRefresher.EnsureCleanAsync(
+            context.Project,
+            cancellationToken);
         IReadOnlyList<FogSourceDescriptor> sources = await sourceScanner.ScanAsync(
             context.Project,
             cancellationToken);
