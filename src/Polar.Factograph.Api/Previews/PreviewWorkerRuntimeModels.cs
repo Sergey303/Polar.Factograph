@@ -7,6 +7,7 @@ public static class PreviewWorkerStates
     public const string Working = "working";
     public const string Idle = "idle";
     public const string Degraded = "degraded";
+    public const string Unresponsive = "unresponsive";
     public const string Stopped = "stopped";
 }
 
