@@ -9,6 +9,7 @@ public sealed class PreviewQueueHostedService(
     ProjectPathResolver pathResolver,
     ProjectConfigurationLoader configurationLoader,
     PreviewWorkerCycle worker,
+    PreviewWorkerRuntimeState runtime,
     IOptions<PreviewWorkerOptions> options,
     ILogger<PreviewQueueHostedService> logger) : BackgroundService
 {
@@ -17,33 +18,45 @@ public sealed class PreviewQueueHostedService(
         PreviewWorkerOptions settings = options.Value;
         if (!settings.Enabled)
         {
+            runtime.MarkDisabled(DateTimeOffset.UtcNow);
             logger.LogInformation("Preview worker is disabled.");
             return;
         }
 
+        runtime.MarkStarted(DateTimeOffset.UtcNow);
         logger.LogInformation("Preview worker started.");
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                ProjectDefinition project = await configurationLoader.LoadAsync(
-                    pathResolver.GetRequiredPath(),
-                    stoppingToken);
-                int handled = await worker.RunAsync(project, stoppingToken);
-                if (handled == 0)
+                runtime.MarkCycleStarted(DateTimeOffset.UtcNow);
+                try
                 {
+                    ProjectDefinition project = await configurationLoader.LoadAsync(
+                        pathResolver.GetRequiredPath(),
+                        stoppingToken);
+                    int handled = await worker.RunAsync(project, stoppingToken);
+                    runtime.MarkCycleCompleted(DateTimeOffset.UtcNow, handled);
+                    if (handled == 0)
+                    {
+                        await DelayAsync(settings, stoppingToken);
+                    }
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception exception)
+                {
+                    runtime.MarkFailure(DateTimeOffset.UtcNow, "cycle-failed");
+                    logger.LogError(exception, "Preview worker cycle failed.");
                     await DelayAsync(settings, stoppingToken);
                 }
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Preview worker cycle failed.");
-                await DelayAsync(settings, stoppingToken);
-            }
+        }
+        finally
+        {
+            runtime.MarkStopped(DateTimeOffset.UtcNow);
         }
     }
 
