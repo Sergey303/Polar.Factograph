@@ -1,4 +1,5 @@
 using Polar.Factograph.Api.Authentication;
+using Polar.Factograph.Api.Collections;
 using Polar.Factograph.Api.Documents;
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Api.Writes;
@@ -45,6 +46,9 @@ public static class FactographApiServices
         services.AddSingleton<ProjectResourceTargetValidationService>();
         services.AddSingleton<ProjectResourceWriteCoordinator>();
         services.AddSingleton<ProjectDirectiveWriteCoordinator>();
+        services.AddSingleton<CollectionMembershipGuard>();
+        services.AddSingleton<ProjectCollectionAddCoordinator>();
+        services.AddSingleton<ProjectCollectionRemoveCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();
         return services;
     }
