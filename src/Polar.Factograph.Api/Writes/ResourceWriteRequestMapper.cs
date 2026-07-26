@@ -2,7 +2,7 @@ using Polar.Factograph.Fog;
 
 namespace Polar.Factograph.Api.Writes;
 
-internal static class ResourceWriteRequestMapper
+public static class ResourceWriteRequestMapper
 {
     public static FogResourceWriteRequest Map(ResourceWriteRequest request)
     {
