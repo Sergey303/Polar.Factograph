@@ -39,8 +39,12 @@ public sealed class ProjectWriteCassetteResolverTests
             ("current", true),
             ("archive", false));
 
-        Assert.Throws<UnauthorizedAccessException>(() =>
+        CassetteAuthorizationException exception = Assert.Throws<CassetteAuthorizationException>(() =>
             new ProjectWriteCassetteResolver().Resolve(access, "archive"));
+
+        Assert.Equal("user", exception.UserId);
+        Assert.Equal("archive", exception.CassetteId);
+        Assert.Equal(CassetteRights.WriteMetadata, exception.RequiredRight);
     }
 
     [Fact]
