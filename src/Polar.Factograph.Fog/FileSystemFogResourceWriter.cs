@@ -33,7 +33,7 @@ public sealed class FileSystemFogResourceWriter : IFogResourceWriter
                 source,
                 outcome.ResourceId,
                 outcome.NextCounter,
-                context.ModifiedAtUtc,
+                outcome.ModifiedAtUtc,
                 cancellationToken);
             FogAtomicFileCommitter.Commit(
                 context.TemporaryPath,
@@ -43,7 +43,7 @@ public sealed class FileSystemFogResourceWriter : IFogResourceWriter
                 outcome.ResourceId,
                 context.TargetPath,
                 outcome.NextCounter,
-                context.ModifiedAtUtc);
+                outcome.ModifiedAtUtc);
         }
         catch
         {
