@@ -1,6 +1,4 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using Polar.Factograph.Api.Infrastructure;
-using Polar.Factograph.Application;
 using Polar.Factograph.Fog;
 using Polar.Factograph.Storage;
 using Xunit;
@@ -14,32 +12,12 @@ public sealed class ProjectResourceWriteCoordinatorIntegrationTests
     {
         await using WritableApiProjectFixture fixture =
             await WritableApiProjectFixture.CreateAsync();
-        FileSystemFogSourceScanner scanner = new();
-        ProjectOperationGate gate = new();
-        ProjectIndexDirtyMarker dirty = new();
-        ProjectIndexCoordinator indexCoordinator = new(
-            scanner,
-            new FogProjectRecordSource(new FileSystemFogRecordReader()),
-            new LegacyFogProjectMaterializer(),
-            new ProjectIndexRebuilder(),
-            gate,
-            dirty);
-        ProjectWriteIndexRefresher refresher = new(
-            indexCoordinator,
-            dirty,
-            NullLogger<ProjectWriteIndexRefresher>.Instance);
-        ProjectResourceWriteCoordinator coordinator = new(
-            scanner,
-            new FileSystemFogResourceWriter(),
-            new ProjectWriteCassetteResolver(),
-            gate,
-            dirty,
-            refresher);
+        WritableApiMutationHarness harness = new();
         FogResourceWriteRequest request = new(
             "person",
             [new FogProperty("name", FogPropertyKind.Literal, "Alice")]);
 
-        ProjectResourceWriteOutcome outcome = await coordinator.WriteAsync(
+        ProjectResourceWriteOutcome outcome = await harness.Resources.WriteAsync(
             fixture.Context,
             request,
             requestedCassetteId: null);
@@ -47,7 +25,7 @@ public sealed class ProjectResourceWriteCoordinatorIntegrationTests
         Assert.True(outcome.IndexReady);
         Assert.Equal("p1", outcome.ResourceId);
         Assert.NotNull(outcome.GenerationId);
-        Assert.False(dirty.Exists(fixture.Project.Index.Path));
+        Assert.False(harness.DirtyMarker.Exists(fixture.Project.Index.Path));
         using PolarDbTypedProjectStore store = PolarDbTypedProjectStore.OpenCurrent(
             fixture.Project.Index.Path);
         ResourceHead? head = await store.GetResourceHeadAsync("p1");

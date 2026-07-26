@@ -1,13 +1,14 @@
 # Fog writing
 
-Polar.Factograph provides compatible append-only metadata writing through a guarded HTTP use case and a validated filesystem transaction.
+Polar.Factograph provides compatible append-only metadata mutations through guarded HTTP use cases and validated filesystem transactions.
 
 ## Routing
 
-1. `ProjectWriteCassetteResolver` selects the requested cassette or the user's configured default.
-2. The user must have `writeMetadata` for that cassette.
-3. `FogWritableSourceSelector` selects a writable Fog in the cassette, preferring its metadata Fog and then a deterministic path order.
-4. A source is writable only when the cassette permits writes and the Fog root contains both `prefix` and `counter`.
+1. Resource definitions require `writeMetadata`.
+2. Delete directives require `delete`.
+3. Substitute directives require `substitute`.
+4. The requested cassette or effective default cassette must grant the exact required right.
+5. `FogWritableSourceSelector` prefers the cassette metadata Fog and then deterministic path order.
 
 ## Resource write
 
@@ -34,36 +35,44 @@ The writer also:
 
 The monotonic timestamp rule is required because equal maximum `mT` values intentionally resolve to the first definition.
 
+## Delete and substitute
+
+`FileSystemFogDirectiveWriter` appends one directive and never rewrites prior logical history.
+
+Delete is serialized as a Fog `delete` record with `rdf:about`. Substitute is serialized with `old-id` and `new-id`. Both receive a UTC `mT`; the root counter remains textually unchanged.
+
+A substitute source and target must differ after legacy `|` cleanup. Delete and substitute rights are independent.
+
 ## Filesystem transaction
 
 1. Acquire an exclusive same-Fog lock file.
-2. Read the current root so a stale scanner snapshot cannot reuse an old counter.
+2. Read the current root under the lock.
 3. Stream existing records one element at a time into a temporary file in the same directory.
-4. Determine a timestamp newer than prior revisions of the same resource.
-5. Append the complete new resource definition.
-6. Flush the temporary file to disk.
-7. Parse it again and verify the new revision and root counter.
-8. Atomically replace the source Fog.
-9. Delete the temporary file after any failure.
+4. Append the complete resource definition or directive.
+5. Flush the temporary file to disk.
+6. Parse it again and verify the exact appended record and root counter.
+7. Atomically replace the source Fog.
+8. Delete the temporary file after any failure.
 
 The original Fog remains unchanged until validation succeeds.
 
 ## Project transaction
 
-`ProjectResourceWriteCoordinator` serializes writes and administrative rebuilds for one project index.
+`ProjectFogMutationRunner` is shared by resource, delete, and substitute coordinators.
 
-1. Repair a preceding `DIRTY` index before accepting another write.
-2. Select the authorized cassette and writable Fog.
-3. Create `DIRTY` before changing the source of truth.
-4. Commit the validated Fog transaction.
-5. Rebuild the complete Polar.DB generation without request cancellation.
-6. Clear `DIRTY` only after the new generation becomes current.
+1. Serialize mutations and administrative rebuilds for one project index.
+2. Repair a preceding `DIRTY` index before accepting another mutation.
+3. Select the authorized cassette and writable Fog.
+4. Create `DIRTY` before changing the source of truth.
+5. Commit the validated Fog transaction.
+6. Rebuild the complete Polar.DB generation without request cancellation.
+7. Clear `DIRTY` only after the new generation becomes current.
 
 Reads started after `DIRTY` appears return `503` instead of silently using stale derived data. Requests already holding an immutable completed generation may finish normally.
 
 ## Compatibility
 
-Identifier generation, counter updates, UTC timestamps, empty literal removal, language values, datatype values, and resource links follow the legacy `FDataService.PutItem` behavior.
+Identifier generation, counter handling, UTC timestamps, empty literal removal, language values, datatype values, resource links, delete, and substitute formats follow the legacy behavior.
 
 Two deliberate corrections are applied:
 
@@ -72,6 +81,6 @@ Two deliberate corrections are applied:
 
 ## Current boundary
 
-`POST /api/resources` now exposes complete metadata definitions. Successful source write plus rebuild returns `201`. When source writing succeeds but rebuild fails, the API returns `202`, keeps `DIRTY`, and requires a successful rebuild before reads resume.
+Resource, delete, and substitute mutations are exposed through the API and rebuild Polar.DB before reporting an index-ready result. A committed Fog mutation with failed rebuild returns `202`, keeps `DIRTY`, and blocks stale reads.
 
-Document uploads, collection mutation, delete/substitute commands, and incremental index updates remain separate later increments.
+Document uploads, collection mutation, ontology-aware edit validation, and incremental index updates remain separate later increments.

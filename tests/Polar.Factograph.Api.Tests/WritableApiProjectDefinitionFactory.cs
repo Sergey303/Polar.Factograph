@@ -31,7 +31,9 @@ internal static class WritableApiProjectDefinitionFactory
         HashSet<string> rights = new(StringComparer.Ordinal)
         {
             CassetteRights.Read,
-            CassetteRights.WriteMetadata
+            CassetteRights.WriteMetadata,
+            CassetteRights.Delete,
+            CassetteRights.Substitute
         };
         ProjectAccessSnapshot access = new(
             "editor",
