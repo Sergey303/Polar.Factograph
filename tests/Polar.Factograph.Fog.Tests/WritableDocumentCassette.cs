@@ -16,10 +16,19 @@ internal sealed class WritableDocumentCassette : IDisposable
             Enabled = true,
             AllowWrite = true
         };
+        Project = new ProjectDefinition
+        {
+            ProjectId = "documents",
+            Name = "Documents",
+            Ontology = new OntologyDefinition { Path = "ontology.xml" },
+            Index = new IndexDefinition { Path = Path.Combine(root, "index") },
+            Cassettes = [Definition]
+        };
     }
 
     public string Root { get; }
     public CassetteDefinition Definition { get; }
+    public ProjectDefinition Project { get; }
 
     public static WritableDocumentCassette Create()
     {
