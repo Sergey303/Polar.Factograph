@@ -2,6 +2,7 @@ using Polar.Factograph.Api.Authentication;
 using Polar.Factograph.Api.Collections;
 using Polar.Factograph.Api.Documents;
 using Polar.Factograph.Api.Infrastructure;
+using Polar.Factograph.Api.Previews;
 using Polar.Factograph.Api.Writes;
 using Polar.Factograph.Application;
 using Polar.Factograph.Fog;
@@ -21,6 +22,12 @@ public static class FactographApiServices
             .Validate(
                 options => options.MaxUploadBytes > 0,
                 "Documents:MaxUploadBytes must be positive.")
+            .ValidateOnStart();
+        services.AddOptions<PreviewWorkerOptions>()
+            .Bind(configuration.GetSection(PreviewWorkerOptions.SectionName))
+            .Validate(
+                options => options.IsValid(),
+                "Previews configuration is invalid.")
             .ValidateOnStart();
         services.AddSingleton<ProjectConfigurationLoader>();
         services.AddSingleton<ProjectAccessService>();
@@ -63,6 +70,9 @@ public static class FactographApiServices
         services.AddSingleton<ProjectDocumentAddCoordinator>();
         services.AddSingleton<ProjectDocumentReplaceCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();
+        services.AddSingleton<ICassettePreviewRenderer, ExternalProcessPreviewRenderer>();
+        services.AddSingleton<PreviewWorkerCycle>();
+        services.AddHostedService<PreviewQueueHostedService>();
         return services;
     }
 }

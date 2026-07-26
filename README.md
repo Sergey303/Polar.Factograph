@@ -34,11 +34,12 @@ The current compatibility increment contains:
 - atomic streamed document original upload and replacement with independent cassette rights;
 - durable preview-generation requests created after document add and replacement;
 - atomic preview queue claiming, retry scheduling, stale-lease recovery, dead-letter isolation, and administrative diagnostics;
+- a configurable hosted preview worker with safe external-process invocation, bounded output capture, source-version checks, and round-robin cassette processing;
 - index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Incremental index refresh, a concrete preview renderer and hosted processing loop, the React client, and final production hardening remain focused follow-up increments.
+Incremental index refresh, a deployment-supplied PDF/image renderer executable, the React client, and final production hardening remain focused follow-up increments.
 
 ## Polar.DB source dependency
 

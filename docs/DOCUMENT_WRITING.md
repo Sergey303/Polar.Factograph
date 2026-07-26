@@ -96,7 +96,7 @@ The request contains logical cassette/document identifiers, original file metada
 
 A queue processor atomically moves one request to `documents/preview-processing` before invoking a renderer. On success it removes the request. A retryable failure increments the attempt, records the error, schedules `notBeforeUtc`, and returns the request to the queue. A permanent failure or exhausted retry limit moves the request to `documents/preview-failed`. Invalid JSON is isolated there with an error note instead of blocking later requests.
 
-Processing claims older than the configured lease timeout are returned to the queue. This recovers requests left in `preview-processing` after a worker crash. Renderers must be idempotent because a crash can happen after preview files are committed but before the queue request is removed.
+Processing claims older than the configured lease timeout are returned to the queue. This recovers requests left in `preview-processing` after a worker crash. A heartbeat renews active claims during long rendering. Renderers must still be idempotent because a crash can happen after preview files are committed but before the queue request is removed.
 
 Administrators with `rebuildIndex` may inspect aggregate queue state without filesystem paths:
 
@@ -104,4 +104,46 @@ Administrators with `rebuildIndex` may inspect aggregate queue state without fil
 GET /api/admin/previews/status
 ```
 
-The response contains queued, processing, and failed counts per enabled cassette plus the oldest queued timestamp. A concrete image/PDF renderer and continuously hosted processing loop remain follow-up work. Existing preview reads continue to use generated files in the established cassette directories.
+The response contains queued, processing, and failed counts per enabled cassette plus the oldest queued timestamp.
+
+## Hosted preview worker
+
+The API contains a background worker, disabled by default. It reloads the project configuration, visits enabled cassettes in round-robin order, and processes a bounded number of requests per cycle.
+
+```json
+{
+  "Previews": {
+    "Enabled": true,
+    "Executable": "/opt/polar-factograph/bin/render-preview",
+    "PrefixArguments": [],
+    "OutputExtension": "jpg",
+    "SmallWidth": 240,
+    "MediumWidth": 800,
+    "NormalWidth": 1600,
+    "PollIntervalSeconds": 5,
+    "RenderTimeoutSeconds": 300,
+    "MaxItemsPerCycle": 8,
+    "MaxAttempts": 3,
+    "RetryDelaySeconds": 300,
+    "LeaseTimeoutSeconds": 1800
+  }
+}
+```
+
+The executable is started directly without a command shell. `PrefixArguments` supports wrappers such as `dotnet renderer.dll`; every value remains a separate process argument.
+
+After the prefix arguments, Polar.Factograph passes this fixed positional contract:
+
+```text
+originalPath smallTemporaryPath mediumTemporaryPath normalTemporaryPath smallWidth mediumWidth normalWidth
+```
+
+The renderer must create three non-empty files and exit with:
+
+- `0` for success;
+- `64` for a permanently unsupported document;
+- any other non-zero code for a retryable failure.
+
+Before and after the process runs, the worker verifies the original length and SHA-256 from the queue request. A superseded request is completed without publishing stale previews. Output files are first written under temporary names and then individually replaced in the established `small`, `medium`, and `normal` directories. An existing preview extension is preserved; otherwise `OutputExtension` is used.
+
+The repository supplies the safe hosted lifecycle and process adapter, but does not bundle a PDF/image conversion executable. Deployments must provide one that implements the contract above. Existing preview reads continue to use generated files in the established cassette directories.
