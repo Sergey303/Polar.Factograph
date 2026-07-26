@@ -1,14 +1,23 @@
 import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
+import type { ProjectOverview } from "../api/models";
+import { hasCassetteRight } from "../app/projectAccess";
 import { useDocumentAsset } from "../app/useDocumentAsset";
+import { DocumentReplaceControl } from "./DocumentReplaceControl";
 
 interface DocumentCardProps {
   uri: string;
   token: string;
+  project: ProjectOverview | null;
 }
 
-export function DocumentCard({ uri, token }: DocumentCardProps) {
+export function DocumentCard({ uri, token, project }: DocumentCardProps) {
   const asset = useDocumentAsset(uri, token);
+  const canReplace = asset.location !== null && hasCassetteRight(
+    project,
+    asset.location.cassetteId,
+    "replaceDocuments"
+  );
 
   async function openOriginal(): Promise<void> {
     try {
@@ -41,16 +50,16 @@ export function DocumentCard({ uri, token }: DocumentCardProps) {
       <div className="document-info">
         <strong>{asset.location?.documentNumber ?? "Документ"}</strong>
         <span className="muted mono">{uri}</span>
-        {asset.location && (
-          <span className="muted">Кассета: {asset.location.cassetteName}</span>
-        )}
-        <button
-          className="button primary"
-          onClick={openOriginal}
-          disabled={!asset.location?.originalAvailable}
-        >
+        {asset.location && <span className="muted">Кассета: {asset.location.cassetteName}</span>}
+        <button className="button primary" onClick={openOriginal} disabled={!asset.location?.originalAvailable}>
           Открыть оригинал
         </button>
+        <DocumentReplaceControl
+          uri={uri}
+          token={token}
+          enabled={canReplace}
+          onReplaced={asset.reload}
+        />
       </div>
     </article>
   );
