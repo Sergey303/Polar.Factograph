@@ -12,7 +12,7 @@ public sealed class ProjectResourceWriteCoordinatorIntegrationTests
     {
         await using WritableApiProjectFixture fixture =
             await WritableApiProjectFixture.CreateAsync();
-        WritableApiMutationHarness harness = new();
+        using WritableApiMutationHarness harness = new();
         FogResourceWriteRequest request = new(
             "person",
             [new FogProperty("name", FogPropertyKind.Literal, "Alice")]);
