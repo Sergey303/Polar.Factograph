@@ -32,6 +32,8 @@ internal static class WritableApiProjectDefinitionFactory
         {
             CassetteRights.Read,
             CassetteRights.WriteMetadata,
+            CassetteRights.AddDocuments,
+            CassetteRights.ReplaceDocuments,
             CassetteRights.Delete,
             CassetteRights.Substitute
         };

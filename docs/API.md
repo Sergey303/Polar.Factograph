@@ -41,6 +41,19 @@ Document variants are `original`, `small`, `medium`, and `normal`. The metadata 
 
 Portrait, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
 
+## Document binary write
+
+```text
+POST /api/documents/files?fileName={name.ext}&cassetteId={optional-id}
+PUT  /api/documents/files?uri={iiss-uri}&fileName={name.ext}
+```
+
+The request body is the raw binary stream. Add requires `addDocuments`; replace requires the independent `replaceDocuments` right. New files receive the next compatible four-character folder/document pair and return an `iiss://` URI. Replacement preserves that URI and requires the same extension as the existing original.
+
+Files are streamed to a temporary path, size-limited, hashed with SHA-256, flushed, and atomically renamed. Binary-only operations do not change Fog or rebuild Polar.DB. Creating or updating the RDF document description continues through `POST /api/resources`.
+
+The complete contract, configuration, and metadata workflow are documented in [DOCUMENT_WRITING.md](DOCUMENT_WRITING.md).
+
 ## Resource write
 
 ```text
@@ -122,11 +135,11 @@ Remove requires `delete`. Before creating `DIRTY`, it verifies that the visible 
 
 Add returns `201 Created` and remove returns `200 OK` when the new generation is ready. The complete request and response contracts are documented in [COLLECTIONS.md](COLLECTIONS.md).
 
-All mutation routes use the same project transaction: serialize mutations, repair a preceding dirty index, validate current targets, append one validated Fog record, rebuild Polar.DB, and switch `CURRENT` only after the generation is complete.
+All metadata mutation routes use the same project transaction: serialize mutations, repair a preceding dirty index, validate current targets, append one validated Fog record, rebuild Polar.DB, and switch `CURRENT` only after the generation is complete.
 
 - create/add routes return `201 Created` when the index is ready;
 - delete/substitute/remove routes return `200 OK` when the index is ready;
-- any mutation returns `202 Accepted` when Fog was committed but rebuild failed;
+- any metadata mutation returns `202 Accepted` when Fog was committed but rebuild failed;
 - while `DIRTY` remains, reads return `503` instead of exposing stale derived data.
 
 Mutation responses never expose local Fog paths.
