@@ -29,9 +29,10 @@ The current compatibility increment contains:
 - safe `iiss://` resolution plus authorized metadata and streamed original/preview content;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
 - production identity from standard claims and a development-only configured identity;
+- authorized cassette/Fog write routing plus validated atomic append-only resource writing;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Compatible editing, document upload operations, authenticated provider setup, and the React client remain focused follow-up increments.
+Write API orchestration, index refresh after writes, document upload operations, authenticated provider setup, and the React client remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -80,4 +81,4 @@ GET  /api/admin/project/materialization-summary
 POST /api/admin/index/rebuild
 ```
 
-See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
+See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
