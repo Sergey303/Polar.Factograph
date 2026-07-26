@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
 import type { ResourcePortrait } from "../api/models";
@@ -7,6 +7,7 @@ export function usePortrait(resourceId: string | null, token: string) {
   const [portrait, setPortrait] = useState<ResourcePortrait | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     if (resourceId === null) {
@@ -28,13 +29,16 @@ export function usePortrait(resourceId: string | null, token: string) {
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       });
 
     return () => controller.abort();
-  }, [resourceId, token]);
+  }, [resourceId, token, revision]);
 
-  return { portrait, loading, error };
+  return {
+    portrait,
+    loading,
+    error,
+    reload: () => setRevision(value => value + 1)
+  };
 }
