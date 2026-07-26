@@ -16,6 +16,12 @@ public static class FactographApiServices
         IConfiguration configuration)
     {
         services.AddFactographAuthentication(configuration);
+        services.AddOptions<DocumentUploadOptions>()
+            .Bind(configuration.GetSection(DocumentUploadOptions.SectionName))
+            .Validate(
+                options => options.MaxUploadBytes > 0,
+                "Documents:MaxUploadBytes must be positive.")
+            .ValidateOnStart();
         services.AddSingleton<ProjectConfigurationLoader>();
         services.AddSingleton<ProjectAccessService>();
         services.AddSingleton<ProjectWriteCassetteResolver>();
@@ -27,6 +33,7 @@ public static class FactographApiServices
         services.AddSingleton<IFogRecordReader, FileSystemFogRecordReader>();
         services.AddSingleton<IFogResourceWriter, FileSystemFogResourceWriter>();
         services.AddSingleton<IFogDirectiveWriter, FileSystemFogDirectiveWriter>();
+        services.AddSingleton<ICassetteDocumentWriter, FileSystemCassetteDocumentWriter>();
         services.AddSingleton<FogProjectRecordSource>();
         services.AddSingleton<LegacyFogProjectMaterializer>();
         services.AddSingleton<CassetteDocumentPathResolver>();
@@ -49,6 +56,8 @@ public static class FactographApiServices
         services.AddSingleton<CollectionMembershipGuard>();
         services.AddSingleton<ProjectCollectionAddCoordinator>();
         services.AddSingleton<ProjectCollectionRemoveCoordinator>();
+        services.AddSingleton<ProjectDocumentAddCoordinator>();
+        services.AddSingleton<ProjectDocumentReplaceCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();
         return services;
     }
