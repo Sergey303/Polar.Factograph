@@ -1,8 +1,8 @@
 namespace Polar.Factograph.Fog;
 
-internal static class FogIdentifier
+public static class FogIdentifier
 {
-    public static string Require(
+    internal static string Require(
         string? value,
         string fogPath,
         string recordDescription)
