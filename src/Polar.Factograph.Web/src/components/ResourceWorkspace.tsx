@@ -9,6 +9,7 @@ import {
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
 import { useOntologySchema } from "../app/useOntologySchema";
 import { ResourceEditor } from "./ResourceEditor";
+import { ResourceEditorLoadState } from "./ResourceEditorLoadState";
 import { ResourcePortraitView } from "./ResourcePortraitView";
 import { ResourceWorkspaceActions } from "./ResourceWorkspaceActions";
 
@@ -53,29 +54,36 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
     if (sameResource) props.onReload();
   }
 
-  if (mode !== null) {
-    if (schema.loading) return <div className="empty-state"><strong>Загрузка схемы…</strong></div>;
-    if (schema.error) return <div className="notice error portrait-error">{schema.error}</div>;
-    if (schema.schema !== null) {
-      return (
-        <ResourceEditor
-          mode={mode}
-          initialDraft={initialDraft}
-          schema={schema.schema}
-          cassettes={writable}
-          token={props.token}
-          onCancel={() => setMode(null)}
-          onSaved={saved}
-        />
-      );
-    }
+  if (mode !== null && schema.schema === null) {
+    return (
+      <ResourceEditorLoadState
+        loading={schema.loading}
+        error={schema.error}
+        onCancel={() => setMode(null)}
+      />
+    );
+  }
+
+  if (mode !== null && schema.schema !== null) {
+    return (
+      <ResourceEditor
+        mode={mode}
+        initialDraft={initialDraft}
+        schema={schema.schema}
+        cassettes={writable}
+        token={props.token}
+        onCancel={() => setMode(null)}
+        onSaved={saved}
+      />
+    );
   }
 
   return (
     <>
       <ResourceWorkspaceActions
         canCreate={writable.length > 0}
-        canEdit={writable.length > 0 && props.portrait?.type !== null}
+        canEdit={writable.length > 0 &&
+          props.portrait !== null && props.portrait.type !== null}
         notice={notice}
         onCreate={() => { setNotice(null); setMode("create"); }}
         onEdit={() => { setNotice(null); setMode("edit"); }}
