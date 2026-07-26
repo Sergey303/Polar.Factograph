@@ -32,11 +32,12 @@ The current compatibility increment contains:
 - atomic append-only resource, delete, substitute, and collection membership mutations;
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
 - atomic streamed document original upload and replacement with independent cassette rights;
+- durable preview-generation requests created after document add and replacement;
 - index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Incremental index refresh, preview generation orchestration, the React client, and final production hardening remain focused follow-up increments.
+Incremental index refresh, the preview rendering worker, the React client, and final production hardening remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
