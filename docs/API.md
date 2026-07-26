@@ -63,12 +63,42 @@ The request contains a complete append-only resource definition:
 
 `kind` is `literal` by default and may be `resource`. When `cassetteId` is omitted, the effective default write cassette is used. The authenticated member must have `writeMetadata` for the selected cassette.
 
-The API serializes project mutations, repairs a preceding dirty index before accepting another write, atomically appends the complete Fog definition, and then rebuilds Polar.DB without observing request cancellation after the source commit.
+## Delete and substitute
 
-- `201 Created` means Fog was written and a complete new index generation became current.
-- `202 Accepted` means Fog was written, but rebuild failed. `indexReady` is `false`, the project remains marked `DIRTY`, and reads return `503` until a successful rebuild.
+```text
+POST /api/resources/delete
+POST /api/resources/substitute
+```
 
-The response never exposes the local Fog path.
+Delete request:
+
+```json
+{
+  "resourceId": "person-1",
+  "cassetteId": "optional-explicit-cassette"
+}
+```
+
+Substitute request:
+
+```json
+{
+  "oldResourceId": "person-1",
+  "newResourceId": "person-2",
+  "cassetteId": "optional-explicit-cassette"
+}
+```
+
+Delete requires the cassette `delete` right. Substitute requires the independent cassette `substitute` right. A substitute source and target must differ after legacy `|` cleanup.
+
+All three mutation routes use the same project transaction: serialize mutations, repair a preceding dirty index, append one validated Fog record, rebuild Polar.DB, and switch `CURRENT` only after the generation is complete.
+
+- resource creation/update returns `201 Created` when the index is ready;
+- delete/substitute return `200 OK` when the index is ready;
+- any mutation returns `202 Accepted` when Fog was committed but rebuild failed;
+- while `DIRTY` remains, reads return `503` instead of exposing stale derived data.
+
+Mutation responses never expose local Fog paths.
 
 ## Administrative routes
 
