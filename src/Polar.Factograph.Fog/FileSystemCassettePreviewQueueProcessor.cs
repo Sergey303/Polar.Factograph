@@ -64,7 +64,13 @@ public sealed class FileSystemCassettePreviewQueueProcessor
 
             try
             {
-                await renderer.RenderAsync(cassette, request, cancellationToken);
+                await using (CassettePreviewLeaseHeartbeat.Start(
+                                 processingPath,
+                                 options.LeaseTimeout))
+                {
+                    await renderer.RenderAsync(cassette, request, cancellationToken);
+                }
+
                 File.Delete(processingPath);
                 return new CassettePreviewProcessResult(
                     PreviewProcessStates.Completed,
