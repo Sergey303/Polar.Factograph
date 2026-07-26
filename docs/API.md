@@ -71,7 +71,15 @@ After authorization and before project locking or `DIRTY`, the request is checke
 - object properties require resource values and cannot carry language/datatype metadata;
 - values backed by an ontology enumeration must be declared states.
 
-Local Fog names and full `http://fogid.net/o/` identifiers are both accepted. Target-resource existence and target-class compatibility with an object-property range are not yet validated by this step.
+After any preceding `DIRTY` generation is repaired and while the mutation gate is held, external object targets are checked against the current Polar.DB generation:
+
+- the target must exist in a cassette readable by the current user;
+- at least one target `rdf:type` must satisfy an object-property `range`, including class inheritance;
+- multiple target types are supported;
+- a hidden target is reported the same way as a missing target;
+- an explicit self-reference is checked against the request `typeId` and does not require an older generation.
+
+Local Fog names and full `http://fogid.net/o/` identifiers are accepted for ontology terms.
 
 ## Delete and substitute
 
