@@ -9,6 +9,13 @@ public sealed class ProjectResourceTypeReader(IProjectRdfStore rdfStore)
     public async Task<string?> ReadAsync(
         string resourceId,
         IReadOnlySet<string> cassetteIds,
+        CancellationToken cancellationToken) =>
+        (await ReadAllAsync(resourceId, cassetteIds, cancellationToken))
+        .FirstOrDefault();
+
+    public async Task<IReadOnlyList<string>> ReadAllAsync(
+        string resourceId,
+        IReadOnlySet<string> cassetteIds,
         CancellationToken cancellationToken)
     {
         List<string> types = new();
@@ -24,6 +31,9 @@ public sealed class ProjectResourceTypeReader(IProjectRdfStore rdfStore)
             types.Add(triple.ObjectValue);
         }
 
-        return types.Order(StringComparer.Ordinal).FirstOrDefault();
+        return types
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
     }
 }
