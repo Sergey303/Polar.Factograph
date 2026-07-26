@@ -7,7 +7,7 @@ namespace Polar.Factograph.Api.Tests;
 public sealed class ProjectResourceTargetValidationSuccessTests
 {
     [Fact]
-    public async Task WriteAsync_AllowsInheritedRangeAndAnyMatchingTargetType()
+    public async Task WriteAsync_AllowsInheritedAndExactTargetRanges()
     {
         await using WritableApiProjectFixture fixture =
             await WritableApiProjectFixture.CreateAsync();
@@ -18,7 +18,7 @@ public sealed class ProjectResourceTargetValidationSuccessTests
             [
                 new FogProperty("name", FogPropertyKind.Literal, "Alice"),
                 new FogProperty("mentor", FogPropertyKind.Resource, "target"),
-                new FogProperty("employer", FogPropertyKind.Resource, "target")
+                new FogProperty("employer", FogPropertyKind.Resource, "company")
             ]);
 
         var outcome = await harness.Resources.WriteAsync(
