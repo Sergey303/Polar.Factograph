@@ -52,7 +52,9 @@ The request body is the raw binary stream. Add requires `addDocuments`; replace 
 
 Files are streamed to a temporary path, size-limited, hashed with SHA-256, flushed, and atomically renamed. Binary-only operations do not change Fog or rebuild Polar.DB. Creating or updating the RDF document description continues through `POST /api/resources`.
 
-The complete contract, configuration, and metadata workflow are documented in [DOCUMENT_WRITING.md](DOCUMENT_WRITING.md).
+After the original is committed, the API attempts to persist a durable preview-generation request. The response reports `previewState` as `queued` or `queue-failed`; a queued response also includes `previewRequestId` and `previewQueuedAtUtc`. A queue failure does not make the already committed binary write fail, which prevents unsafe client retries.
+
+The complete contract, configuration, preview queue format, and metadata workflow are documented in [DOCUMENT_WRITING.md](DOCUMENT_WRITING.md).
 
 ## Resource write
 

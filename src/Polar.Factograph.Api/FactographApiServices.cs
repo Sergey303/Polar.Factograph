@@ -34,6 +34,7 @@ public static class FactographApiServices
         services.AddSingleton<IFogResourceWriter, FileSystemFogResourceWriter>();
         services.AddSingleton<IFogDirectiveWriter, FileSystemFogDirectiveWriter>();
         services.AddSingleton<ICassetteDocumentWriter, FileSystemCassetteDocumentWriter>();
+        services.AddSingleton<ICassettePreviewRequestWriter, FileSystemCassettePreviewRequestWriter>();
         services.AddSingleton<FogProjectRecordSource>();
         services.AddSingleton<LegacyFogProjectMaterializer>();
         services.AddSingleton<CassetteDocumentPathResolver>();

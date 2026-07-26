@@ -5,9 +5,11 @@ namespace Polar.Factograph.Api.Documents;
 internal static class DocumentBinaryWriteMapper
 {
     public static DocumentBinaryWriteResponse Map(
-        CassetteDocumentWriteResult result)
+        CassetteDocumentWriteResult result,
+        CassettePreviewQueueResult preview)
     {
         ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(preview);
         return new DocumentBinaryWriteResponse(
             result.CassetteId,
             result.CassetteName,
@@ -17,6 +19,9 @@ internal static class DocumentBinaryWriteMapper
             result.FileName,
             result.Length,
             result.Sha256,
-            result.Replaced);
+            result.Replaced,
+            preview.State,
+            preview.RequestId,
+            preview.QueuedAtUtc);
     }
 }
