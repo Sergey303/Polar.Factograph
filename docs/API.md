@@ -83,7 +83,7 @@ The request contains a complete append-only resource definition:
 
 `kind` is `literal` by default and may be `resource`. When `cassetteId` is omitted, the effective default write cassette is used. The authenticated member must have `writeMetadata` for the selected cassette.
 
-Supplying an existing `resourceId` appends a complete new revision; it is not a partial patch. A client editor must therefore send every literal and direct resource link that should remain current. The React workspace builds this request from the complete authorized portrait and preserves properties that are not recognized by its current schema view.
+Supplying an existing `resourceId` appends a complete new revision; it is not a partial patch. A client editor must therefore send every literal and direct resource link that should remain current. The React workspace builds this request from the complete authorized portrait. Values outside the current write schema remain visible, but the client blocks saving instead of silently dropping them or sending a request that the server must reject.
 
 After authorization and before project locking or `DIRTY`, the request is checked against the current ontology:
 
