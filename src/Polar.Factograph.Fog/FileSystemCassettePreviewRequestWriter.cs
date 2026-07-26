@@ -17,7 +17,6 @@ public sealed class FileSystemCassettePreviewRequestWriter : ICassettePreviewReq
     {
         ArgumentNullException.ThrowIfNull(cassette);
         ArgumentNullException.ThrowIfNull(document);
-
         if (!string.Equals(cassette.Id, document.CassetteId, StringComparison.Ordinal))
         {
             throw new InvalidDataException(
@@ -28,42 +27,24 @@ public sealed class FileSystemCassettePreviewRequestWriter : ICassettePreviewReq
         try
         {
             string directory = Path.Combine(
-                Path.GetFullPath(cassette.Path),
-                "documents",
-                "preview-queue");
+                Path.GetFullPath(cassette.Path), "documents", "preview-queue");
             Directory.CreateDirectory(directory);
-
             DateTimeOffset queuedAtUtc = DateTimeOffset.UtcNow;
             string requestId = Guid.NewGuid().ToString("N");
             string fileName = $"{document.FolderName}-{document.DocumentNumber}-{requestId}.json";
             string finalPath = Path.Combine(directory, fileName);
             temporaryPath = Path.Combine(directory, $".{fileName}.tmp");
-            PreviewRequestEnvelope envelope = new(
-                requestId,
-                queuedAtUtc,
-                document.CassetteId,
-                document.CassetteName,
-                document.DocumentUri,
-                document.FolderName,
-                document.DocumentNumber,
-                document.FileName,
-                document.Length,
-                document.Sha256,
-                document.Replaced);
+            CassettePreviewRequestEnvelope envelope = new(
+                requestId, queuedAtUtc, document.CassetteId, document.CassetteName,
+                document.DocumentUri, document.FolderName, document.DocumentNumber,
+                document.FileName, document.Length, document.Sha256, document.Replaced);
 
             await using (FileStream stream = new(
-                temporaryPath,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 16 * 1024,
-                FileOptions.Asynchronous | FileOptions.WriteThrough))
+                temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                16 * 1024, FileOptions.Asynchronous | FileOptions.WriteThrough))
             {
                 await JsonSerializer.SerializeAsync(
-                    stream,
-                    envelope,
-                    JsonOptions,
-                    cancellationToken);
+                    stream, envelope, JsonOptions, cancellationToken);
                 await stream.FlushAsync(cancellationToken);
             }
 
@@ -82,23 +63,22 @@ public sealed class FileSystemCassettePreviewRequestWriter : ICassettePreviewReq
         }
         finally
         {
-            if (temporaryPath is not null)
-            {
-                File.Delete(temporaryPath);
-            }
+            TryDelete(temporaryPath);
         }
     }
 
-    private sealed record PreviewRequestEnvelope(
-        string RequestId,
-        DateTimeOffset RequestedAtUtc,
-        string CassetteId,
-        string CassetteName,
-        string DocumentUri,
-        string FolderName,
-        string DocumentNumber,
-        string OriginalFileName,
-        long OriginalLength,
-        string OriginalSha256,
-        bool Replaced);
+    private static void TryDelete(string? path)
+    {
+        try
+        {
+            if (path is not null)
+            {
+                File.Delete(path);
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
 }
