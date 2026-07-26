@@ -2,7 +2,7 @@ using Polar.Factograph.Storage;
 
 namespace Polar.Factograph.Application;
 
-internal sealed class ProjectResourceTypeReader(IProjectRdfStore rdfStore)
+public sealed class ProjectResourceTypeReader(IProjectRdfStore rdfStore)
 {
     private const string RdfType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
 
