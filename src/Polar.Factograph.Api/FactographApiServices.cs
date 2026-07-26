@@ -34,6 +34,7 @@ public static class FactographApiServices
         services.AddSingleton<OntologyCatalogProvider>();
         services.AddSingleton<ProjectRequestContextFactory>();
         services.AddSingleton<ProjectIndexCoordinator>();
+        services.AddSingleton<ProjectWriteIndexRefresher>();
         services.AddSingleton<ProjectResourceWriteCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();
         return services;
