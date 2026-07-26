@@ -48,7 +48,7 @@ public sealed class PreviewQueueHostedService(
                 }
                 catch (Exception exception)
                 {
-                    runtime.MarkFailure(DateTimeOffset.UtcNow, "cycle-failed");
+                    runtime.MarkCycleFailure(DateTimeOffset.UtcNow);
                     logger.LogError(exception, "Preview worker cycle failed.");
                     await DelayAsync(settings, stoppingToken);
                 }
