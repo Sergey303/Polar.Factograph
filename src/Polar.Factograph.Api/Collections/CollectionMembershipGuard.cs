@@ -24,18 +24,17 @@ public sealed class CollectionMembershipGuard(ProjectStoreProvider storeProvider
 
         IReadOnlyList<string> types = await new ProjectResourceTypeReader(store)
             .ReadAllAsync(request.MembershipResourceId, readable, cancellationToken);
-        bool hasType = types.Any(type => string.Equals(
-            type,
+        bool hasType = types.Contains(
             CollectionMutationVocabulary.FullMembershipType,
-            StringComparison.Ordinal));
-        bool hasCollection = await HasLinkAsync(
+            StringComparer.Ordinal);
+        bool hasCollection = await CollectionMembershipLinkReader.HasAsync(
             store,
             request.MembershipResourceId,
             CollectionMutationVocabulary.FullInCollection,
             request.CollectionId,
             readable,
             cancellationToken);
-        bool hasItem = await HasLinkAsync(
+        bool hasItem = await CollectionMembershipLinkReader.HasAsync(
             store,
             request.MembershipResourceId,
             CollectionMutationVocabulary.FullCollectionItem,
@@ -46,30 +45,6 @@ public sealed class CollectionMembershipGuard(ProjectStoreProvider storeProvider
         {
             throw InvalidMembership();
         }
-    }
-
-    private static async Task<bool> HasLinkAsync(
-        IProjectRdfStore store,
-        string membershipId,
-        string predicate,
-        string targetId,
-        IReadOnlySet<string> readableCassetteIds,
-        CancellationToken cancellationToken)
-    {
-        await foreach (TripleRow _ in store.FindAsync(
-                           new TriplePattern(
-                               Subject: membershipId,
-                               Predicate: predicate,
-                               ObjectKind: TripleObjectKind.Iri,
-                               ObjectValue: targetId),
-                           readableCassetteIds,
-                           cancellationToken)
-                           .WithCancellation(cancellationToken))
-        {
-            return true;
-        }
-
-        return false;
     }
 
     private static ArgumentException InvalidMembership() => new(
