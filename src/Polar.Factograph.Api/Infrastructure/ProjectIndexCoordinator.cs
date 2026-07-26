@@ -13,7 +13,7 @@ public sealed class ProjectIndexCoordinator(
     IFogSourceScanner sourceScanner,
     FogProjectRecordSource recordSource,
     LegacyFogProjectMaterializer materializer,
-    ProjectIndexRebuilder rebuilder)
+    ProjectIndexRebuilder rebuilder) : IProjectIndexRefresher
 {
     public async Task<ProjectIndexRebuildResult> RebuildAsync(
         ProjectDefinition project,
