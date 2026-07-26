@@ -1,6 +1,7 @@
 using Polar.Factograph.Api.Authentication;
 using Polar.Factograph.Api.Documents;
 using Polar.Factograph.Api.Infrastructure;
+using Polar.Factograph.Api.Writing;
 using Polar.Factograph.Application;
 using Polar.Factograph.Fog;
 using Polar.Factograph.Storage;
@@ -16,9 +17,11 @@ public static class FactographApiServices
         services.AddFactographAuthentication(configuration);
         services.AddSingleton<ProjectConfigurationLoader>();
         services.AddSingleton<ProjectAccessService>();
+        services.AddSingleton<ProjectWriteCassetteResolver>();
         services.AddSingleton<XmlOntologyCatalogLoader>();
         services.AddSingleton<IFogSourceScanner, FileSystemFogSourceScanner>();
         services.AddSingleton<IFogRecordReader, FileSystemFogRecordReader>();
+        services.AddSingleton<IFogResourceWriter, FileSystemFogResourceWriter>();
         services.AddSingleton<FogProjectRecordSource>();
         services.AddSingleton<LegacyFogProjectMaterializer>();
         services.AddSingleton<CassetteDocumentPathResolver>();
@@ -30,6 +33,11 @@ public static class FactographApiServices
         services.AddSingleton<OntologyCatalogProvider>();
         services.AddSingleton<ProjectRequestContextFactory>();
         services.AddSingleton<ProjectIndexCoordinator>();
+        services.AddSingleton<IProjectIndexRefresher>(provider =>
+            provider.GetRequiredService<ProjectIndexCoordinator>());
+        services.AddSingleton<ProjectMutationGate>();
+        services.AddSingleton<ResourceWriteRequestMapper>();
+        services.AddSingleton<ProjectResourceWriteCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();
         return services;
     }
