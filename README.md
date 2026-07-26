@@ -29,12 +29,12 @@ The current compatibility increment contains:
 - safe `iiss://` resolution plus authorized metadata and streamed original/preview content;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
 - production JWT identity plus a development-only configured identity;
-- atomic append-only resource, delete, and substitute Fog mutations;
+- atomic append-only resource, delete, substitute, and collection membership mutations;
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Document upload operations, collection mutation, incremental index refresh, and the React client remain focused follow-up increments.
+Document upload operations, incremental index refresh, and the React client remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -77,6 +77,9 @@ GET  /api/resources/portrait?id={rdf-id}
 POST /api/resources
 POST /api/resources/delete
 POST /api/resources/substitute
+GET  /api/collections/items?id={collection-id}
+POST /api/collections/items
+POST /api/collections/items/remove
 GET  /api/search/names?q={text}
 GET  /api/search/words?q={text}
 GET  /api/documents/location?uri={iiss-uri}
@@ -86,4 +89,4 @@ GET  /api/admin/project/materialization-summary
 POST /api/admin/index/rebuild
 ```
 
-See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
+See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
