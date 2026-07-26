@@ -18,8 +18,10 @@ public sealed class ProjectWriteCassetteResolver
 
         if (!access.HasCassetteRight(cassetteId, CassetteRights.WriteMetadata))
         {
-            throw new UnauthorizedAccessException(
-                $"Metadata write access is not granted for cassette '{cassetteId}'.");
+            throw new CassetteAuthorizationException(
+                access.UserId,
+                cassetteId,
+                CassetteRights.WriteMetadata);
         }
 
         return cassetteId;
