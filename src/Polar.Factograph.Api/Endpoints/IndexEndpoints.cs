@@ -8,8 +8,22 @@ public static class IndexEndpoints
 {
     public static IEndpointRouteBuilder MapIndexEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapGet("/api/admin/index/status", GetStatusAsync);
         endpoints.MapPost("/api/admin/index/rebuild", RebuildAsync);
         return endpoints;
+    }
+
+    private static async Task<IResult> GetStatusAsync(
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        ProjectIndexRuntimeStatusReader statusReader,
+        CancellationToken cancellationToken)
+    {
+        ProjectAccessContext context = await RequireAdminAsync(
+            httpContext,
+            contextFactory,
+            cancellationToken);
+        return Results.Ok(statusReader.Read(context.Project.Index.Path));
     }
 
     private static async Task<IResult> RebuildAsync(
@@ -18,16 +32,27 @@ public static class IndexEndpoints
         ProjectIndexCoordinator coordinator,
         CancellationToken cancellationToken)
     {
+        ProjectAccessContext context = await RequireAdminAsync(
+            httpContext,
+            contextFactory,
+            cancellationToken);
+        ProjectIndexRebuildResult result = await coordinator.RebuildAsync(
+            context.Project,
+            cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<ProjectAccessContext> RequireAdminAsync(
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        CancellationToken cancellationToken)
+    {
         ProjectAccessContext context = await contextFactory.CreateAccessAsync(
             httpContext,
             cancellationToken);
         ProjectAuthorization.RequireProjectRight(
             context.Access,
             ProjectRights.RebuildIndex);
-
-        ProjectIndexRebuildResult result = await coordinator.RebuildAsync(
-            context.Project,
-            cancellationToken);
-        return Results.Ok(result);
+        return context;
     }
 }
