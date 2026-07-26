@@ -5,15 +5,17 @@ namespace Polar.Factograph.Fog;
 
 internal static class FogExistingRecordCopier
 {
-    public static async Task CopyAsync(
+    public static async Task<DateTime?> CopyAsync(
         XmlReader reader,
         XmlWriter writer,
         string sourcePath,
+        string resourceId,
         CancellationToken cancellationToken)
     {
+        DateTime? latestModifiedAt = null;
         if (reader.IsEmptyElement)
         {
-            return;
+            return latestModifiedAt;
         }
 
         while (await reader.ReadAsync())
@@ -21,7 +23,7 @@ internal static class FogExistingRecordCopier
             cancellationToken.ThrowIfCancellationRequested();
             if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == 0)
             {
-                return;
+                return latestModifiedAt;
             }
 
             if (reader.NodeType != XmlNodeType.Element || reader.Depth != 1)
@@ -40,6 +42,15 @@ internal static class FogExistingRecordCopier
                 LoadOptions.None,
                 cancellationToken);
             element.WriteTo(writer);
+            DateTime? modifiedAt = FogExistingRevision.ModifiedAt(
+                element,
+                resourceId,
+                sourcePath);
+            if (modifiedAt is not null &&
+                (latestModifiedAt is null || modifiedAt > latestModifiedAt))
+            {
+                latestModifiedAt = modifiedAt;
+            }
         }
 
         throw new InvalidDataException($"Fog root element is not closed: {sourcePath}");
