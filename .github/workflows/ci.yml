@@ -27,6 +27,37 @@ jobs:
           git -C ../../Polar.DB checkout --detach FETCH_HEAD
           echo "Polar.DB dependency: $(git -C ../../Polar.DB rev-parse HEAD)"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Install web dependencies
+        working-directory: src/Polar.Factograph.Web
+        shell: bash
+        run: |
+          set +e
+          npm install --package-lock=false --no-audit --no-fund > web-install.log 2>&1
+          exit_code=$?
+          cat web-install.log
+          exit $exit_code
+      - name: Build web
+        working-directory: src/Polar.Factograph.Web
+        shell: bash
+        run: |
+          set +e
+          npm run build > web-build.log 2>&1
+          exit_code=$?
+          cat web-build.log
+          exit $exit_code
+      - name: Upload web logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-logs
+          path: |
+            src/Polar.Factograph.Web/web-install.log
+            src/Polar.Factograph.Web/web-build.log
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
