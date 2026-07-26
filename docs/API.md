@@ -41,6 +41,8 @@ Document variants are `original`, `small`, `medium`, and `normal`. The metadata 
 
 Portrait, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
 
+The public health response reports the service as `ok` or `degraded` and exposes only whether preview processing is enabled plus its coarse state. Disabled preview processing is healthy. A failed, stopped, or unresponsive enabled worker makes the service status `degraded`, but the response never includes timestamps, filesystem paths, process output, or exception text.
+
 ## Document binary write
 
 ```text
@@ -160,7 +162,7 @@ All administrative routes above require `rebuildIndex`.
 
 The index status response does not expose filesystem paths. It reports `ready`, `dirty`, `missing`, or `invalid`, the `DIRTY` timestamp when parseable, the current generation id and availability, and counts of completed and `.building` generations. An invalid or missing `CURRENT` pointer is returned as diagnostic state instead of causing an unhandled error.
 
-The preview status response reports aggregate and per-cassette counts for queued, currently processing, and failed requests, plus the oldest queued timestamp. It never exposes queue directories, original paths, or failure details.
+The preview status response contains queue counts and oldest queued time per cassette together with the worker runtime snapshot: start/stop and cycle timestamps, last and total handled counts, consecutive failures, and a fixed failure code. It also includes the evaluated state `disabled`, `starting`, `working`, `idle`, `degraded`, `unresponsive`, or `stopped`. It never exposes queue directories, original paths, process output, or exception text.
 
 A rebuild streams Fog/XML, resolves current records, writes all four Polar.DB sets, builds their external indexes, switches `CURRENT` only after the complete generation succeeds, and clears `DIRTY` only after success.
 
