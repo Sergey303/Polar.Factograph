@@ -7,6 +7,7 @@ public sealed class ProjectResourceWriteCoordinator(
     IFogResourceWriter resourceWriter,
     ProjectWriteCassetteResolver cassetteResolver,
     ProjectResourceWriteValidationService validationService,
+    ProjectResourceTargetValidationService targetValidationService,
     ProjectFogMutationRunner mutationRunner)
 {
     public async Task<ProjectResourceWriteOutcome> WriteAsync(
@@ -29,7 +30,8 @@ public sealed class ProjectResourceWriteCoordinator(
                 context.Project,
                 cassetteId,
                 (source, token) => resourceWriter.AppendAsync(source, request, token),
-                cancellationToken);
+                cancellationToken,
+                token => targetValidationService.ValidateAsync(context, request, token));
 
         return new ProjectResourceWriteOutcome(
             mutation.Written.ResourceId,

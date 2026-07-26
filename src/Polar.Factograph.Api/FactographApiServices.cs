@@ -21,6 +21,7 @@ public static class FactographApiServices
         services.AddSingleton<ProjectCassetteCommandResolver>();
         services.AddSingleton<XmlOntologyCatalogLoader>();
         services.AddSingleton<OntologyResourceWriteValidator>();
+        services.AddSingleton<OntologyObjectTargetValidator>();
         services.AddSingleton<IFogSourceScanner, FileSystemFogSourceScanner>();
         services.AddSingleton<IFogRecordReader, FileSystemFogRecordReader>();
         services.AddSingleton<IFogResourceWriter, FileSystemFogResourceWriter>();
@@ -41,6 +42,7 @@ public static class FactographApiServices
         services.AddSingleton<ProjectWriteIndexRefresher>();
         services.AddSingleton<ProjectFogMutationRunner>();
         services.AddSingleton<ProjectResourceWriteValidationService>();
+        services.AddSingleton<ProjectResourceTargetValidationService>();
         services.AddSingleton<ProjectResourceWriteCoordinator>();
         services.AddSingleton<ProjectDirectiveWriteCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();

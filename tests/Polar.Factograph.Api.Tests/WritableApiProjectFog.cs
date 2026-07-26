@@ -12,6 +12,7 @@ internal static class WritableApiProjectFog
           <person rdf:about="target" mT="2020-01-01 00:00:01Z">
             <name>Target</name>
           </person>
+          <organization rdf:about="company" mT="2020-01-01 00:00:02Z" />
         </rdf:RDF>
         """;
 }

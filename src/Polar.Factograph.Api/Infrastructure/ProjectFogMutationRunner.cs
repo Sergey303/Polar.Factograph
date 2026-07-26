@@ -13,7 +13,8 @@ public sealed class ProjectFogMutationRunner(
         ProjectDefinition project,
         string cassetteId,
         Func<FogSourceDescriptor, CancellationToken, Task<T>> write,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? beforeDirty = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentException.ThrowIfNullOrWhiteSpace(cassetteId);
@@ -23,6 +24,11 @@ public sealed class ProjectFogMutationRunner(
             project.Index.Path,
             cancellationToken);
         await indexRefresher.EnsureCleanAsync(project, cancellationToken);
+        if (beforeDirty is not null)
+        {
+            await beforeDirty(cancellationToken);
+        }
+
         IReadOnlyList<FogSourceDescriptor> sources = await sourceScanner.ScanAsync(
             project,
             cancellationToken);

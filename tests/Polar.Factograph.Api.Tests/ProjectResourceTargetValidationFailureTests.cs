@@ -3,23 +3,35 @@ using Xunit;
 
 namespace Polar.Factograph.Api.Tests;
 
-public sealed class ProjectResourceWriteValidationIntegrationTests
+public sealed class ProjectResourceTargetValidationFailureTests
 {
     [Fact]
-    public async Task WriteAsync_InvalidOntologyPropertyDoesNotChangeFogOrDirtyIndex()
+    public async Task WriteAsync_MissingTargetDoesNotChangeFogOrDirtyIndex()
+    {
+        await AssertRejectedWithoutMutationAsync(
+            new FogProperty("mentor", FogPropertyKind.Resource, "missing"));
+    }
+
+    [Fact]
+    public async Task WriteAsync_IncompatibleTargetTypeDoesNotChangeFogOrDirtyIndex()
+    {
+        await AssertRejectedWithoutMutationAsync(
+            new FogProperty("employer", FogPropertyKind.Resource, "existing"));
+    }
+
+    private static async Task AssertRejectedWithoutMutationAsync(FogProperty property)
     {
         await using WritableApiProjectFixture fixture =
             await WritableApiProjectFixture.CreateAsync();
         using WritableApiMutationHarness harness = new();
+        await harness.RebuildAsync(fixture.Project);
         string fogPath = Path.Combine(
             fixture.Root,
             "Cassette",
             "meta",
             "Cassette_current.fog");
         string before = await File.ReadAllTextAsync(fogPath);
-        FogResourceWriteRequest request = new(
-            "person",
-            [new FogProperty("unknown", FogPropertyKind.Literal, "value")]);
+        FogResourceWriteRequest request = new("person", [property]);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             harness.Resources.WriteAsync(
