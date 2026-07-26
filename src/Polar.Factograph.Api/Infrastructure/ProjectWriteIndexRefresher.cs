@@ -5,8 +5,19 @@ namespace Polar.Factograph.Api.Infrastructure;
 
 public sealed class ProjectWriteIndexRefresher(
     ProjectIndexCoordinator indexCoordinator,
+    ProjectIndexDirtyMarker dirtyMarker,
     ILogger<ProjectWriteIndexRefresher> logger)
 {
+    public async Task EnsureCleanAsync(
+        ProjectDefinition project,
+        CancellationToken cancellationToken)
+    {
+        if (dirtyMarker.Exists(project.Index.Path))
+        {
+            await indexCoordinator.RebuildUnderLeaseAsync(project, cancellationToken);
+        }
+    }
+
     public async Task<ProjectResourceWriteOutcome> RefreshAsync(
         ProjectDefinition project,
         FogResourceWriteResult written,
