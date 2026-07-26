@@ -35,11 +35,12 @@ The current compatibility increment contains:
 - durable preview-generation requests created after document add and replacement;
 - atomic preview queue claiming, retry scheduling, stale-lease recovery, dead-letter isolation, and administrative diagnostics;
 - a configurable hosted preview worker with safe external-process invocation, source-version checks, fair cassette processing, runtime health, and failure counters;
+- a React/TypeScript workspace for project scope, two-mode search, ontology-labelled portraits, relation navigation, and authorized document previews;
 - index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Incremental index refresh, a deployment-supplied PDF/image renderer executable, the React client, and remaining production hardening remain focused follow-up increments.
+Collection navigation, editing screens, incremental index refresh, a deployment-supplied PDF/image renderer executable, and remaining production hardening remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -64,14 +65,22 @@ All four sets belong to one atomic generation. Readers switch only after all row
 
 ## Start
 
-Place the Polar.DB repository at the external path shown above, then run:
+Place the Polar.DB repository at the external path shown above, then run the API:
 
 ```bash
 dotnet restore Polar.Factograph.slnx
 dotnet run --project src/Polar.Factograph.Api
 ```
 
-Development configuration selects `examples/syp.project.json` and its existing `admin` member. Production requests require an authenticated identity claim.
+Run the web workspace in another terminal:
+
+```bash
+cd src/Polar.Factograph.Web
+npm install
+npm run dev
+```
+
+Development configuration selects `examples/syp.project.json` and its existing `admin` member. Production requests require an authenticated identity claim. Vite proxies `/api` to `http://localhost:5000` by default; `FACTOGRAPH_API_URL` changes that target.
 
 Useful routes:
 
@@ -98,4 +107,4 @@ POST /api/admin/index/rebuild
 GET  /api/admin/previews/status
 ```
 
-See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
+See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), [web workspace](src/Polar.Factograph.Web/README.md), and [legacy sources](docs/LEGACY_SOURCES.md).
