@@ -11,7 +11,7 @@ public sealed class ProjectDeleteCoordinatorIntegrationTests
     {
         await using WritableApiProjectFixture fixture =
             await WritableApiProjectFixture.CreateAsync();
-        WritableApiMutationHarness harness = new();
+        using WritableApiMutationHarness harness = new();
 
         var outcome = await harness.Directives.DeleteAsync(
             fixture.Context,
