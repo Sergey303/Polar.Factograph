@@ -12,13 +12,7 @@ public sealed class OntologyObjectTargetVisibilityTests
     public async Task ValidateAsync_HidesTargetOutsideReadableCassettes()
     {
         OntologyCatalog catalog = await OntologyWriteTestCatalog.CreateAsync();
-        ResourceHead hidden = new(
-            "hidden",
-            Guid.NewGuid(),
-            "secret",
-            "secret.fog",
-            DateTimeOffset.UtcNow,
-            IsDeleted: false);
+        ResourceHead hidden = CreateHead("hidden", "secret");
         FogResourceWriteRequest request = new(
             "child",
             [new FogProperty("mentor", FogPropertyKind.Resource, "hidden")]);
@@ -33,4 +27,29 @@ public sealed class OntologyObjectTargetVisibilityTests
 
         Assert.Contains("does not exist or is not readable", exception.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task ValidateAsync_AllowsAnyMatchingTargetType()
+    {
+        OntologyCatalog catalog = await OntologyWriteTestCatalog.CreateAsync();
+        ResourceHead target = CreateHead("target", "current");
+        FogResourceWriteRequest request = new(
+            "child",
+            [new FogProperty("employer", FogPropertyKind.Resource, "target")]);
+
+        await new OntologyObjectTargetValidator().ValidateAsync(
+            catalog,
+            new ObjectTargetStoreStub(target, ["child", "organization"]),
+            request,
+            new HashSet<string>(["current"], StringComparer.Ordinal),
+            CancellationToken.None);
+    }
+
+    private static ResourceHead CreateHead(string id, string cassetteId) => new(
+        id,
+        Guid.NewGuid(),
+        cassetteId,
+        $"{cassetteId}.fog",
+        DateTimeOffset.UtcNow,
+        IsDeleted: false);
 }
