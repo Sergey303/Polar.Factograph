@@ -32,7 +32,7 @@ Development API configuration may resolve its configured development member with
 - direct and inverse relation navigation;
 - create a resource from the authorized ontology write schema;
 - edit an existing resource as a complete new Fog revision;
-- preserve and visibly mark properties unknown to the current ontology schema;
+- keep properties outside the current write schema visible and block an invalid save with a clear message;
 - choose among cassettes where `writeMetadata` is actually granted;
 - authorized preview and original document loading;
 - open collections by resource id and navigate back through collection history;
@@ -41,6 +41,6 @@ Development API configuration may resolve its configured development member with
 - remove a membership only when `delete` is granted on its actual source cassette;
 - replace a document original only when `replaceDocuments` is granted for that document cassette.
 
-Changing a type while creating a resource clears the draft properties so incompatible values are not silently submitted. Editing keeps the existing type fixed. The editor sends all current literal and direct-link values, so a saved edit creates a complete compatible revision rather than a partial patch.
+Changing a type while creating a resource clears the draft properties so incompatible values are not silently submitted. Editing keeps the existing type fixed. The editor sends all current literal and direct-link values. When an older property is no longer allowed by the current ontology, it remains visible but saving is blocked until the ontology or data is reconciled; the client does not silently discard it.
 
 The client never treats a cassette id supplied by the browser as authority. Read scope and write routing continue to be resolved by the API. Explicit cassette ids are sent only for an operation already enabled by the effective access snapshot returned by the server; the API re-authorizes every request.
