@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { readAccessToken, writeAccessToken } from "../api/tokenStore";
 import { NavigationPanel } from "../components/NavigationPanel";
-import { ResourcePortraitView } from "../components/ResourcePortraitView";
+import { ResourceWorkspace } from "../components/ResourceWorkspace";
 import { SearchPanel } from "../components/SearchPanel";
 import { SearchResultList } from "../components/SearchResultList";
 import { TopBar } from "../components/TopBar";
@@ -65,13 +65,14 @@ export function App() {
         </section>
 
         <section className="panel portrait-panel">
-          <ResourcePortraitView
+          <ResourceWorkspace
             portrait={portrait.portrait}
             loading={portrait.loading}
             error={portrait.error}
             token={token}
             project={project.project}
             onSelect={setSelectedId}
+            onReload={portrait.reload}
           />
         </section>
       </main>
