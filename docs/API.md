@@ -23,6 +23,7 @@ For local development only, `appsettings.Development.json` may provide:
 ```text
 GET /api/system/health
 GET /api/project
+GET /api/ontology/write-schema?lang=ru
 GET /api/resources/portrait?id={rdf-id}&lang=ru
 GET /api/search/names?q={text}&limit=50&lang=ru
 GET /api/search/words?q={text}&limit=50&lang=ru
@@ -33,13 +34,15 @@ GET /api/documents/content?uri={iiss-uri}&variant={variant}
 
 The portrait route returns ontology labels, inverse labels, enumeration display values, and ontology property order while preserving raw RDF identifiers and literal values. `lang` defaults to `ru`.
 
+The ontology write-schema route returns localized classes and their inherited writable properties. Each property contains its stable id, display label, literal/resource kind, range identifiers, and localized enumeration choices. It requires project `read` and never returns the ontology path, raw XML, members, roles, or cassette configuration.
+
 Collection browsing follows the legacy membership-resource join and is documented in [COLLECTIONS.md](COLLECTIONS.md).
 
 Document variants are `original`, `small`, `medium`, and `normal`. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests.
 
 `/api/project` returns a safe overview: project identity, effective project rights, readable cassettes, and the default write cassette. It does not expose project members, role definitions, or filesystem paths.
 
-Portrait, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
+Portrait, ontology schema, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
 
 The public health response reports the service as `ok` or `degraded` and exposes only whether preview processing is enabled plus its coarse state. Disabled preview processing is healthy. A failed, stopped, or unresponsive enabled worker makes the service status `degraded`, but the response never includes timestamps, filesystem paths, process output, or exception text.
 
@@ -79,6 +82,8 @@ The request contains a complete append-only resource definition:
 ```
 
 `kind` is `literal` by default and may be `resource`. When `cassetteId` is omitted, the effective default write cassette is used. The authenticated member must have `writeMetadata` for the selected cassette.
+
+Supplying an existing `resourceId` appends a complete new revision; it is not a partial patch. A client editor must therefore send every literal and direct resource link that should remain current. The React workspace builds this request from the complete authorized portrait. Values outside the current write schema remain visible, but the client blocks saving instead of silently dropping them or sending a request that the server must reject.
 
 After authorization and before project locking or `DIRTY`, the request is checked against the current ontology:
 
