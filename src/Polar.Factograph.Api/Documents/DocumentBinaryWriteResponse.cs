@@ -9,4 +9,7 @@ public sealed record DocumentBinaryWriteResponse(
     string FileName,
     long Length,
     string Sha256,
-    bool Replaced);
+    bool Replaced,
+    string PreviewState,
+    string? PreviewRequestId,
+    DateTimeOffset? PreviewQueuedAtUtc);
