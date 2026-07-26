@@ -3,11 +3,6 @@ using Polar.Factograph.Domain;
 
 namespace Polar.Factograph.Fog;
 
-internal sealed record CassetteDocumentSlot(
-    string FolderName,
-    string DocumentNumber,
-    string Path);
-
 internal static class CassetteDocumentSlotAllocator
 {
     private const int MaxNumber = 9_999;
@@ -72,8 +67,15 @@ internal static class CassetteDocumentSlotAllocator
             : throw new IOException("Cassette document number space is exhausted.");
     }
 
-    private static bool TryNumber(string value, out int number) =>
-        value.Length == 4 &&
-        int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out number) &&
-        number is > 0 and <= MaxNumber;
+    private static bool TryNumber(string value, out int number)
+    {
+        number = 0;
+        return value.Length == 4 &&
+               int.TryParse(
+                   value,
+                   NumberStyles.None,
+                   CultureInfo.InvariantCulture,
+                   out number) &&
+               number is > 0 and <= MaxNumber;
+    }
 }
