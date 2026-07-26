@@ -9,8 +9,7 @@ public sealed class ProjectResourceWriteCoordinator(
     ProjectWriteCassetteResolver cassetteResolver,
     ProjectOperationGate operationGate,
     ProjectIndexDirtyMarker dirtyMarker,
-    ProjectIndexCoordinator indexCoordinator,
-    ILogger<ProjectResourceWriteCoordinator> logger)
+    ProjectWriteIndexRefresher indexRefresher)
 {
     public async Task<ProjectResourceWriteOutcome> WriteAsync(
         ProjectAccessContext context,
@@ -45,46 +44,25 @@ public sealed class ProjectResourceWriteCoordinator(
         }
         catch
         {
-            TryClearDirty(context.Project.Index.Path);
+            ClearAfterFailedWrite(context.Project.Index.Path);
             throw;
         }
 
-        try
-        {
-            ProjectIndexRebuildResult rebuild = await indexCoordinator
-                .RebuildUnderLeaseAsync(context.Project, CancellationToken.None);
-            return CreateOutcome(written, cassetteId, rebuild.GenerationId, indexReady: true);
-        }
-        catch (Exception exception)
-        {
-            logger.LogError(
-                exception,
-                "Fog resource {ResourceId} was written, but index rebuild failed.",
-                written.ResourceId);
-            return CreateOutcome(written, cassetteId, generationId: null, indexReady: false);
-        }
+        return await indexRefresher.RefreshAsync(
+            context.Project,
+            written,
+            cassetteId);
     }
 
-    private void TryClearDirty(string indexRoot)
+    private void ClearAfterFailedWrite(string indexRoot)
     {
         try
         {
             dirtyMarker.Clear(indexRoot);
         }
-        catch (Exception exception)
+        catch
         {
-            logger.LogWarning(exception, "Could not clear unused project DIRTY marker.");
+            // A stale marker is safer than hiding the original write failure.
         }
     }
-
-    private static ProjectResourceWriteOutcome CreateOutcome(
-        FogResourceWriteResult written,
-        string cassetteId,
-        Guid? generationId,
-        bool indexReady) => new(
-        written.ResourceId,
-        cassetteId,
-        written.ModifiedAtUtc,
-        indexReady,
-        generationId);
 }
