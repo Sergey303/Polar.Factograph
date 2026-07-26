@@ -1,6 +1,5 @@
 using System.Text;
 using System.Xml;
-using System.Xml.Linq;
 
 namespace Polar.Factograph.Fog;
 
@@ -27,13 +26,7 @@ internal static class FogResourceFileRewriter
     {
         await using FileStream input = OpenInput(sourcePath);
         using XmlReader reader = FogXmlReaderFactory.Create(input);
-        await using FileStream output = new(
-            temporaryPath,
-            FileMode.CreateNew,
-            FileAccess.Write,
-            FileShare.None,
-            bufferSize: 64 * 1024,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        await using FileStream output = OpenOutput(temporaryPath);
         using XmlWriter writer = XmlWriter.Create(output, WriterSettings);
 
         await writer.WriteStartDocumentAsync();
@@ -44,9 +37,16 @@ internal static class FogResourceFileRewriter
         }
 
         FogWriteRootState root = FogWriteRootState.Read(reader, request, sourcePath);
-        await FogXmlRootWriter.WriteStartAsync(reader, writer, root.NextCounter);
-        await CopyExistingRecordsAsync(reader, writer, sourcePath, cancellationToken);
-        FogResourceElementFactory.Create(request, root.ResourceId, modifiedAtUtc).WriteTo(writer);
+        await FogXmlRootWriter.WriteStartAsync(reader, writer, root.WrittenCounter);
+        await FogExistingRecordCopier.CopyAsync(
+            reader,
+            writer,
+            sourcePath,
+            cancellationToken);
+        FogResourceElementFactory.Create(
+            request,
+            root.ResourceId,
+            modifiedAtUtc).WriteTo(writer);
         await writer.WriteEndElementAsync();
         await writer.WriteEndDocumentAsync();
         await writer.FlushAsync();
@@ -64,43 +64,11 @@ internal static class FogResourceFileRewriter
         bufferSize: 64 * 1024,
         FileOptions.Asynchronous | FileOptions.SequentialScan);
 
-    private static async Task CopyExistingRecordsAsync(
-        XmlReader reader,
-        XmlWriter writer,
-        string sourcePath,
-        CancellationToken cancellationToken)
-    {
-        if (reader.IsEmptyElement)
-        {
-            return;
-        }
-
-        while (await reader.ReadAsync())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (reader.NodeType == XmlNodeType.EndElement && reader.Depth == 0)
-            {
-                return;
-            }
-
-            if (reader.NodeType != XmlNodeType.Element || reader.Depth != 1)
-            {
-                continue;
-            }
-
-            using XmlReader subtree = reader.ReadSubtree();
-            if (!await subtree.ReadAsync())
-            {
-                throw new InvalidDataException($"Fog record is empty: {sourcePath}");
-            }
-
-            XElement element = await XElement.LoadAsync(
-                subtree,
-                LoadOptions.None,
-                cancellationToken);
-            element.WriteTo(writer);
-        }
-
-        throw new InvalidDataException($"Fog root element is not closed: {sourcePath}");
-    }
+    private static FileStream OpenOutput(string path) => new(
+        path,
+        FileMode.CreateNew,
+        FileAccess.Write,
+        FileShare.None,
+        bufferSize: 64 * 1024,
+        FileOptions.Asynchronous | FileOptions.SequentialScan);
 }
