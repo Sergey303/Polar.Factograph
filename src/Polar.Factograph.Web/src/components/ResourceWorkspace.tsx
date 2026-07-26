@@ -7,9 +7,7 @@ import {
   resourceDraftFromPortrait
 } from "../app/resourceDraftFactory";
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
-import { useOntologySchema } from "../app/useOntologySchema";
-import { ResourceEditor } from "./ResourceEditor";
-import { ResourceEditorLoadState } from "./ResourceEditorLoadState";
+import { ResourceEditorPane } from "./ResourceEditorPane";
 import { ResourcePortraitView } from "./ResourcePortraitView";
 import { ResourceWorkspaceActions } from "./ResourceWorkspaceActions";
 
@@ -42,7 +40,6 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
       ? resourceDraftFromPortrait(props.portrait, cassetteId)
       : emptyResourceDraft(cassetteId),
   [mode, props.portrait, cassetteId]);
-  const schema = useOntologySchema(props.token, mode !== null);
 
   function saved(result: ResourceWriteResponse): void {
     setNotice(result.indexReady
@@ -54,22 +51,11 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
     if (sameResource) props.onReload();
   }
 
-  if (mode !== null && schema.schema === null) {
+  if (mode !== null) {
     return (
-      <ResourceEditorLoadState
-        loading={schema.loading}
-        error={schema.error}
-        onCancel={() => setMode(null)}
-      />
-    );
-  }
-
-  if (mode !== null && schema.schema !== null) {
-    return (
-      <ResourceEditor
+      <ResourceEditorPane
         mode={mode}
         initialDraft={initialDraft}
-        schema={schema.schema}
         cassettes={writable}
         token={props.token}
         onCancel={() => setMode(null)}
