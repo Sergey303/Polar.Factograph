@@ -3,8 +3,12 @@ using Polar.Factograph.Storage;
 
 namespace Polar.Factograph.Api.Tests;
 
-internal sealed class ObjectTargetStoreStub(ResourceHead? head) : IProjectRdfStore
+internal sealed class ObjectTargetStoreStub(
+    ResourceHead? head,
+    IReadOnlyList<string>? types = null) : IProjectRdfStore
 {
+    private const string RdfType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+
     public ValueTask<ResourceHead?> GetResourceHeadAsync(
         string resourceId,
         CancellationToken cancellationToken = default) =>
@@ -19,8 +23,29 @@ internal sealed class ObjectTargetStoreStub(ResourceHead? head) : IProjectRdfSto
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await Task.Yield();
-        cancellationToken.ThrowIfCancellationRequested();
-        yield break;
+        if (head is null || !allowedCassetteIds.Contains(head.SourceCassetteId) ||
+            !string.Equals(pattern.Subject, head.ResourceId, StringComparison.Ordinal) ||
+            !string.Equals(pattern.Predicate, RdfType, StringComparison.Ordinal))
+        {
+            yield break;
+        }
+
+        foreach (string type in types ?? [])
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return new TripleRow(
+                Guid.NewGuid(),
+                head.ResourceId,
+                RdfType,
+                TripleObjectKind.Iri,
+                type,
+                null,
+                null,
+                head.CurrentSourceRecordId,
+                head.SourceCassetteId,
+                head.SourceFogPath,
+                head.ModifiedAt);
+        }
     }
 
     public Task RebuildAsync(CancellationToken cancellationToken = default) =>
