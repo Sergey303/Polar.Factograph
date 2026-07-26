@@ -39,7 +39,7 @@ The monotonic timestamp rule is required because equal maximum `mT` values inten
 
 After `writeMetadata` authorization and before project locking, resource definitions are checked against the cached current ontology.
 
-The validator checks:
+The first validation stage checks:
 
 - class existence;
 - property existence;
@@ -48,7 +48,16 @@ The validator checks:
 - enumeration state values;
 - absence of language/datatype metadata on resource links.
 
-Local names and full Fog namespace identifiers resolve to the same ontology term. Failed validation raises an invalid-request response before `DIRTY`, temporary files, or Fog changes. Object target existence and target-class range compatibility remain later checks.
+After the mutation gate is acquired and a preceding `DIRTY` index is repaired, external object targets are checked against the current generation before a new `DIRTY` marker is created.
+
+The target stage checks:
+
+- existence in a cassette readable by the current user;
+- all declared `rdf:type` values;
+- object-property ranges with class inheritance;
+- explicit self-references against the request type.
+
+A hidden target is indistinguishable from a missing target. Literal-only requests and explicit self-references do not require an older Polar.DB generation. Any failed validation leaves Fog and `DIRTY` unchanged.
 
 ## Delete and substitute
 
@@ -77,11 +86,12 @@ The original Fog remains unchanged until validation succeeds.
 
 1. Serialize mutations and administrative rebuilds for one project index.
 2. Repair a preceding `DIRTY` index before accepting another mutation.
-3. Select the authorized cassette and writable Fog.
-4. Create `DIRTY` before changing the source of truth.
-5. Commit the validated Fog transaction.
-6. Rebuild the complete Polar.DB generation without request cancellation.
-7. Clear `DIRTY` only after the new generation becomes current.
+3. Validate current object targets while the repaired generation is stable.
+4. Select the authorized cassette and writable Fog.
+5. Create `DIRTY` before changing the source of truth.
+6. Commit the validated Fog transaction.
+7. Rebuild the complete Polar.DB generation without request cancellation.
+8. Clear `DIRTY` only after the new generation becomes current.
 
 Reads started after `DIRTY` appears return `503` instead of silently using stale derived data. Requests already holding an immutable completed generation may finish normally.
 
@@ -98,4 +108,4 @@ Two deliberate corrections are applied:
 
 Resource, delete, and substitute mutations are exposed through the API and rebuild Polar.DB before reporting an index-ready result. A committed Fog mutation with failed rebuild returns `202`, keeps `DIRTY`, and blocks stale reads.
 
-Document uploads, collection mutation, object-range target validation, and incremental index updates remain separate later increments.
+Document uploads, collection mutation, incremental index updates, and the React client remain separate later increments.
