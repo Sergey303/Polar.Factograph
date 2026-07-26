@@ -22,10 +22,10 @@ public sealed class ProjectResourceWriteCoordinator(
         ArgumentNullException.ThrowIfNull(access);
         ArgumentNullException.ThrowIfNull(command);
 
+        string cassetteId = cassetteResolver.Resolve(access, command.CassetteId);
         await using ProjectMutationLease lease = await mutationGate.AcquireAsync(
             project.Index.Path,
             cancellationToken);
-        string cassetteId = cassetteResolver.Resolve(access, command.CassetteId);
         IReadOnlyList<FogSourceDescriptor> sources = await sourceScanner.ScanAsync(
             project,
             cancellationToken);
