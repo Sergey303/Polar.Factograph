@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Polar.Factograph.Api.Infrastructure;
 
 public sealed class ProjectIndexDirtyMarker(TimeProvider? timeProvider = null)
@@ -6,6 +8,24 @@ public sealed class ProjectIndexDirtyMarker(TimeProvider? timeProvider = null)
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
     public bool Exists(string indexRoot) => File.Exists(GetPath(indexRoot));
+
+    public DateTimeOffset? ReadMarkedAtUtc(string indexRoot)
+    {
+        string path = GetPath(indexRoot);
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        string value = File.ReadAllText(path).Trim();
+        return DateTimeOffset.TryParse(
+            value,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind,
+            out DateTimeOffset timestamp)
+            ? timestamp.ToUniversalTime()
+            : null;
+    }
 
     public void Mark(string indexRoot)
     {
