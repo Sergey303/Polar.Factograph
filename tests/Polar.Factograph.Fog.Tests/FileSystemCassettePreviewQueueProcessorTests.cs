@@ -109,6 +109,34 @@ public sealed class FileSystemCassettePreviewQueueProcessorTests
             "*.error.txt"));
     }
 
+    [Fact]
+    public async Task ProcessNextAsync_RecoversExpiredProcessingClaim()
+    {
+        using WritableDocumentCassette cassette = WritableDocumentCassette.Create();
+        await QueueAsync(cassette);
+        string queuePath = Path.Combine(cassette.Root, "documents", "preview-queue");
+        string processingPath = Path.Combine(cassette.Root, "documents", "preview-processing");
+        Directory.CreateDirectory(processingPath);
+        string queuedFile = Directory.GetFiles(queuePath, "*.json").Single();
+        string abandonedFile = Path.Combine(processingPath, Path.GetFileName(queuedFile));
+        File.Move(queuedFile, abandonedFile);
+        File.SetLastWriteTimeUtc(abandonedFile, DateTime.UtcNow.AddHours(-1));
+        RecordingRenderer renderer = new();
+        FileSystemCassettePreviewQueueProcessor processor = new();
+
+        CassettePreviewProcessResult result = await processor.ProcessNextAsync(
+            cassette.Definition,
+            renderer,
+            new CassettePreviewProcessingOptions
+            {
+                LeaseTimeout = TimeSpan.FromMinutes(1)
+            });
+
+        Assert.Equal(PreviewProcessStates.Completed, result.State);
+        Assert.Single(renderer.Requests);
+        Assert.Empty(Directory.GetFiles(processingPath, "*.json"));
+    }
+
     private static async Task QueueAsync(WritableDocumentCassette cassette)
     {
         CassetteDocumentWriteResult document = new(
