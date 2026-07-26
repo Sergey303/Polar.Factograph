@@ -41,7 +41,7 @@ internal sealed record FogWriteRootState(
         }
 
         return new FogWriteRootState(
-            FogIdentifier.Clean(prefix + counterText),
+            FogIdentifier.Clean(prefix + counter.ToString(CultureInfo.InvariantCulture)),
             checked(counter + 1));
     }
 }
