@@ -29,10 +29,10 @@ The current compatibility increment contains:
 - safe `iiss://` resolution plus authorized metadata and streamed original/preview content;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
 - production identity from standard claims and a development-only configured identity;
-- authorized cassette/Fog write routing plus validated atomic append-only resource writing;
+- authorized atomic append-only metadata writes followed by serialized project-index rebuilds;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Write API orchestration, index refresh after writes, document upload operations, authenticated provider setup, and the React client remain focused follow-up increments.
+Document upload operations, collection mutations, delete/substitute APIs, incremental index updates, authenticated provider deployment, and the React client remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -72,6 +72,8 @@ Useful routes:
 GET  /api/system/health
 GET  /api/project
 GET  /api/resources/portrait?id={rdf-id}
+POST /api/resources
+PUT  /api/resources/{resourceId}
 GET  /api/search/names?q={text}
 GET  /api/search/words?q={text}
 GET  /api/documents/location?uri={iiss-uri}
