@@ -14,10 +14,9 @@ internal sealed class PreviewOutputPlan : IDisposable
     public string OriginalPath { get; }
     public IReadOnlyList<PreviewOutputFile> Outputs { get; }
 
-    public static PreviewOutputPlan Create(
+    public static string ResolveOriginalPath(
         CassetteDefinition cassette,
-        CassettePreviewRequest request,
-        PreviewWorkerOptions options)
+        CassettePreviewRequest request)
     {
         string root = Path.GetFullPath(cassette.Path);
         string originalDirectory = Path.Combine(root, "originals", request.FolderName);
@@ -29,6 +28,16 @@ internal sealed class PreviewOutputPlan : IDisposable
             throw new PreviewRenderingException("The original document is missing.", false);
         }
 
+        return originalPath;
+    }
+
+    public static PreviewOutputPlan Create(
+        CassetteDefinition cassette,
+        CassettePreviewRequest request,
+        PreviewWorkerOptions options,
+        string originalPath)
+    {
+        string root = Path.GetFullPath(cassette.Path);
         PreviewOutputFile[] outputs = [
             CreateOutput(root, "small", request, options.SmallWidth, options.OutputExtension),
             CreateOutput(root, "medium", request, options.MediumWidth, options.OutputExtension),
@@ -74,21 +83,28 @@ internal sealed class PreviewOutputPlan : IDisposable
                 $"The {variant} preview has multiple current files.", false);
         }
 
-        string extension = existing.Length == 1
+        string defaultSuffix = $".{defaultExtension.ToLowerInvariant()}";
+        string existingExtension = existing.Length == 1
             ? Path.GetExtension(existing[0])
-            : $".{defaultExtension.ToLowerInvariant()}";
+            : string.Empty;
+        string renderExtension = string.IsNullOrEmpty(existingExtension)
+            ? defaultSuffix
+            : existingExtension;
         string finalPath = existing.SingleOrDefault() ??
-            Path.Combine(directory, request.DocumentNumber + extension);
+            Path.Combine(directory, request.DocumentNumber + defaultSuffix);
         string temporaryPath = Path.Combine(
             directory,
-            $".{request.DocumentNumber}.{request.RequestId}.{Guid.NewGuid():N}.tmp{extension}");
+            $".{request.DocumentNumber}.{request.RequestId}.{Guid.NewGuid():N}.tmp{renderExtension}");
         return new PreviewOutputFile(variant, width, finalPath, temporaryPath);
     }
 
     private static void RequireInside(string directory, string path)
     {
         string prefix = Path.GetFullPath(directory) + Path.DirectorySeparatorChar;
-        if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (!path.StartsWith(prefix, comparison))
         {
             throw new PreviewRenderingException("The original path is invalid.", false);
         }
