@@ -6,6 +6,7 @@ namespace Polar.Factograph.Api.Infrastructure;
 public sealed class ProjectResourceWriteCoordinator(
     IFogResourceWriter resourceWriter,
     ProjectWriteCassetteResolver cassetteResolver,
+    ProjectResourceWriteValidationService validationService,
     ProjectFogMutationRunner mutationRunner)
 {
     public async Task<ProjectResourceWriteOutcome> WriteAsync(
@@ -19,6 +20,10 @@ public sealed class ProjectResourceWriteCoordinator(
         string cassetteId = cassetteResolver.Resolve(
             context.Access,
             requestedCassetteId);
+        await validationService.ValidateAsync(
+            context.Project,
+            request,
+            cancellationToken);
         ProjectFogMutationOutcome<FogResourceWriteResult> mutation =
             await mutationRunner.RunAsync(
                 context.Project,
