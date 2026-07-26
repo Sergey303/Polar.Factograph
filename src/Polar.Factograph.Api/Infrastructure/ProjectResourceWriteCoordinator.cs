@@ -4,12 +4,9 @@ using Polar.Factograph.Fog;
 namespace Polar.Factograph.Api.Infrastructure;
 
 public sealed class ProjectResourceWriteCoordinator(
-    IFogSourceScanner sourceScanner,
     IFogResourceWriter resourceWriter,
     ProjectWriteCassetteResolver cassetteResolver,
-    ProjectOperationGate operationGate,
-    ProjectIndexDirtyMarker dirtyMarker,
-    ProjectWriteIndexRefresher indexRefresher)
+    ProjectFogMutationRunner mutationRunner)
 {
     public async Task<ProjectResourceWriteOutcome> WriteAsync(
         ProjectAccessContext context,
@@ -22,50 +19,18 @@ public sealed class ProjectResourceWriteCoordinator(
         string cassetteId = cassetteResolver.Resolve(
             context.Access,
             requestedCassetteId);
-
-        await using IAsyncDisposable lease = await operationGate.AcquireAsync(
-            context.Project.Index.Path,
-            cancellationToken);
-        await indexRefresher.EnsureCleanAsync(
-            context.Project,
-            cancellationToken);
-        IReadOnlyList<FogSourceDescriptor> sources = await sourceScanner.ScanAsync(
-            context.Project,
-            cancellationToken);
-        FogSourceDescriptor source = FogWritableSourceSelector.Select(
-            sources,
-            cassetteId);
-
-        dirtyMarker.Mark(context.Project.Index.Path);
-        FogResourceWriteResult written;
-        try
-        {
-            written = await resourceWriter.AppendAsync(
-                source,
-                request,
+        ProjectFogMutationOutcome<FogResourceWriteResult> mutation =
+            await mutationRunner.RunAsync(
+                context.Project,
+                cassetteId,
+                (source, token) => resourceWriter.AppendAsync(source, request, token),
                 cancellationToken);
-        }
-        catch
-        {
-            ClearAfterFailedWrite(context.Project.Index.Path);
-            throw;
-        }
 
-        return await indexRefresher.RefreshAsync(
-            context.Project,
-            written,
-            cassetteId);
-    }
-
-    private void ClearAfterFailedWrite(string indexRoot)
-    {
-        try
-        {
-            dirtyMarker.Clear(indexRoot);
-        }
-        catch
-        {
-            // A stale marker is safer than hiding the original write failure.
-        }
+        return new ProjectResourceWriteOutcome(
+            mutation.Written.ResourceId,
+            cassetteId,
+            mutation.Written.ModifiedAtUtc,
+            mutation.IndexReady,
+            mutation.GenerationId);
     }
 }
