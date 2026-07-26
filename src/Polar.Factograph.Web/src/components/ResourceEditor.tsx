@@ -1,0 +1,76 @@
+import type { OntologyWriteSchema } from "../api/ontologyModels";
+import type { ProjectCassetteOverview } from "../api/models";
+import type { ResourceWriteResponse } from "../api/resourceWriteModels";
+import { findWriteClass } from "../app/ontologySchemaLookup";
+import type { ResourceDraft } from "../app/resourceDraftModels";
+import { useResourceDraft } from "../app/useResourceDraft";
+import { useResourceWrite } from "../app/useResourceWrite";
+import { ResourceEditorHeader } from "./ResourceEditorHeader";
+import { ResourcePropertyAdd } from "./ResourcePropertyAdd";
+import { ResourcePropertyList } from "./ResourcePropertyList";
+
+interface ResourceEditorProps {
+  mode: "create" | "edit";
+  initialDraft: ResourceDraft;
+  schema: OntologyWriteSchema;
+  cassettes: ProjectCassetteOverview[];
+  token: string;
+  onCancel: () => void;
+  onSaved: (result: ResourceWriteResponse) => void;
+}
+
+export function ResourceEditor(props: ResourceEditorProps) {
+  const editor = useResourceDraft(props.initialDraft);
+  const writer = useResourceWrite(props.token, props.onSaved);
+  const type = findWriteClass(props.schema, editor.draft.typeId);
+
+  return (
+    <form
+      className="resource-editor"
+      onSubmit={event => {
+        event.preventDefault();
+        void writer.save(editor.draft);
+      }}
+    >
+      <header className="resource-editor-title">
+        <div>
+          <span className="eyebrow">Метаданные</span>
+          <h1>{props.mode === "create" ? "Новый ресурс" : "Редактирование ресурса"}</h1>
+        </div>
+        <button className="button subtle" type="button" onClick={props.onCancel}>
+          Отмена
+        </button>
+      </header>
+
+      <ResourceEditorHeader
+        mode={props.mode}
+        draft={editor.draft}
+        classes={props.schema.classes}
+        cassettes={props.cassettes}
+        onTypeChange={editor.setType}
+        onFieldChange={editor.setField}
+      />
+
+      <section className="resource-editor-properties">
+        <div className="section-heading-row">
+          <h3>Свойства</h3>
+          <ResourcePropertyAdd type={type} onAdd={editor.addProperty} />
+        </div>
+        <ResourcePropertyList
+          typeId={editor.draft.typeId}
+          rows={editor.draft.properties}
+          schema={props.schema}
+          onChange={editor.updateProperty}
+          onRemove={editor.removeProperty}
+        />
+      </section>
+
+      {writer.error && <div className="notice error">{writer.error}</div>}
+      <footer className="resource-editor-actions">
+        <button className="button primary" type="submit" disabled={writer.busy}>
+          {writer.busy ? "Сохранение…" : "Сохранить новую ревизию"}
+        </button>
+      </footer>
+    </form>
+  );
+}
