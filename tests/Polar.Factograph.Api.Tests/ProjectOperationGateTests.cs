@@ -13,7 +13,11 @@ public sealed class ProjectOperationGateTests
         using CancellationTokenSource cancellation = new(TimeSpan.FromMilliseconds(100));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-            await gate.AcquireAsync("index-a", cancellation.Token));
+        {
+            await using IAsyncDisposable blocked = await gate.AcquireAsync(
+                "index-a",
+                cancellation.Token);
+        });
     }
 
     [Fact]
