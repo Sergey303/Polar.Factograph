@@ -28,6 +28,15 @@ public sealed class ApiExceptionMiddleware(
         {
             await WriteAsync(context, StatusCodes.Status403Forbidden, "forbidden", exception.Message);
         }
+        catch (ProjectWriteCommittedException exception)
+        {
+            logger.LogError(exception, "Fog write committed but index refresh failed.");
+            await WriteAsync(
+                context,
+                StatusCodes.Status503ServiceUnavailable,
+                "write_committed_index_refresh_failed",
+                exception.Message);
+        }
         catch (ProjectRuntimeUnavailableException exception)
         {
             await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "project_unavailable", exception.Message);
