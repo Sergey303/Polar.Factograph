@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Polar.Factograph.Api.Collections;
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Api.Writes;
 using Polar.Factograph.Application;
@@ -52,11 +53,19 @@ internal sealed class WritableApiMutationHarness : IDisposable
             new FileSystemFogDirectiveWriter(),
             new ProjectCassetteCommandResolver(),
             runner);
+        CollectionsAdd = new ProjectCollectionAddCoordinator(Resources);
+        CollectionsRemove = new ProjectCollectionRemoveCoordinator(
+            new FileSystemFogDirectiveWriter(),
+            new ProjectCassetteCommandResolver(),
+            new CollectionMembershipGuard(_stores),
+            runner);
     }
 
     public ProjectIndexDirtyMarker DirtyMarker { get; }
     public ProjectResourceWriteCoordinator Resources { get; }
     public ProjectDirectiveWriteCoordinator Directives { get; }
+    public ProjectCollectionAddCoordinator CollectionsAdd { get; }
+    public ProjectCollectionRemoveCoordinator CollectionsRemove { get; }
 
     public Task RebuildAsync(ProjectDefinition project) =>
         _indexCoordinator.RebuildAsync(project);
