@@ -1,5 +1,5 @@
 import type { ProjectOverview } from "../api/models";
-import { hasDefaultCassetteRight } from "../app/projectAccess";
+import { hasCassetteRight, hasDefaultCassetteRight } from "../app/projectAccess";
 import { useCollectionContents } from "../app/useCollectionContents";
 import { useCollectionMutation } from "../app/useCollectionMutation";
 import { useCollectionNavigation } from "../app/useCollectionNavigation";
@@ -29,7 +29,6 @@ export function CollectionWorkspace({
     collection.reload
   );
   const canAdd = hasDefaultCassetteRight(project, "writeMetadata");
-  const canRemove = hasDefaultCassetteRight(project, "delete");
 
   return (
     <section className="navigation-section collection-workspace">
@@ -65,7 +64,11 @@ export function CollectionWorkspace({
           <CollectionItemList
             items={collection.contents.items}
             selectedId={selectedResourceId}
-            canRemove={canRemove}
+            canRemove={item => hasCassetteRight(
+              project,
+              item.membershipCassetteId,
+              "delete"
+            )}
             busy={mutation.busy}
             onSelect={onSelect}
             onOpenCollection={navigation.open}
