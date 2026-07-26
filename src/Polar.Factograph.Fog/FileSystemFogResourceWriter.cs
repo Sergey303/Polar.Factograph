@@ -14,67 +14,40 @@ public sealed class FileSystemFogResourceWriter : IFogResourceWriter
         FogResourceWriteRequest request,
         CancellationToken cancellationToken = default)
     {
-        Validate(source, request);
-        string targetPath = Path.GetFullPath(source.FogPath);
-        string temporaryPath = CreateTemporaryPath(targetPath);
-        DateTime modifiedAtUtc = TruncateToSeconds(
-            _timeProvider.GetUtcNow().UtcDateTime);
+        FogResourceWriteContext context = FogResourceWritePreparation.Prepare(
+            source,
+            request,
+            _timeProvider);
+        await using FogWriteLease lease = FogWriteLease.Acquire(context.TargetPath);
 
-        await using FogWriteLease lease = FogWriteLease.Acquire(targetPath);
         try
         {
             FogRewriteOutcome outcome = await FogResourceFileRewriter.RewriteAsync(
-                targetPath,
-                temporaryPath,
+                context.TargetPath,
+                context.TemporaryPath,
                 request,
-                modifiedAtUtc,
+                context.ModifiedAtUtc,
                 cancellationToken);
             await FogWrittenFileValidator.ValidateAsync(
-                temporaryPath,
+                context.TemporaryPath,
                 source,
                 outcome.ResourceId,
                 outcome.NextCounter,
                 cancellationToken);
-            FogAtomicFileCommitter.Commit(temporaryPath, targetPath);
+            FogAtomicFileCommitter.Commit(
+                context.TemporaryPath,
+                context.TargetPath);
 
             return new FogResourceWriteResult(
                 outcome.ResourceId,
-                targetPath,
+                context.TargetPath,
                 outcome.NextCounter,
-                modifiedAtUtc);
+                context.ModifiedAtUtc);
         }
         catch
         {
-            FogAtomicFileCommitter.DeleteTemporary(temporaryPath);
+            FogAtomicFileCommitter.DeleteTemporary(context.TemporaryPath);
             throw;
         }
     }
-
-    private static void Validate(
-        FogSourceDescriptor source,
-        FogResourceWriteRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(request);
-        if (!source.Writable || source.Prefix is null || source.Counter is null)
-        {
-            throw new InvalidOperationException(
-                $"Fog source is not writable: {source.FogPath}");
-        }
-
-        if (!File.Exists(source.FogPath))
-        {
-            throw new FileNotFoundException(
-                $"Fog file was not found: {source.FogPath}",
-                source.FogPath);
-        }
-    }
-
-    private static string CreateTemporaryPath(string targetPath) =>
-        Path.Combine(
-            Path.GetDirectoryName(targetPath)!,
-            $".{Path.GetFileName(targetPath)}.{Guid.NewGuid():N}.tmp");
-
-    private static DateTime TruncateToSeconds(DateTime value) =>
-        new(value.Ticks - value.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
 }
