@@ -34,7 +34,7 @@ public sealed class FileSystemCassettePreviewRequestWriter : ICassettePreviewReq
             string fileName = $"{document.FolderName}-{document.DocumentNumber}-{requestId}.json";
             string finalPath = Path.Combine(directory, fileName);
             temporaryPath = Path.Combine(directory, $".{fileName}.tmp");
-            CassettePreviewRequestEnvelope envelope = new(
+            CassettePreviewRequest request = new(
                 requestId, queuedAtUtc, document.CassetteId, document.CassetteName,
                 document.DocumentUri, document.FolderName, document.DocumentNumber,
                 document.FileName, document.Length, document.Sha256, document.Replaced);
@@ -44,7 +44,7 @@ public sealed class FileSystemCassettePreviewRequestWriter : ICassettePreviewReq
                 16 * 1024, FileOptions.Asynchronous | FileOptions.WriteThrough))
             {
                 await JsonSerializer.SerializeAsync(
-                    stream, envelope, JsonOptions, cancellationToken);
+                    stream, request, JsonOptions, cancellationToken);
                 await stream.FlushAsync(cancellationToken);
             }
 
