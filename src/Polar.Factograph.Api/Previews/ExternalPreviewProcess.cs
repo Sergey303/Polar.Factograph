@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Polar.Factograph.Fog;
 
 namespace Polar.Factograph.Api.Previews;
 
