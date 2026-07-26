@@ -31,10 +31,11 @@ The current compatibility increment contains:
 - production JWT identity plus a development-only configured identity;
 - atomic append-only resource, delete, substitute, and collection membership mutations;
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
+- atomic streamed document original upload and replacement with independent cassette rights;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Document upload operations, incremental index refresh, and the React client remain focused follow-up increments.
+Incremental index refresh, preview generation orchestration, the React client, and final production hardening remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -84,9 +85,11 @@ GET  /api/search/names?q={text}
 GET  /api/search/words?q={text}
 GET  /api/documents/location?uri={iiss-uri}
 GET  /api/documents/content?uri={iiss-uri}&variant={variant}
+POST /api/documents/files?fileName={name.ext}&cassetteId={optional-id}
+PUT  /api/documents/files?uri={iiss-uri}&fileName={name.ext}
 GET  /api/admin/project/sources
 GET  /api/admin/project/materialization-summary
 POST /api/admin/index/rebuild
 ```
 
-See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
+See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), and [legacy sources](docs/LEGACY_SOURCES.md).
