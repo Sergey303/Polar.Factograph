@@ -70,6 +70,7 @@ public static class FactographApiServices
         services.AddSingleton<ProjectDocumentAddCoordinator>();
         services.AddSingleton<ProjectDocumentReplaceCoordinator>();
         services.AddSingleton<DocumentContentTypeResolver>();
+        services.AddSingleton<PreviewWorkerRuntimeState>();
         services.AddSingleton<ICassettePreviewRenderer, ExternalProcessPreviewRenderer>();
         services.AddSingleton<PreviewWorkerCycle>();
         services.AddHostedService<PreviewQueueHostedService>();
