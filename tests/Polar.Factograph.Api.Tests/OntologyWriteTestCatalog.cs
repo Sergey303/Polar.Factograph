@@ -30,12 +30,17 @@ internal static class OntologyWriteTestCatalog
           <Class rdf:about="base" />
           <Class rdf:about="child"><SubClassOf rdf:resource="base" /></Class>
           <Class rdf:about="other" />
+          <Class rdf:about="organization" />
           <DatatypeProperty rdf:about="name">
             <domain rdf:resource="base" />
           </DatatypeProperty>
           <ObjectProperty rdf:about="mentor">
             <domain rdf:resource="child" />
             <range rdf:resource="base" />
+          </ObjectProperty>
+          <ObjectProperty rdf:about="employer">
+            <domain rdf:resource="child" />
+            <range rdf:resource="organization" />
           </ObjectProperty>
           <EnumerationType rdf:about="status-enum">
             <state value="active">Active</state>
