@@ -10,8 +10,7 @@ public sealed class FileSystemFogResourceWriterIdentityTests
     public async Task AppendAsync_UsesExplicitIdWithoutChangingCounter()
     {
         await using WritableFogFixture fog = await WritableFogFixture.CreateAsync();
-        FileSystemFogResourceWriter writer = new(new FixedTimeProvider(
-            new DateTimeOffset(2026, 7, 26, 7, 0, 0, TimeSpan.Zero)));
+        FileSystemFogResourceWriter writer = CreateWriter();
         FogResourceWriteRequest request = new(
             "person",
             [new FogProperty("name", FogPropertyKind.Literal, "Manual")],
@@ -27,4 +26,25 @@ public sealed class FileSystemFogResourceWriterIdentityTests
         List<FogSourceRecord> records = await FogTestRecords.ReadAllAsync(fog.Source);
         Assert.Contains(records, record => record.ResourceId == "manualid");
     }
+
+    [Fact]
+    public async Task AppendAsync_ReadsCurrentCounterInsteadOfStaleDescriptorCounter()
+    {
+        await using WritableFogFixture fog = await WritableFogFixture.CreateAsync();
+        FileSystemFogResourceWriter writer = CreateWriter();
+        FogResourceWriteRequest request = new(
+            "person",
+            [new FogProperty("name", FogPropertyKind.Literal, "Generated")]);
+
+        FogResourceWriteResult first = await writer.AppendAsync(fog.Source, request);
+        FogResourceWriteResult second = await writer.AppendAsync(fog.Source, request);
+
+        Assert.Equal("p7", first.ResourceId);
+        Assert.Equal("p8", second.ResourceId);
+        Assert.Equal(9, second.NextCounter);
+    }
+
+    private static FileSystemFogResourceWriter CreateWriter() => new(
+        new FixedTimeProvider(
+            new DateTimeOffset(2026, 7, 26, 7, 0, 0, TimeSpan.Zero)));
 }
