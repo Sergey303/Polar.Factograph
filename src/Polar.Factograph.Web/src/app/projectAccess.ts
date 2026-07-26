@@ -6,7 +6,7 @@ import type {
 export function defaultWriteCassette(
   project: ProjectOverview | null
 ): ProjectCassetteOverview | null {
-  if (project?.defaultWriteCassetteId === null || project === null) {
+  if (project === null || project.defaultWriteCassetteId === null) {
     return null;
   }
   return project.cassettes.find(
