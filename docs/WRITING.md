@@ -26,21 +26,25 @@ The writer also:
 
 - removes `|` from identifiers;
 - writes `mT` in UTC with one-second precision;
+- advances `mT` beyond the latest existing revision when the clock value is not newer;
 - omits empty literal properties;
 - preserves `xml:lang` and `rdf:datatype`;
 - writes object properties through `rdf:resource`;
 - appends a new definition instead of destroying prior source history.
+
+The monotonic timestamp rule is required because equal maximum `mT` values intentionally resolve to the first definition.
 
 ## Filesystem transaction
 
 1. Acquire an exclusive same-Fog lock file.
 2. Read the current root so a stale scanner snapshot cannot reuse an old counter.
 3. Stream existing records one element at a time into a temporary file in the same directory.
-4. Append the complete new resource definition.
-5. Flush the temporary file to disk.
-6. Parse it again and verify the new revision and root counter.
-7. Atomically replace the source Fog.
-8. Delete the temporary file after any failure.
+4. Determine a timestamp newer than prior revisions of the same resource.
+5. Append the complete new resource definition.
+6. Flush the temporary file to disk.
+7. Parse it again and verify the new revision and root counter.
+8. Atomically replace the source Fog.
+9. Delete the temporary file after any failure.
 
 The original Fog remains unchanged until validation succeeds.
 
