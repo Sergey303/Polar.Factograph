@@ -1,6 +1,6 @@
 # API
 
-The API is a thin layer over validated project configuration, effective access snapshots, and one completed Polar.DB generation.
+The API is a thin layer over validated project configuration, effective access snapshots, Fog/XML source files, and one completed Polar.DB generation.
 
 ## Identity
 
@@ -41,6 +41,35 @@ Document variants are `original`, `small`, `medium`, and `normal`. The metadata 
 
 Portrait, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
 
+## Resource write
+
+```text
+POST /api/resources
+```
+
+The request contains a complete append-only resource definition:
+
+```json
+{
+  "typeId": "person",
+  "resourceId": "optional-existing-id",
+  "cassetteId": "optional-explicit-cassette",
+  "properties": [
+    { "predicate": "name", "value": "Alice", "language": "en" },
+    { "predicate": "friend", "value": "person-2", "kind": "resource" }
+  ]
+}
+```
+
+`kind` is `literal` by default and may be `resource`. When `cassetteId` is omitted, the effective default write cassette is used. The authenticated member must have `writeMetadata` for the selected cassette.
+
+The API serializes project mutations, repairs a preceding dirty index before accepting another write, atomically appends the complete Fog definition, and then rebuilds Polar.DB without observing request cancellation after the source commit.
+
+- `201 Created` means Fog was written and a complete new index generation became current.
+- `202 Accepted` means Fog was written, but rebuild failed. `indexReady` is `false`, the project remains marked `DIRTY`, and reads return `503` until a successful rebuild.
+
+The response never exposes the local Fog path.
+
 ## Administrative routes
 
 ```text
@@ -51,7 +80,7 @@ POST /api/admin/index/rebuild
 
 All administrative routes above require `rebuildIndex`.
 
-A rebuild streams Fog/XML, resolves current records, writes all four Polar.DB sets, builds their external indexes, and switches `CURRENT` only after the complete generation succeeds.
+A rebuild streams Fog/XML, resolves current records, writes all four Polar.DB sets, builds their external indexes, switches `CURRENT` only after the complete generation succeeds, and clears `DIRTY` only after success.
 
 ## Error boundary
 
