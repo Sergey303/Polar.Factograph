@@ -7,13 +7,16 @@ using Polar.Factograph.Storage;
 
 namespace Polar.Factograph.Api.Tests;
 
-internal sealed class WritableApiMutationHarness
+internal sealed class WritableApiMutationHarness : IDisposable
 {
+    private readonly ProjectStoreProvider _stores;
+
     public WritableApiMutationHarness()
     {
         FileSystemFogSourceScanner scanner = new();
         ProjectOperationGate gate = new();
         DirtyMarker = new ProjectIndexDirtyMarker();
+        _stores = new ProjectStoreProvider(DirtyMarker);
         ProjectIndexCoordinator indexCoordinator = new(
             scanner,
             new FogProjectRecordSource(new FileSystemFogRecordReader()),
@@ -30,14 +33,18 @@ internal sealed class WritableApiMutationHarness
             gate,
             DirtyMarker,
             refresher);
-        ProjectResourceWriteValidationService validation = new(
-            new OntologyCatalogProvider(new XmlOntologyCatalogLoader()),
-            new OntologyResourceWriteValidator());
+        OntologyCatalogProvider ontology = new(new XmlOntologyCatalogLoader());
 
         Resources = new ProjectResourceWriteCoordinator(
             new FileSystemFogResourceWriter(),
             new ProjectWriteCassetteResolver(),
-            validation,
+            new ProjectResourceWriteValidationService(
+                ontology,
+                new OntologyResourceWriteValidator()),
+            new ProjectResourceTargetValidationService(
+                _stores,
+                ontology,
+                new OntologyObjectTargetValidator()),
             runner);
         Directives = new ProjectDirectiveWriteCoordinator(
             new FileSystemFogDirectiveWriter(),
@@ -48,4 +55,6 @@ internal sealed class WritableApiMutationHarness
     public ProjectIndexDirtyMarker DirtyMarker { get; }
     public ProjectResourceWriteCoordinator Resources { get; }
     public ProjectDirectiveWriteCoordinator Directives { get; }
+
+    public void Dispose() => _stores.Dispose();
 }
