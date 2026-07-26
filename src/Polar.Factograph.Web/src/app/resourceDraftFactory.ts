@@ -60,18 +60,6 @@ export function newPropertyDraft(
   };
 }
 
-export function validateResourceDraft(draft: ResourceDraft): string | null {
-  if (draft.typeId.trim().length === 0) return "Выберите тип ресурса.";
-  if (draft.cassetteId.trim().length === 0) return "Выберите кассету записи.";
-  if (draft.properties.some(item => item.predicate.trim().length === 0)) {
-    return "У каждого значения должно быть свойство.";
-  }
-  if (draft.properties.some(item => item.value.trim().length === 0)) {
-    return "Значения свойств не могут быть пустыми.";
-  }
-  return null;
-}
-
 export function toResourceWriteRequest(
   draft: ResourceDraft
 ): ResourceWriteRequest {
