@@ -109,10 +109,23 @@ Substitute request:
 
 Delete requires the cassette `delete` right. Substitute requires the independent cassette `substitute` right. A substitute source and target must differ after legacy `|` cleanup.
 
-All three mutation routes use the same project transaction: serialize mutations, repair a preceding dirty index, append one validated Fog record, rebuild Polar.DB, and switch `CURRENT` only after the generation is complete.
+## Collection mutations
 
-- resource creation/update returns `201 Created` when the index is ready;
-- delete/substitute return `200 OK` when the index is ready;
+```text
+POST /api/collections/items
+POST /api/collections/items/remove
+```
+
+Add creates a new ontology-validated `collection-member` linking the requested collection and item. It requires `writeMetadata`, and both target resources must be readable and satisfy the ontology ranges.
+
+Remove requires `delete`. Before creating `DIRTY`, it verifies that the visible current membership has type `collection-member` and contains both requested links. Only that membership is deleted; the collection and item remain unchanged.
+
+Add returns `201 Created` and remove returns `200 OK` when the new generation is ready. The complete request and response contracts are documented in [COLLECTIONS.md](COLLECTIONS.md).
+
+All mutation routes use the same project transaction: serialize mutations, repair a preceding dirty index, validate current targets, append one validated Fog record, rebuild Polar.DB, and switch `CURRENT` only after the generation is complete.
+
+- create/add routes return `201 Created` when the index is ready;
+- delete/substitute/remove routes return `200 OK` when the index is ready;
 - any mutation returns `202 Accepted` when Fog was committed but rebuild failed;
 - while `DIRTY` remains, reads return `503` instead of exposing stale derived data.
 
