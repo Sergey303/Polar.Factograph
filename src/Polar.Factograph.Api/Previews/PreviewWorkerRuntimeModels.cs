@@ -11,6 +11,11 @@ public static class PreviewWorkerStates
     public const string Stopped = "stopped";
 }
 
+public static class PreviewWorkerFailureCodes
+{
+    public const string CycleFailed = "cycle-failed";
+}
+
 public sealed record PreviewWorkerRuntimeSnapshot(
     string State,
     bool Enabled,
