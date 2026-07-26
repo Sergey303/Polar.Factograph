@@ -35,12 +35,13 @@ The current compatibility increment contains:
 - durable preview-generation requests created after document add and replacement;
 - atomic preview queue claiming, retry scheduling, stale-lease recovery, dead-letter isolation, and administrative diagnostics;
 - a configurable hosted preview worker with safe external-process invocation, source-version checks, fair cassette processing, runtime health, and failure counters;
-- a React/TypeScript workspace for project scope, two-mode search, ontology-labelled portraits, relation navigation, and authorized document previews;
+- a React/TypeScript workspace for search, portraits, relation and collection navigation, document replacement, and ontology-driven resource revisions;
+- an authorized write-schema route exposing only localized classes, allowed properties, value kinds, ranges, and enumeration choices;
 - index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Collection navigation, editing screens, incremental index refresh, a deployment-supplied PDF/image renderer executable, and remaining production hardening remain focused follow-up increments.
+New-document metadata workflow, administrative screens, incremental index refresh, a deployment-supplied PDF/image renderer executable, and remaining production hardening remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -87,6 +88,7 @@ Useful routes:
 ```text
 GET  /api/system/health
 GET  /api/project
+GET  /api/ontology/write-schema
 GET  /api/resources/portrait?id={rdf-id}
 POST /api/resources
 POST /api/resources/delete
