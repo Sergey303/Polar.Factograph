@@ -66,6 +66,7 @@ public sealed class PreviewWorkerRuntimeState
 
     public void MarkCycleCompleted(DateTimeOffset now, int handled)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(handled);
         lock (sync)
         {
             snapshot = snapshot with
@@ -81,9 +82,8 @@ public sealed class PreviewWorkerRuntimeState
         }
     }
 
-    public void MarkFailure(DateTimeOffset now, string code)
+    public void MarkCycleFailure(DateTimeOffset now)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
         lock (sync)
         {
             snapshot = snapshot with
@@ -92,7 +92,7 @@ public sealed class PreviewWorkerRuntimeState
                 LastFailureAtUtc = now,
                 LastHandled = 0,
                 ConsecutiveFailures = snapshot.ConsecutiveFailures + 1,
-                LastFailureCode = code
+                LastFailureCode = PreviewWorkerFailureCodes.CycleFailed
             };
         }
     }
