@@ -43,6 +43,7 @@ public static class FactographApiServices
         services.AddSingleton<CurrentUserResolver>();
         services.AddSingleton<ProjectOperationGate>();
         services.AddSingleton<ProjectIndexDirtyMarker>();
+        services.AddSingleton<ProjectIndexRuntimeStatusReader>();
         services.AddSingleton<ProjectStoreProvider>();
         services.AddSingleton<OntologyCatalogProvider>();
         services.AddSingleton<ProjectRequestContextFactory>();
