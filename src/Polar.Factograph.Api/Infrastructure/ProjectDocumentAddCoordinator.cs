@@ -44,10 +44,11 @@ public sealed class ProjectDocumentAddCoordinator(
             fileName,
             maxBytes,
             cancellationToken);
+        // The original is committed; finish the durable handoff even if the client disconnects.
         CassettePreviewQueueResult preview = await previewWriter.QueueAsync(
             cassette,
             result,
-            cancellationToken);
+            CancellationToken.None);
         return DocumentBinaryWriteMapper.Map(result, preview);
     }
 }
