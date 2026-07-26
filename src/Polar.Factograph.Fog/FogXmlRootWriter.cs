@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Xml;
 
 namespace Polar.Factograph.Fog;
@@ -8,7 +7,7 @@ internal static class FogXmlRootWriter
     public static async Task WriteStartAsync(
         XmlReader reader,
         XmlWriter writer,
-        long nextCounter)
+        string writtenCounter)
     {
         await writer.WriteStartElementAsync(
             reader.Prefix,
@@ -25,7 +24,7 @@ internal static class FogXmlRootWriter
         {
             string value = reader.NamespaceURI.Length == 0 &&
                            string.Equals(reader.LocalName, "counter", StringComparison.Ordinal)
-                ? nextCounter.ToString(CultureInfo.InvariantCulture)
+                ? writtenCounter
                 : reader.Value;
             await writer.WriteAttributeStringAsync(
                 reader.Prefix,
