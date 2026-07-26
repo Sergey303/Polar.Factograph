@@ -10,6 +10,7 @@ public sealed class ProjectDocumentAddCoordinator(
     ProjectCassetteCommandResolver cassetteResolver,
     ProjectOperationGate operationGate,
     ICassetteDocumentWriter writer,
+    ICassettePreviewRequestWriter previewWriter,
     IOptions<DocumentUploadOptions> options)
 {
     public async Task<DocumentBinaryWriteResponse> AddAsync(
@@ -43,6 +44,10 @@ public sealed class ProjectDocumentAddCoordinator(
             fileName,
             maxBytes,
             cancellationToken);
-        return DocumentBinaryWriteMapper.Map(result);
+        CassettePreviewQueueResult preview = await previewWriter.QueueAsync(
+            cassette,
+            result,
+            cancellationToken);
+        return DocumentBinaryWriteMapper.Map(result, preview);
     }
 }
