@@ -9,7 +9,7 @@ The first product version preserves the existing cassette directory structure, F
 - A **project** combines an ontology, users, access rules, and multiple cassettes.
 - All enabled cassette Fog files are materialized into one current RDF cloud.
 - Polar.DB is a rebuildable project-level index; Fog/XML remains the source of truth.
-- Reads operate over the unified cloud and are filtered by effective cassette access.
+- Reads operate over the unified current cloud and are filtered by effective cassette access.
 - Writes are routed to a cassette and writable Fog allowed for the current user.
 - The web UX preserves the established workflows: search, resource portrait, direct and inverse links, collection tree, documents, previews, and editing.
 
@@ -32,6 +32,7 @@ The current compatibility increment contains:
 - atomic append-only resource, delete, substitute, and collection membership mutations;
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
 - atomic streamed document original upload and replacement with independent cassette rights;
+- index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
@@ -45,7 +46,7 @@ The solution uses the existing `Polar.DB.Typed` project from `Sergey303/Polar.DB
 ../../Polar.DB/src/Polar.DB.Typed/Polar.DB.Typed.csproj
 ```
 
-CI checks out the exact Polar.DB commit recorded in `eng/PolarDb.version`. This keeps source builds reproducible while allowing local development against the sibling Polar.DB checkout.
+CI checks out the exact Polar.DB commit recorded in `eng/PolarDb.version`. This keeps CI reproducible while retaining a normal sibling-repository workflow for local development.
 
 ## Physical index layout
 
@@ -89,6 +90,7 @@ POST /api/documents/files?fileName={name.ext}&cassetteId={optional-id}
 PUT  /api/documents/files?uri={iiss-uri}&fileName={name.ext}
 GET  /api/admin/project/sources
 GET  /api/admin/project/materialization-summary
+GET  /api/admin/index/status
 POST /api/admin/index/rebuild
 ```
 
