@@ -2,7 +2,7 @@ using Polar.Factograph.Storage;
 
 namespace Polar.Factograph.Api.Infrastructure;
 
-public sealed class ProjectStoreProvider : IDisposable
+public sealed class ProjectStoreProvider(ProjectIndexDirtyMarker dirtyMarker) : IDisposable
 {
     private readonly object _sync = new();
     private readonly List<PolarDbTypedProjectStore> _retired = new();
@@ -13,6 +13,11 @@ public sealed class ProjectStoreProvider : IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(indexRoot);
         string fullRoot = Path.GetFullPath(indexRoot);
+        if (dirtyMarker.Exists(fullRoot))
+        {
+            throw new ProjectRuntimeUnavailableException(
+                "The project index is waiting for a successful rebuild.");
+        }
 
         lock (_sync)
         {
