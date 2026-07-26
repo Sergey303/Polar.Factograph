@@ -28,6 +28,10 @@ public sealed class ApiExceptionMiddleware(
         {
             await WriteAsync(context, StatusCodes.Status403Forbidden, "forbidden", exception.Message);
         }
+        catch (UnauthorizedAccessException exception)
+        {
+            await WriteAsync(context, StatusCodes.Status403Forbidden, "forbidden", exception.Message);
+        }
         catch (ProjectRuntimeUnavailableException exception)
         {
             await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "project_unavailable", exception.Message);
