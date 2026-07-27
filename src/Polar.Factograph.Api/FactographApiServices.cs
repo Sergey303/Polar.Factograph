@@ -14,9 +14,13 @@ public static class FactographApiServices
 {
     public static IServiceCollection AddFactographApi(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
-        services.AddFactographAuthentication(configuration);
+        LocalAuthenticationOptions authentication = services.AddLocalIdentity(
+            configuration,
+            environment);
+        services.AddFactographAuthentication(authentication, environment);
         services.AddOptions<DocumentUploadOptions>()
             .Bind(configuration.GetSection(DocumentUploadOptions.SectionName))
             .Validate(
@@ -29,6 +33,10 @@ public static class FactographApiServices
                 options => options.IsValid(),
                 "Previews configuration is invalid.")
             .ValidateOnStart();
+        services.AddSingleton<IdentityJsonStore>();
+        services.AddSingleton<LocalAuthenticationService>();
+        services.AddSingleton<IdentityProjectMemberOverlay>();
+        services.AddSingleton<IdentityFogSourceResolver>();
         services.AddSingleton<ProjectConfigurationLoader>();
         services.AddSingleton<ProjectAccessService>();
         services.AddSingleton<ProjectWriteCassetteResolver>();
