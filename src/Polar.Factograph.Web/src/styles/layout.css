@@ -86,7 +86,7 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(14rem, 0.75fr) minmax(20rem, 1fr) minmax(28rem, 1.65fr);
+  grid-template-columns: minmax(14rem, 18rem) minmax(20rem, 1fr) minmax(28rem, 1.65fr);
   gap: 0.8rem;
   min-height: calc(100vh - 4.4rem);
   padding: 0.8rem;
