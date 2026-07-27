@@ -79,10 +79,16 @@ export function TopBar(props: TopBarProps) {
       {expanded && (
         <div className="token-popover authentication-popover">
           {auth.error && <div className="notice error">{auth.error}</div>}
-          <DiagnosticTokenForm
-            token={auth.source === "diagnostic" ? auth.token : ""}
-            onSave={saveDiagnostic}
-          />
+          {auth.source === "oidc" ? (
+            <p className="muted">
+              Завершите текущую OIDC-сессию перед использованием ручного токена.
+            </p>
+          ) : (
+            <DiagnosticTokenForm
+              token={auth.source === "diagnostic" ? auth.token : ""}
+              onSave={saveDiagnostic}
+            />
+          )}
           <div className="token-actions">
             <button className="button ghost" type="button" onClick={() => setExpanded(false)}>
               Закрыть
