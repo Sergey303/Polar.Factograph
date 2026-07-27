@@ -15,6 +15,10 @@ interface ResourceEditorProps {
   schema: OntologyWriteSchema;
   cassettes: ProjectCassetteOverview[];
   token: string;
+  title?: string;
+  lockType?: boolean;
+  lockCassette?: boolean;
+  protectedRowIds?: string[];
   onCancel: () => void;
   onSaved: (result: ResourceWriteResponse) => void;
 }
@@ -35,7 +39,7 @@ export function ResourceEditor(props: ResourceEditorProps) {
       <header className="resource-editor-title">
         <div>
           <span className="eyebrow">Метаданные</span>
-          <h1>{props.mode === "create" ? "Новый ресурс" : "Редактирование ресурса"}</h1>
+          <h1>{props.title ?? (props.mode === "create" ? "Новый ресурс" : "Редактирование ресурса")}</h1>
         </div>
         <button className="button subtle" type="button" onClick={props.onCancel}>
           Отмена
@@ -47,6 +51,8 @@ export function ResourceEditor(props: ResourceEditorProps) {
         draft={editor.draft}
         classes={props.schema.classes}
         cassettes={props.cassettes}
+        lockType={props.lockType}
+        lockCassette={props.lockCassette}
         onTypeChange={editor.setType}
         onFieldChange={editor.setField}
       />
@@ -60,6 +66,7 @@ export function ResourceEditor(props: ResourceEditorProps) {
           typeId={editor.draft.typeId}
           rows={editor.draft.properties}
           schema={props.schema}
+          protectedRowIds={props.protectedRowIds}
           onChange={editor.updateProperty}
           onRemove={editor.removeProperty}
         />

@@ -5,6 +5,7 @@ import { ResourceValueInput } from "./ResourceValueInput";
 interface ResourcePropertyRowProps {
   row: ResourcePropertyDraft;
   property: OntologyWriteProperty | null;
+  protectedValue?: boolean;
   onChange: (changes: Partial<ResourcePropertyDraft>) => void;
   onRemove: () => void;
 }
@@ -12,6 +13,7 @@ interface ResourcePropertyRowProps {
 export function ResourcePropertyRow({
   row,
   property,
+  protectedValue = false,
   onChange,
   onRemove
 }: ResourcePropertyRowProps) {
@@ -27,6 +29,7 @@ export function ResourcePropertyRow({
         </div>
         <div className="badge-row">
           <span className="badge">{row.kind === "resource" ? "связь" : "значение"}</span>
+          {protectedValue && <span className="badge accent">обязательно</span>}
           {property === null && <span className="badge warning">неизвестно схеме</span>}
         </div>
       </div>
@@ -34,11 +37,12 @@ export function ResourcePropertyRow({
       <ResourceValueInput
         property={property}
         value={row.value}
+        readOnly={protectedValue}
         onChange={value => onChange({ value })}
       />
       {ranges.length > 0 && <span className="muted">Диапазон: {ranges}</span>}
 
-      {row.kind === "literal" && (
+      {row.kind === "literal" && !protectedValue && (
         <div className="resource-property-metadata">
           <input
             value={row.language}
@@ -53,9 +57,11 @@ export function ResourcePropertyRow({
         </div>
       )}
 
-      <button className="button danger compact" type="button" onClick={onRemove}>
-        Удалить значение
-      </button>
+      {!protectedValue && (
+        <button className="button danger compact" type="button" onClick={onRemove}>
+          Удалить значение
+        </button>
+      )}
     </li>
   );
 }

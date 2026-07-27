@@ -7,6 +7,7 @@ import "./styles/components.css";
 import "./styles/portrait.css";
 import "./styles/collections.css";
 import "./styles/document-actions.css";
+import "./styles/document-intake.css";
 import "./styles/resource-editor.css";
 import "./styles/resource-properties.css";
 

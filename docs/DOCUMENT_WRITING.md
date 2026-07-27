@@ -84,6 +84,19 @@ For a new document:
 
 Updating document metadata uses the same append-only resource route. Replacing only the binary leaves the existing RDF identifier and `iiss://` URI unchanged.
 
+### Web intake workflow
+
+The React workspace exposes these two contracts as one guided workflow without pretending they are one atomic server transaction.
+
+- The action is available only when at least one cassette grants both `addDocuments` and `writeMetadata`.
+- Before upload, the user selects the document class and a free-form literal property that will contain the `iiss://` URI.
+- The original and its RDF revision are written to the same selected cassette.
+- After a successful upload, the returned URI, selected class, and cassette are locked while the remaining metadata is completed.
+- If RDF writing fails, the upload result stays in memory and only `POST /api/resources` is retried.
+- Cancelling after upload warns that the committed binary remains available under the returned URI.
+
+The workflow never automatically retries the binary add after a successful response. This avoids duplicate originals when preview queueing or metadata creation fails after the file commit.
+
 ## Preview generation queue
 
 Every successful add or replacement attempts to write one atomic JSON request under:

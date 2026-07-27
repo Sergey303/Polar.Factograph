@@ -7,6 +7,7 @@ interface ResourcePropertyListProps {
   typeId: string;
   rows: ResourcePropertyDraft[];
   schema: OntologyWriteSchema | null;
+  protectedRowIds?: string[];
   onChange: (rowId: string, changes: Partial<ResourcePropertyDraft>) => void;
   onRemove: (rowId: string) => void;
 }
@@ -23,6 +24,7 @@ export function ResourcePropertyList(props: ResourcePropertyListProps) {
           key={row.rowId}
           row={row}
           property={findWriteProperty(props.schema, props.typeId, row.predicate)}
+          protectedValue={props.protectedRowIds?.includes(row.rowId)}
           onChange={changes => props.onChange(row.rowId, changes)}
           onRemove={() => props.onRemove(row.rowId)}
         />
