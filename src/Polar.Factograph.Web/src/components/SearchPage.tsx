@@ -1,9 +1,9 @@
-import type { ReturnTypeOfUseSearch } from "../app/useSearchTypes";
+import { useSearch } from "../app/useSearch";
 import { SearchPanel } from "./SearchPanel";
 import { SearchResultList } from "./SearchResultList";
 
 interface SearchPageProps {
-  search: ReturnTypeOfUseSearch;
+  search: ReturnType<typeof useSearch>;
 }
 
 export function SearchPage({ search }: SearchPageProps) {
