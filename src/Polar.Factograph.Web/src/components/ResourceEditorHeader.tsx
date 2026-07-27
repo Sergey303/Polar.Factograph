@@ -7,6 +7,8 @@ interface ResourceEditorHeaderProps {
   draft: ResourceDraft;
   classes: OntologyWriteClass[];
   cassettes: ProjectCassetteOverview[];
+  lockType?: boolean;
+  lockCassette?: boolean;
   onTypeChange: (value: string) => void;
   onFieldChange: (field: "resourceId" | "cassetteId", value: string) => void;
 }
@@ -19,7 +21,7 @@ export function ResourceEditorHeader(props: ResourceEditorHeaderProps) {
         <select
           value={props.draft.typeId}
           onChange={event => props.onTypeChange(event.target.value)}
-          disabled={props.mode === "edit"}
+          disabled={props.mode === "edit" || props.lockType}
         >
           <option value="">Выберите тип</option>
           {props.classes.map(type => (
@@ -43,6 +45,7 @@ export function ResourceEditorHeader(props: ResourceEditorHeaderProps) {
         <select
           value={props.draft.cassetteId}
           onChange={event => props.onFieldChange("cassetteId", event.target.value)}
+          disabled={props.lockCassette}
         >
           <option value="">Выберите кассету</option>
           {props.cassettes.map(cassette => (
