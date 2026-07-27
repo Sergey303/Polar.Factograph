@@ -13,7 +13,7 @@ public sealed class IdentityJsonStore : IDisposable
     private readonly LocalAuthenticationOptions _options;
     private readonly ILogger<IdentityJsonStore> _logger;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
-    private readonly IDisposable _reloadSubscription;
+    private readonly IDisposable? _reloadSubscription;
     private IdentityData _current;
 
     public IdentityJsonStore(
@@ -63,7 +63,7 @@ public sealed class IdentityJsonStore : IDisposable
 
     public void Dispose()
     {
-        _reloadSubscription.Dispose();
+        _reloadSubscription?.Dispose();
         _writeLock.Dispose();
     }
 
