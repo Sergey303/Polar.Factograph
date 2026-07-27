@@ -115,7 +115,7 @@ jobs:
           json_exit=$?
           dotnet publish src/Polar.Factograph.Api/Polar.Factograph.Api.csproj \
             --configuration Release \
-            --no-build \
+            --no-restore \
             -p:SkipFactographWebBuild=true \
             -o artifacts/publish-test > publish.log 2>&1
           publish_exit=$?
