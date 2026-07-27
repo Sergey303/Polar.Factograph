@@ -63,6 +63,14 @@ public sealed class OntologyResourceWriteValidator
                 $"Resource property '{term.Id}' cannot have language or datatype metadata.");
         }
 
+        if (property.Kind == FogPropertyKind.Literal &&
+            !string.IsNullOrWhiteSpace(property.DataType) &&
+            !term.Ranges.Contains(property.DataType, StringComparer.Ordinal))
+        {
+            throw new ArgumentException(
+                $"Datatype '{property.DataType}' is not allowed for ontology property '{term.Id}'.");
+        }
+
         OntologyEnumerationWriteValidator.Validate(catalog, term, property);
     }
 
