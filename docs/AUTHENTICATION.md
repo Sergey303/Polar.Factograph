@@ -51,7 +51,13 @@ Each user record contains:
 
 Each device record contains its id, user id, display name, creation and expiry times, last-seen time, and optional revocation time.
 
-The application reads the complete file into memory. Application changes are serialized to a temporary file and published by atomic replacement. External valid edits are picked up through the standard JSON configuration provider with `reloadOnChange`. An invalid external snapshot is rejected and the previous valid in-memory snapshot remains active.
+The application reads the complete file into memory. Application changes are serialized to a temporary file and published by atomic replacement. On Windows, a short-lived reader lock is retried before the operation is reported as unavailable. External valid edits are picked up through the standard JSON configuration provider with `reloadOnChange`. An invalid external snapshot is rejected and the previous valid in-memory snapshot remains active.
+
+## Login rules
+
+A login contains 3-63 Unicode letters or digits and may also contain dots, underscores, and hyphens. It must start with a letter or digit and cannot end with a dot. Cyrillic logins are supported. Login comparison is case-insensitive after Unicode normalization.
+
+The restrictions keep the login safe for use in the physical Fog filename on Windows and Linux. The stable user id remains independent of the login, so a future login-renaming operation does not need to change RDF ownership.
 
 ## Registration and user Fog
 
@@ -64,7 +70,13 @@ Registration performs one serialized operation:
 5. store the user, password hash, device, roles, and Fog mapping in `identity.json`;
 6. issue the application cookie.
 
-The Fog filename follows the cassette document numbering rules. The original login is not used as a physical filename. The Fog root stores the stable user id as `dbid` and `owner`.
+The physical filename contains both the normal cassette document number and the login, for example:
+
+```text
+originals/0001/0042-Сергей.fog
+```
+
+The number preserves unique `iiss://` allocation and compatibility with later document additions. The login keeps the file recognizable to an administrator. The Fog root stores the stable user id as `dbid` and `owner`; its technical RDF prefix is also derived from that stable id rather than from the Unicode filename.
 
 Registered users are overlaid onto the project membership at request time. Existing explicit entries in `project.json` keep priority. Every RDF mutation made by a registered user is routed only to the Fog assigned to that user. Static project users that are absent from `identity.json` retain the legacy writable-Fog selection behavior.
 
@@ -82,6 +94,10 @@ POST api/auth/devices/{deviceId}/revoke
 `GET api/auth/session` returns the current user and devices when authenticated and always returns a request-verification token. The React client sends that token in `X-CSRF-TOKEN` for every mutating request.
 
 Logging out revokes the current device. Logging out everywhere increments the user's security version and revokes all device records. Cookie validation checks the user, device, expiry, revocation, and security version on subsequent requests.
+
+## Browser interface
+
+Until a valid local session is present, the React application displays only the login or registration screen. Project cassettes, search, collections, resource portraits, documents, and administration controls are not mounted and do not issue API requests.
 
 ## Project and source configuration
 
