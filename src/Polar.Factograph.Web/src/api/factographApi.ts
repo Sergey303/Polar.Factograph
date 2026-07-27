@@ -18,7 +18,7 @@ function query(parameters: Record<string, string | number>): string {
 
 export const factographApi = {
   getProject(token: string, signal?: AbortSignal): Promise<ProjectOverview> {
-    return requestJson<ProjectOverview>("/api/project", token, signal);
+    return requestJson<ProjectOverview>("api/project", token, signal);
   },
 
   search(
@@ -29,7 +29,7 @@ export const factographApi = {
   ): Promise<ResourceSearchResult[]> {
     const parameters = query({ q: text, limit: 50, lang: "ru" });
     return requestJson<ResourceSearchResult[]>(
-      `/api/search/${mode}?${parameters}`,
+      `api/search/${mode}?${parameters}`,
       token,
       signal
     );
@@ -42,7 +42,7 @@ export const factographApi = {
   ): Promise<ResourcePortrait> {
     const parameters = query({ id: resourceId, lang: "ru" });
     return requestJson<ResourcePortrait>(
-      `/api/resources/portrait?${parameters}`,
+      `api/resources/portrait?${parameters}`,
       token,
       signal
     );
@@ -54,7 +54,7 @@ export const factographApi = {
     signal?: AbortSignal
   ): Promise<DocumentLocation> {
     return requestJson<DocumentLocation>(
-      `/api/documents/location?${query({ uri })}`,
+      `api/documents/location?${query({ uri })}`,
       token,
       signal
     );
@@ -67,7 +67,7 @@ export const factographApi = {
     signal?: AbortSignal
   ): Promise<Blob> {
     return requestBlob(
-      `/api/documents/content?${query({ uri, variant })}`,
+      `api/documents/content?${query({ uri, variant })}`,
       token,
       signal
     );
