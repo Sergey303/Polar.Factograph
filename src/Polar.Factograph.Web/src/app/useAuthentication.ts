@@ -41,6 +41,7 @@ export function useAuthentication() {
       .then(result => {
         if (!active) return;
         setConfiguration(result.configuration);
+        setError(result.callbackError);
         if (result.completed !== null) {
           apply(result.completed.token, result.completed.session);
         }
