@@ -43,18 +43,17 @@ export function ResourcePropertyRow({
       {ranges.length > 0 && <span className="muted">Диапазон: {ranges}</span>}
 
       {row.kind === "literal" && !protectedValue && (
-        <div className="resource-property-metadata">
+        <label className="resource-property-language">
+          <span>Язык текста</span>
           <input
             value={row.language}
             onChange={event => onChange({ language: event.target.value })}
-            placeholder="Язык, например ru"
+            placeholder="Например, ru"
           />
-          <input
-            value={row.dataType}
-            onChange={event => onChange({ dataType: event.target.value })}
-            placeholder="Тип данных, необязательно"
-          />
-        </div>
+        </label>
+      )}
+      {row.dataType && (
+        <span className="muted mono">Тип данных задаётся онтологией: {row.dataType}</span>
       )}
 
       {!protectedValue && (
