@@ -1,16 +1,11 @@
 import type { ResourceSearchResult } from "../api/models";
+import { resourceHref } from "../app/routes";
 
 interface SearchResultListProps {
   results: ResourceSearchResult[];
-  selectedId: string | null;
-  onSelect: (resourceId: string) => void;
 }
 
-export function SearchResultList({
-  results,
-  selectedId,
-  onSelect
-}: SearchResultListProps) {
+export function SearchResultList({ results }: SearchResultListProps) {
   if (results.length === 0) {
     return (
       <div className="empty-state">
@@ -24,22 +19,17 @@ export function SearchResultList({
     <ol className="result-list">
       {results.map(result => (
         <li key={result.resourceId}>
-          <button
-            className={result.resourceId === selectedId ? "selected" : ""}
-            onClick={() => onSelect(result.resourceId)}
-          >
+          <a href={resourceHref(result.resourceId)}>
             <span className="result-title">{result.displayName}</span>
             <span className="result-meta">
               {result.typeLabel ?? result.type ?? "Тип не указан"}
-              <span>·</span>
-              {result.sourceCassetteId}
             </span>
             {result.matches[0] && (
               <span className="result-evidence">
                 {result.matches[0].value}
               </span>
             )}
-          </button>
+          </a>
         </li>
       ))}
     </ol>
