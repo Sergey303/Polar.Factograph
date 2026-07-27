@@ -3,8 +3,6 @@ import { ApiRequestError } from "./http";
 const messages: Record<string, string> = {
   authentication_required: "Сначала войдите в систему.",
   invalid_credentials: "Неверный логин или пароль.",
-  invalid_registration: "Проверьте логин и пароль.",
-  registration_unavailable: "Регистрация сейчас недоступна.",
   identity_storage_unavailable: "Не удалось сохранить данные пользователя. Повторите попытку.",
   antiforgery_failed: "Сессия формы устарела. Обновите страницу и повторите попытку.",
   forbidden: "Недостаточно прав для этой операции.",
