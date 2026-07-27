@@ -37,11 +37,12 @@ export function ResourcePropertyRow({
       <ResourceValueInput
         property={property}
         value={row.value}
+        readOnly={protectedValue}
         onChange={value => onChange({ value })}
       />
       {ranges.length > 0 && <span className="muted">Диапазон: {ranges}</span>}
 
-      {row.kind === "literal" && (
+      {row.kind === "literal" && !protectedValue && (
         <div className="resource-property-metadata">
           <input
             value={row.language}
