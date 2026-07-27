@@ -11,7 +11,7 @@ export const resourceWriteApi = {
     signal?: AbortSignal
   ): Promise<ResourceWriteResponse> {
     return requestJsonBody<ResourceWriteResponse>(
-      "/api/resources",
+      "api/resources",
       "POST",
       request,
       token,
