@@ -1,0 +1,54 @@
+.document-upload-form,
+.document-metadata-stage {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.document-upload-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.document-upload-fields label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.document-upload-fields input,
+.document-upload-fields select {
+  width: 100%;
+  min-height: 2.55rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  color: inherit;
+  background: var(--surface);
+}
+
+.document-upload-summary {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #b9d9dc;
+  border-radius: 0.8rem;
+  background: var(--accent-soft);
+}
+
+.document-upload-summary > div:first-child {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.document-upload-summary .mono {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .document-upload-fields {
+    grid-template-columns: 1fr;
+  }
+}
