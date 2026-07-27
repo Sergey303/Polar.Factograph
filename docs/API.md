@@ -6,7 +6,15 @@ The API is a thin layer over validated project configuration, effective access s
 
 Production requests require an authenticated principal. The user id is read from `ClaimTypes.NameIdentifier`, `sub`, or `Identity.Name` in that order.
 
-The API never accepts a user id from a query parameter or custom request header. JWT bearer setup and development fallback rules are documented in [AUTHENTICATION.md](AUTHENTICATION.md).
+The API never accepts a user id from a query parameter or custom request header. JWT bearer setup, browser Authorization Code with PKCE, and development fallback rules are documented in [AUTHENTICATION.md](AUTHENTICATION.md).
+
+The unauthenticated browser configuration route is:
+
+```text
+GET /api/auth/browser
+```
+
+It returns only whether browser login is enabled plus the public `authority`, `clientId`, and `scope`. It never returns a client secret, signing key, users, roles, or project data.
 
 For local development only, `appsettings.Development.json` may provide:
 
@@ -110,26 +118,7 @@ POST /api/resources/delete
 POST /api/resources/substitute
 ```
 
-Delete request:
-
-```json
-{
-  "resourceId": "person-1",
-  "cassetteId": "optional-explicit-cassette"
-}
-```
-
-Substitute request:
-
-```json
-{
-  "oldResourceId": "person-1",
-  "newResourceId": "person-2",
-  "cassetteId": "optional-explicit-cassette"
-}
-```
-
-Delete requires the cassette `delete` right. Substitute requires the independent cassette `substitute` right. A substitute source and target must differ after legacy `|` cleanup.
+Delete appends a Fog `delete` directive. Substitute appends a Fog `substitute` directive. Both require the cassette `delete` right and trigger the shared write/index refresh pipeline.
 
 ## Collection mutations
 
@@ -138,20 +127,7 @@ POST /api/collections/items
 POST /api/collections/items/remove
 ```
 
-Add creates a new ontology-validated `collection-member` linking the requested collection and item. It requires `writeMetadata`, and both target resources must be readable and satisfy the ontology ranges.
-
-Remove requires `delete`. Before creating `DIRTY`, it verifies that the visible current membership has type `collection-member` and contains both requested links. Only that membership is deleted; the collection and item remain unchanged.
-
-Add returns `201 Created` and remove returns `200 OK` when the new generation is ready. The complete request and response contracts are documented in [COLLECTIONS.md](COLLECTIONS.md).
-
-All metadata mutation routes use the same project transaction: serialize mutations, repair a preceding dirty index, validate current targets, append one validated Fog record, rebuild Polar.DB, and switch `CURRENT` only after the generation is complete.
-
-- create/add routes return `201 Created` when the index is ready;
-- delete/substitute/remove routes return `200 OK` when the index is ready;
-- any metadata mutation returns `202 Accepted` when Fog was committed but rebuild failed;
-- while `DIRTY` remains, reads return `503` instead of exposing stale derived data.
-
-Mutation responses never expose local Fog paths.
+Adding creates a compatible membership resource and requires `writeMetadata` for the selected write cassette. Removing appends a delete directive for the membership record itself and requires `delete` on that membership's actual source cassette.
 
 ## Administrative routes
 
@@ -163,21 +139,4 @@ POST /api/admin/index/rebuild
 GET  /api/admin/previews/status
 ```
 
-All administrative routes above require `rebuildIndex`.
-
-The index status response does not expose filesystem paths. It reports `ready`, `dirty`, `missing`, or `invalid`, the `DIRTY` timestamp when parseable, the current generation id and availability, and counts of completed and `.building` generations. An invalid or missing `CURRENT` pointer is returned as diagnostic state instead of causing an unhandled error.
-
-The preview status response contains queue counts and oldest queued time per cassette together with the worker runtime snapshot: start/stop and cycle timestamps, last and total handled counts, consecutive failures, and a fixed failure code. It also includes the evaluated state `disabled`, `starting`, `working`, `idle`, `degraded`, `unresponsive`, or `stopped`. It never exposes queue directories, original paths, process output, or exception text.
-
-A rebuild streams Fog/XML, resolves current records, writes all four Polar.DB sets, builds their external indexes, switches `CURRENT` only after the complete generation succeeds, and clears `DIRTY` only after success.
-
-## Error boundary
-
-The API uses stable error codes:
-
-- `authentication_required` — 401;
-- `forbidden` — 403;
-- `resource_not_found`, `collection_not_found`, `document_not_found`, or `document_variant_not_found` — 404;
-- `invalid_request` — 400;
-- `project_unavailable` or `storage_unavailable` — 503;
-- `internal_error` — 500.
+All administrative routes require the project `rebuildIndex` right. The React dashboard intentionally uses only aggregate status, materialization summary, rebuild, and preview status; it does not request or display physical source paths.
