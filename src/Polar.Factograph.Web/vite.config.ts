@@ -6,7 +6,12 @@ export default defineConfig(({ mode }) => {
   const apiTarget = env.FACTOGRAPH_API_URL || "http://localhost:5000";
 
   return {
+    base: "./",
     plugins: [react()],
+    build: {
+      outDir: "../Polar.Factograph.Api/wwwroot",
+      emptyOutDir: true
+    },
     server: {
       port: 5173,
       proxy: {
