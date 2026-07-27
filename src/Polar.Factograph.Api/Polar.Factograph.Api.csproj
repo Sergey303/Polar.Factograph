@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
-  </ItemGroup>
+  <PropertyGroup>
+    <FactographWebRoot>../Polar.Factograph.Web</FactographWebRoot>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Polar.Factograph.Domain/Polar.Factograph.Domain.csproj" />
@@ -9,4 +9,13 @@
     <ProjectReference Include="../Polar.Factograph.Fog/Polar.Factograph.Fog.csproj" />
     <ProjectReference Include="../Polar.Factograph.Storage/Polar.Factograph.Storage.csproj" />
   </ItemGroup>
+
+  <Target Name="BuildFactographWeb"
+          BeforeTargets="PrepareForPublish"
+          Condition="'$(SkipFactographWebBuild)' != 'true'">
+    <Exec WorkingDirectory="$(FactographWebRoot)"
+          Command="npm install --package-lock=false --no-audit --no-fund" />
+    <Exec WorkingDirectory="$(FactographWebRoot)"
+          Command="npm run build" />
+  </Target>
 </Project>
