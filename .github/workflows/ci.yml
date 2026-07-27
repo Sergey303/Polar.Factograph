@@ -106,3 +106,28 @@ jobs:
         with:
           name: test-log
           path: test.log
+
+      - name: Validate release publish
+        shell: bash
+        run: |
+          set +e
+          python -m json.tool scripts/run/appsettings.json > /dev/null
+          json_exit=$?
+          dotnet publish src/Polar.Factograph.Api/Polar.Factograph.Api.csproj \
+            --configuration Release \
+            --no-build \
+            -p:SkipFactographWebBuild=true \
+            -o artifacts/publish-test > publish.log 2>&1
+          publish_exit=$?
+          cat publish.log
+          if [ $json_exit -ne 0 ] || [ $publish_exit -ne 0 ]; then
+            exit 1
+          fi
+          test -f artifacts/publish-test/Polar.Factograph.Api.dll
+          test -f artifacts/publish-test/wwwroot/index.html
+      - name: Upload publish log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-log
+          path: publish.log
