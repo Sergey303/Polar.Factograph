@@ -1,32 +1,39 @@
 import { useEffect, useState } from "react";
 import type { ProjectOverview } from "../api/models";
+import { DiagnosticTokenForm } from "./DiagnosticTokenForm";
+import { OidcSessionControls } from "./OidcSessionControls";
+
+interface TopBarAuthentication {
+  token: string;
+  source: "oidc" | "diagnostic" | null;
+  oidcEnabled: boolean;
+  initializing: boolean;
+  busy: boolean;
+  error: string | null;
+  onLogin: () => void;
+  onLogout: () => void;
+  onDiagnosticToken: (value: string) => void;
+}
 
 interface TopBarProps {
   project: ProjectOverview | null;
-  token: string;
   loading: boolean;
   canAdmin: boolean;
-  onTokenSave: (value: string) => void;
+  authentication: TopBarAuthentication;
   onReload: () => void;
   onAdmin: () => void;
 }
 
-export function TopBar({
-  project,
-  token,
-  loading,
-  canAdmin,
-  onTokenSave,
-  onReload,
-  onAdmin
-}: TopBarProps) {
-  const [draft, setDraft] = useState(token);
+export function TopBar(props: TopBarProps) {
   const [expanded, setExpanded] = useState(false);
+  const auth = props.authentication;
 
-  useEffect(() => setDraft(token), [token]);
+  useEffect(() => {
+    if (auth.error !== null) setExpanded(true);
+  }, [auth.error]);
 
-  function save(): void {
-    onTokenSave(draft);
+  function saveDiagnostic(value: string): void {
+    auth.onDiagnosticToken(value);
     setExpanded(false);
   }
 
@@ -37,46 +44,48 @@ export function TopBar({
         <div>
           <strong>Polar.Factograph</strong>
           <div className="muted top-caption">
-            {project?.name ?? "Подключение к проекту"}
+            {props.project?.name ?? "Подключение к проекту"}
           </div>
         </div>
       </div>
 
       <div className="top-actions">
-        {project && (
-          <span className="user-pill" title={project.userId}>
-            {project.userId}
+        {props.project && (
+          <span className="user-pill" title={props.project.userId}>
+            {props.project.userId}
           </span>
         )}
-        {canAdmin && (
-          <button className="button" onClick={onAdmin}>
+        {props.canAdmin && (
+          <button className="button" type="button" onClick={props.onAdmin}>
             Администрирование
           </button>
         )}
-        <button className="button ghost" onClick={onReload} disabled={loading}>
+        <button className="button ghost" type="button" onClick={props.onReload} disabled={props.loading}>
           Обновить
         </button>
-        <button className="button" onClick={() => setExpanded(value => !value)}>
-          Доступ
+        <OidcSessionControls
+          authenticated={auth.source === "oidc"}
+          enabled={auth.oidcEnabled}
+          initializing={auth.initializing}
+          busy={auth.busy}
+          onLogin={auth.onLogin}
+          onLogout={auth.onLogout}
+        />
+        <button className="button" type="button" onClick={() => setExpanded(value => !value)}>
+          Диагностика
         </button>
       </div>
 
       {expanded && (
-        <div className="token-popover">
-          <label htmlFor="access-token">JWT для текущей сессии</label>
-          <textarea
-            id="access-token"
-            value={draft}
-            onChange={event => setDraft(event.target.value)}
-            rows={4}
-            placeholder="В режиме разработки поле можно оставить пустым"
+        <div className="token-popover authentication-popover">
+          {auth.error && <div className="notice error">{auth.error}</div>}
+          <DiagnosticTokenForm
+            token={auth.source === "diagnostic" ? auth.token : ""}
+            onSave={saveDiagnostic}
           />
           <div className="token-actions">
-            <button className="button ghost" onClick={() => setExpanded(false)}>
-              Отмена
-            </button>
-            <button className="button primary" onClick={save}>
-              Подключить
+            <button className="button ghost" type="button" onClick={() => setExpanded(false)}>
+              Закрыть
             </button>
           </div>
         </div>
