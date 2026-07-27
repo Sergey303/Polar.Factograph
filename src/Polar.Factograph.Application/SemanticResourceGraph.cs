@@ -62,6 +62,12 @@ internal sealed class SemanticResourceGraph(
             ? null
             : ontology.LabelOf(portrait.Type, preferredLanguage) ?? portrait.Type;
 
+    public string PropertyLabel(string predicate) =>
+        ontology.LabelOf(predicate, preferredLanguage) ?? predicate;
+
+    public string InversePropertyLabel(string predicate) =>
+        ontology.InverseLabelOf(predicate, preferredLanguage) ?? PropertyLabel(predicate);
+
     public string? DocumentUri(ProjectResourcePortrait portrait) =>
         portrait.Literals
             .Where(field => string.Equals(
@@ -91,6 +97,12 @@ internal sealed class SemanticResourceGraph(
             .Select(link => link.SourceResourceId)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
+
+    public string? LiteralValue(ProjectResourcePortrait portrait, string predicate) =>
+        portrait.Literals
+            .Where(field => string.Equals(field.Predicate, predicate, StringComparison.Ordinal))
+            .Select(field => field.Value)
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
     public async ValueTask<ProjectResourcePortrait> ResolveCanonicalAsync(
         ProjectResourcePortrait portrait,
