@@ -39,9 +39,7 @@ internal static class CassetteDocumentSlotAllocator
 
             foreach (string file in Directory.EnumerateFiles(directory))
             {
-                if (CassetteDocumentNumber.TryParse(
-                        Path.GetFileNameWithoutExtension(file),
-                        out int document) &&
+                if (TryParseDocumentNumber(file, out int document) &&
                     (folder, document).CompareTo(maximum) > 0)
                 {
                     maximum = (folder, document);
@@ -50,5 +48,18 @@ internal static class CassetteDocumentSlotAllocator
         }
 
         return maximum;
+    }
+
+    private static bool TryParseDocumentNumber(string path, out int document)
+    {
+        string name = Path.GetFileNameWithoutExtension(path);
+        if (CassetteDocumentNumber.TryParse(name, out document))
+        {
+            return true;
+        }
+
+        return name.Length > 5 &&
+               name[4] == '-' &&
+               CassetteDocumentNumber.TryParse(name[..4], out document);
     }
 }
