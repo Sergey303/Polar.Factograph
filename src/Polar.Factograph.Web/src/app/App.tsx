@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AdminDialog } from "../components/AdminDialog";
+import { AuthenticationPage } from "../components/AuthenticationPage";
 import { NavigationPanel } from "../components/NavigationPanel";
 import { ResourceWorkspace } from "../components/ResourceWorkspace";
 import { SearchPanel } from "../components/SearchPanel";
@@ -12,6 +13,30 @@ import { useSearch } from "./useSearch";
 
 export function App() {
   const auth = useAuthentication();
+
+  if (auth.initializing || !auth.authenticated) {
+    return (
+      <AuthenticationPage
+        initializing={auth.initializing}
+        registrationEnabled={auth.registrationEnabled}
+        user={auth.user}
+        busy={auth.busy}
+        error={auth.error}
+        onLogin={auth.login}
+        onRegister={auth.register}
+        onLogout={auth.logout}
+      />
+    );
+  }
+
+  return <AuthenticatedWorkspace auth={auth} />;
+}
+
+interface AuthenticatedWorkspaceProps {
+  auth: ReturnType<typeof useAuthentication>;
+}
+
+function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const project = useProject(auth.token);
@@ -33,7 +58,7 @@ export function App() {
     <div className="app-shell">
       <TopBar
         project={project.project}
-        loading={project.loading || auth.initializing}
+        loading={project.loading}
         canAdmin={canAdmin}
         authentication={{
           authenticated: auth.authenticated,
