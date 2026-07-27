@@ -4,8 +4,8 @@ import type { OntologyWriteSchema } from "../api/ontologyModels";
 import type { ProjectCassetteOverview } from "../api/models";
 import {
   documentClasses,
-  literalProperties,
-  preferredUriProperty
+  preferredUriProperty,
+  uriProperties
 } from "../app/documentIntakeDraft";
 import { useDocumentUpload } from "../app/useDocumentUpload";
 import { DocumentUploadFields } from "./DocumentUploadFields";
@@ -65,7 +65,7 @@ export function DocumentUploadForm(props: DocumentUploadFormProps) {
       <DocumentUploadFields
         cassettes={props.cassettes}
         classes={classes}
-        properties={literalProperties(selectedType)}
+        properties={uriProperties(selectedType)}
         cassetteId={cassetteId}
         typeId={typeId}
         uriPredicate={uriPredicate}
@@ -76,7 +76,7 @@ export function DocumentUploadForm(props: DocumentUploadFormProps) {
       />
 
       {classes.length === 0 && (
-        <div className="notice error">В онтологии нет класса со свободным литеральным свойством.</div>
+        <div className="notice error">В онтологии нет класса со свободным URI-свойством.</div>
       )}
       {uploader.error && <div className="notice error">{uploader.error}</div>}
       <footer className="resource-editor-actions">
