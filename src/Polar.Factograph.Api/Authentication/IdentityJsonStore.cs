@@ -5,6 +5,7 @@ namespace Polar.Factograph.Api.Authentication;
 
 public sealed class IdentityJsonStore : IDisposable
 {
+    private const int PublishAttempts = 8;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -95,27 +96,68 @@ public sealed class IdentityJsonStore : IDisposable
 
         try
         {
-            await using FileStream stream = new(
+            await using (FileStream stream = new(
                 temporaryPath,
                 FileMode.CreateNew,
                 FileAccess.Write,
                 FileShare.None,
                 bufferSize: 16 * 1024,
-                FileOptions.Asynchronous | FileOptions.WriteThrough);
-            await JsonSerializer.SerializeAsync(
-                stream,
-                value,
-                JsonOptions,
+                FileOptions.Asynchronous | FileOptions.WriteThrough))
+            {
+                await JsonSerializer.SerializeAsync(
+                    stream,
+                    value,
+                    JsonOptions,
+                    cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+            }
+
+            await PublishTemporaryFileAsync(
+                temporaryPath,
+                _options.IdentityPath,
                 cancellationToken);
-            await stream.FlushAsync(cancellationToken);
-            File.Move(temporaryPath, _options.IdentityPath, overwrite: true);
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            TryDelete(temporaryPath);
+        }
+    }
+
+    private static async Task PublishTemporaryFileAsync(
+        string temporaryPath,
+        string targetPath,
+        CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            try
             {
-                File.Delete(temporaryPath);
+                File.Move(temporaryPath, targetPath, overwrite: true);
+                return;
             }
+            catch (IOException) when (attempt < PublishAttempts)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(25 * attempt), cancellationToken);
+            }
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+            // A stale temporary file is harmless and can be cleaned up later.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Do not hide the original write error with a cleanup failure.
         }
     }
 
