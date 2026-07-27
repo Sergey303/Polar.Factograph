@@ -4,10 +4,16 @@ export type AppRoute =
   | { page: "search" }
   | { page: "resource"; resourceId: string };
 
-export const searchHref = "#/search";
+function applicationHref(hash: string): string {
+  const target = new URL(document.baseURI);
+  target.hash = hash;
+  return target.href;
+}
+
+export const searchHref = applicationHref("/search");
 
 export function resourceHref(resourceId: string): string {
-  return `#/resource/${encodeURIComponent(resourceId)}`;
+  return applicationHref(`/resource/${encodeURIComponent(resourceId)}`);
 }
 
 function currentRoute(): AppRoute {
