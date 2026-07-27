@@ -6,41 +6,26 @@
   margin: 0;
 }
 
-.diagnostic-access {
+.local-authentication-form {
   display: grid;
-  gap: 0.65rem;
-  padding: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  background: var(--surface-soft);
+  gap: 0.7rem;
 }
 
-.diagnostic-access summary {
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 750;
-}
-
-.diagnostic-access p {
-  margin: 0;
-  font-size: 0.78rem;
-}
-
-.diagnostic-access label {
+.local-authentication-form label {
+  display: grid;
+  gap: 0.35rem;
   font-size: 0.78rem;
   font-weight: 700;
 }
 
-.diagnostic-access textarea {
+.local-authentication-form input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 5rem;
-  padding: 0.7rem;
-  resize: vertical;
+  padding: 0.65rem 0.7rem;
   border: 1px solid var(--border);
   border-radius: 0.65rem;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 0.76rem;
+  background: var(--surface);
+  color: var(--text);
 }
 
 @media (max-width: 720px) {
