@@ -1,42 +1,42 @@
-import type { ProjectOverview, ResourcePortrait } from "../api/models";
+import type { ProjectOverview, SemanticResourcePage } from "../api/models";
 import { resourceDocumentUris } from "../app/resourceDocuments";
 import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
-import { RelationSection } from "./RelationSection";
+import { SemanticResourceSections } from "./SemanticResourceSections";
 
 interface ResourcePortraitViewProps {
-  portrait: ResourcePortrait | null;
+  page: SemanticResourcePage | null;
   loading: boolean;
   error: string | null;
   token: string;
   project: ProjectOverview | null;
-  onSelect: (resourceId: string) => void;
 }
 
-function titleOf(portrait: ResourcePortrait): string {
-  const named = portrait.literals.find(field =>
+function titleOf(page: SemanticResourcePage): string {
+  const named = page.portrait.literals.find(field =>
     /(^|[/#])(name|alias)$/i.test(field.predicate)
   );
-  return named?.displayValue || portrait.resourceId;
+  return named?.displayValue || page.portrait.resourceId;
 }
 
 export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   if (props.loading) {
-    return <div className="empty-state"><strong>Загрузка карточки…</strong></div>;
+    return <div className="empty-state"><strong>Загрузка страницы…</strong></div>;
   }
   if (props.error) {
     return <div className="notice error portrait-error">{props.error}</div>;
   }
-  if (!props.portrait) {
+  if (!props.page) {
     return (
       <div className="empty-state portrait-empty">
-        <strong>Выберите ресурс</strong>
-        <span>Здесь появятся поля, связи и документы.</span>
+        <strong>Ресурс не выбран</strong>
+        <span>Вернитесь к поиску и откройте нужную сущность.</span>
       </div>
     );
   }
 
-  const portrait = props.portrait;
+  const page = props.page;
+  const portrait = page.portrait;
   const documents = resourceDocumentUris(portrait);
   const modified = new Intl.DateTimeFormat("ru-RU", {
     dateStyle: "medium",
@@ -48,22 +48,17 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
       <header className="portrait-header">
         <div>
           <span className="eyebrow">{portrait.typeLabel ?? portrait.type ?? "Ресурс"}</span>
-          <h1>{titleOf(portrait)}</h1>
+          <h1>{titleOf(page)}</h1>
           <span className="muted mono">{portrait.resourceId}</span>
         </div>
         <div className="provenance">
-          <span>{portrait.provenance.sourceCassetteId}</span>
           <span>{modified}</span>
         </div>
       </header>
 
       <LiteralFields fields={portrait.literals} />
       <DocumentSection uris={documents} token={props.token} project={props.project} />
-      <RelationSection
-        direct={portrait.directLinks}
-        inverse={portrait.inverseLinks}
-        onSelect={props.onSelect}
-      />
+      <SemanticResourceSections page={page} />
     </article>
   );
 }
