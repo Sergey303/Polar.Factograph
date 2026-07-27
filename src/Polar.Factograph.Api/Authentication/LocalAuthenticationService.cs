@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using Microsoft.AspNetCore.Identity;
@@ -17,7 +18,7 @@ public sealed class LocalAuthenticationService(
     ICassetteDocumentWriter documentWriter)
 {
     private static readonly Regex LoginPattern = new(
-        "^[a-z0-9][a-z0-9._-]{2,62}$",
+        "^[\\p{L}\\p{Nd}][\\p{L}\\p{Nd}._-]{2,62}$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private readonly SemaphoreSlim _registrationLock = new(1, 1);
 
@@ -30,17 +31,18 @@ public sealed class LocalAuthenticationService(
     {
         if (!options.RegistrationEnabled)
         {
-            throw new InvalidOperationException("Registration is disabled.");
+            throw new InvalidOperationException("Регистрация отключена.");
         }
 
-        string normalizedLogin = NormalizeLogin(login);
+        string canonicalLogin = CanonicalizeLogin(login);
+        string normalizedLogin = NormalizeCanonicalLogin(canonicalLogin);
         RequirePassword(password);
         await _registrationLock.WaitAsync(cancellationToken);
         try
         {
             if (store.FindByNormalizedLogin(normalizedLogin) is not null)
             {
-                throw new ArgumentException("This login is already registered.", nameof(login));
+                throw new ArgumentException("Этот логин уже зарегистрирован.", nameof(login));
             }
 
             string projectPath = projectPathResolver.GetRequiredPath();
@@ -49,15 +51,13 @@ public sealed class LocalAuthenticationService(
             if (!project.Roles.ContainsKey(options.DefaultRole))
             {
                 throw new InvalidOperationException(
-                    $"Default registration role '{options.DefaultRole}' is absent from the project.");
+                    $"Роль регистрации '{options.DefaultRole}' отсутствует в проекте.");
             }
 
             string userId = $"u_{Guid.NewGuid():N}";
-            string canonicalLogin = normalizedLogin.ToLowerInvariant();
             IdentityFogReference fog = await CreateFogAsync(
                 cassette,
                 userId,
-                canonicalLogin,
                 cancellationToken);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             IdentityUser user = new()
@@ -208,7 +208,7 @@ public sealed class LocalAuthenticationService(
     {
         Id = $"d_{Guid.NewGuid():N}",
         UserId = userId,
-        Name = string.IsNullOrWhiteSpace(deviceName) ? "Browser" : deviceName.Trim(),
+        Name = string.IsNullOrWhiteSpace(deviceName) ? "Браузер" : deviceName.Trim(),
         CreatedAtUtc = now,
         LastSeenAtUtc = now,
         ExpiresAtUtc = now.AddDays(options.SessionDays)
@@ -223,27 +223,26 @@ public sealed class LocalAuthenticationService(
         {
             return writable.SingleOrDefault(cassette => cassette.Id == options.DefaultCassetteId)
                 ?? throw new InvalidOperationException(
-                    $"Registration cassette '{options.DefaultCassetteId}' is not enabled for writing.");
+                    $"Кассета регистрации '{options.DefaultCassetteId}' не найдена или недоступна для записи.");
         }
 
         return writable.Length == 1
             ? writable[0]
             : throw new InvalidOperationException(
-                "Authentication:Local:DefaultCassetteId is required when the project has multiple writable cassettes.");
+                "Укажите Authentication:Local:DefaultCassetteId, когда для записи доступно несколько кассет.");
     }
 
     private async Task<IdentityFogReference> CreateFogAsync(
         CassetteDefinition cassette,
         string userId,
-        string login,
         CancellationToken cancellationToken)
     {
-        byte[] content = CreateFogXml(userId, login);
+        byte[] content = CreateFogXml(userId);
         await using MemoryStream stream = new(content, writable: false);
         CassetteDocumentWriteResult result = await documentWriter.AddAsync(
             cassette,
             stream,
-            $"{login}.fog",
+            $"{userId}.fog",
             options.MaxFogBytes,
             cancellationToken);
         return new IdentityFogReference
@@ -258,13 +257,13 @@ public sealed class LocalAuthenticationService(
         };
     }
 
-    private static byte[] CreateFogXml(string userId, string login)
+    private static byte[] CreateFogXml(string userId)
     {
         using MemoryStream stream = new();
         using (XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings
         {
             OmitXmlDeclaration = false,
-            Encoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+            Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             Indent = true
         }))
         {
@@ -274,9 +273,7 @@ public sealed class LocalAuthenticationService(
                 "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
             writer.WriteAttributeString("dbid", userId);
             writer.WriteAttributeString("owner", userId);
-            writer.WriteAttributeString(
-                "prefix",
-                login.Replace('.', '_').Replace('-', '_') + "_");
+            writer.WriteAttributeString("prefix", userId + "_");
             writer.WriteAttributeString("counter", "1000");
             writer.WriteEndElement();
         }
@@ -300,27 +297,41 @@ public sealed class LocalAuthenticationService(
         }
     }
 
-    private static string NormalizeLogin(string login)
+    private static string NormalizeLogin(string login) =>
+        NormalizeCanonicalLogin(CanonicalizeLogin(login));
+
+    private static string CanonicalizeLogin(string login)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(login);
-        string canonical = login.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(login))
+        {
+            throw new ArgumentException("Введите логин.", nameof(login));
+        }
+
+        string canonical = login.Trim().Normalize(NormalizationForm.FormKC);
         if (!LoginPattern.IsMatch(canonical))
         {
             throw new ArgumentException(
-                "Login must contain 3-63 lowercase Latin letters, digits, dots, underscores, or hyphens.",
+                "Логин должен содержать от 3 до 63 букв, цифр, точек, знаков подчёркивания или дефисов и начинаться с буквы или цифры.",
                 nameof(login));
         }
 
-        return canonical.ToUpperInvariant();
+        return canonical;
     }
+
+    private static string NormalizeCanonicalLogin(string canonicalLogin) =>
+        canonicalLogin.ToUpperInvariant();
 
     private static void RequirePassword(string password)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(password);
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new ArgumentException("Введите пароль.", nameof(password));
+        }
+
         if (password.Length < 10)
         {
             throw new ArgumentException(
-                "Password must contain at least 10 characters.",
+                "Пароль должен содержать не менее 10 символов.",
                 nameof(password));
         }
     }
