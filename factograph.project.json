@@ -20,7 +20,7 @@
     },
     {
       "id": "syp-cassette-small",
-      "name": "SypCassete _small",
+      "name": "SypCassete",
       "path": "./cassetes/SypCassete _small",
       "enabled": true,
       "defaultAccess": "read",
