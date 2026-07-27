@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { AdminDialog } from "../components/AdminDialog";
 import { AuthenticationPage } from "../components/AuthenticationPage";
-import { NavigationPanel } from "../components/NavigationPanel";
-import { ResourceWorkspace } from "../components/ResourceWorkspace";
-import { SearchPanel } from "../components/SearchPanel";
-import { SearchResultList } from "../components/SearchResultList";
+import { ResourcePage } from "../components/ResourcePage";
+import { SearchPage } from "../components/SearchPage";
 import { TopBar } from "../components/TopBar";
+import { resourceHref, useAppRoute } from "./routes";
 import { useAuthentication } from "./useAuthentication";
-import { usePortrait } from "./usePortrait";
 import { useProject } from "./useProject";
+import { useResourcePage } from "./useResourcePage";
 import { useSearch } from "./useSearch";
 
 export function App() {
@@ -37,15 +36,15 @@ interface AuthenticatedWorkspaceProps {
 }
 
 function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
+  const route = useAppRoute();
   const project = useProject(auth.token);
   const search = useSearch(auth.token);
-  const portrait = usePortrait(selectedId, auth.token);
+  const resourceId = route.page === "resource" ? route.resourceId : null;
+  const resource = useResourcePage(resourceId, auth.token);
   const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
 
   useEffect(() => {
-    setSelectedId(null);
     setAdminOpen(false);
     search.clear();
   }, [auth.token]);
@@ -53,6 +52,17 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   useEffect(() => {
     if (!canAdmin) setAdminOpen(false);
   }, [canAdmin]);
+
+  useEffect(() => {
+    const canonicalId = resource.page?.portrait.resourceId;
+    if (resourceId !== null && canonicalId && canonicalId !== resourceId) {
+      window.location.replace(resourceHref(canonicalId));
+    }
+  }, [resourceId, resource.page]);
+
+  function openResource(id: string): void {
+    window.location.hash = resourceHref(id).slice(1);
+  }
 
   return (
     <div className="app-shell">
@@ -71,48 +81,23 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
           onRegister: auth.register,
           onLogout: auth.logout
         }}
-        onReload={project.reload}
+        onReload={() => {
+          project.reload();
+          if (route.page === "resource") resource.reload();
+        }}
         onAdmin={() => setAdminOpen(true)}
       />
 
-      <main className="workspace">
-        <NavigationPanel
+      {route.page === "search" ? (
+        <SearchPage search={search} />
+      ) : (
+        <ResourcePage
           project={project.project}
-          loading={project.loading}
-          error={project.error}
+          token={auth.token}
+          resource={resource}
+          onSelect={openResource}
         />
-
-        <section className="panel results-panel">
-          <SearchPanel
-            query={search.query}
-            loading={search.loading}
-            error={search.error}
-            onQueryChange={search.setQuery}
-            onSearch={search.search}
-            onClear={() => {
-              search.clear();
-              setSelectedId(null);
-            }}
-          />
-          <SearchResultList
-            results={search.results}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-          />
-        </section>
-
-        <section className="panel portrait-panel">
-          <ResourceWorkspace
-            portrait={portrait.portrait}
-            loading={portrait.loading}
-            error={portrait.error}
-            token={auth.token}
-            project={project.project}
-            onSelect={setSelectedId}
-            onReload={portrait.reload}
-          />
-        </section>
-      </main>
+      )}
 
       {adminOpen && canAdmin && (
         <AdminDialog token={auth.token} onClose={() => setAdminOpen(false)} />
