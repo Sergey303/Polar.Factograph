@@ -1,12 +1,9 @@
 import type { FormEvent } from "react";
-import type { SearchMode } from "../api/models";
 
 interface SearchPanelProps {
-  mode: SearchMode;
   query: string;
   loading: boolean;
   error: string | null;
-  onModeChange: (mode: SearchMode) => void;
   onQueryChange: (query: string) => void;
   onSearch: () => void;
   onClear: () => void;
@@ -24,28 +21,12 @@ export function SearchPanel(props: SearchPanelProps) {
         <span className="eyebrow">Поиск</span>
         <h2>Ресурсы проекта</h2>
       </div>
-      <div className="segmented" aria-label="Режим поиска">
-        <button
-          className={props.mode === "names" ? "active" : ""}
-          onClick={() => props.onModeChange("names")}
-          type="button"
-        >
-          Имена
-        </button>
-        <button
-          className={props.mode === "words" ? "active" : ""}
-          onClick={() => props.onModeChange("words")}
-          type="button"
-        >
-          Слова
-        </button>
-      </div>
       <form className="search-form" onSubmit={submit}>
         <input
           value={props.query}
           onChange={event => props.onQueryChange(event.target.value)}
-          placeholder={props.mode === "names" ? "Начало имени или псевдонима" : "Слова из описания"}
-          aria-label="Строка поиска"
+          placeholder="Имя, название или слова из описания"
+          aria-label="Поиск по ресурсам проекта"
         />
         <button className="button primary" disabled={props.loading}>
           {props.loading ? "Ищем…" : "Найти"}
