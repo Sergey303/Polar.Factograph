@@ -20,11 +20,17 @@ FACTOGRAPH_API_URL=https://localhost:7001 npm run dev
 
 ## Authentication
 
-Development API configuration may resolve its configured development member without a token. For production-like testing, open **Доступ** in the top bar and paste a JWT. The token is kept only in `sessionStorage`; it is not written to local storage or a cookie.
+When `Authentication:Browser` is configured in the API, the top bar shows **Войти** and performs Authorization Code with PKCE against the configured OpenID Connect provider. Public browser settings come from `/api/auth/browser`; the React build does not contain a client secret or environment-specific authority.
+
+The access token, expiry, state, and PKCE verifier are kept only in `sessionStorage`. Callback parameters are removed from the address bar before code exchange, and the local session is cleared automatically when `expires_in` is reached.
+
+Development API configuration may still resolve its configured development member without a token. Manual bearer-token entry remains under **Диагностика** for provider testing and is not the normal production login path.
 
 ## Implemented workflows
 
 - load project identity, current member and readable cassettes;
+- browser OpenID Connect login through Authorization Code with PKCE;
+- automatic local logout when the access token expires;
 - show the effective default write cassette or read-only state;
 - explicit name-prefix and normalized-word search modes;
 - deterministic result list with type and match evidence;
