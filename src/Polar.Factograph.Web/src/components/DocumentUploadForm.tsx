@@ -56,7 +56,14 @@ export function DocumentUploadForm(props: DocumentUploadFormProps) {
           <span className="eyebrow">Документы</span>
           <h1>Добавление документа</h1>
         </div>
-        <button className="button subtle" type="button" onClick={props.onCancel}>Отмена</button>
+        <button
+          className="button subtle"
+          type="button"
+          disabled={uploader.busy}
+          onClick={props.onCancel}
+        >
+          Отмена
+        </button>
       </header>
 
       <div className="notice">
@@ -69,6 +76,7 @@ export function DocumentUploadForm(props: DocumentUploadFormProps) {
         cassetteId={cassetteId}
         typeId={typeId}
         uriPredicate={uriPredicate}
+        disabled={uploader.busy}
         onFileChange={setFile}
         onCassetteChange={setCassetteId}
         onTypeChange={changeType}
