@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml;
 using Microsoft.AspNetCore.Identity;
 using Polar.Factograph.Api.Infrastructure;
@@ -17,9 +16,6 @@ public sealed class LocalAuthenticationService(
     ProjectConfigurationLoader projectLoader,
     ICassetteDocumentWriter documentWriter)
 {
-    private static readonly Regex LoginPattern = new(
-        "^[\\p{L}\\p{Nd}][\\p{L}\\p{Nd}._-]{1,61}[\\p{L}\\p{Nd}_-]$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private readonly SemaphoreSlim _registrationLock = new(1, 1);
 
     public async Task<LocalAuthenticationSession> RegisterAsync(
@@ -34,8 +30,8 @@ public sealed class LocalAuthenticationService(
             throw new InvalidOperationException("Регистрация отключена.");
         }
 
-        string canonicalLogin = CanonicalizeLogin(login);
-        string normalizedLogin = NormalizeCanonicalLogin(canonicalLogin);
+        string canonicalLogin = LocalLoginName.Canonicalize(login);
+        string normalizedLogin = LocalLoginName.NormalizeCanonical(canonicalLogin);
         RequirePassword(password);
         await _registrationLock.WaitAsync(cancellationToken);
         try
@@ -109,7 +105,7 @@ public sealed class LocalAuthenticationService(
         string? deviceName,
         CancellationToken cancellationToken = default)
     {
-        string normalizedLogin = NormalizeLogin(login);
+        string normalizedLogin = LocalLoginName.Normalize(login);
         IdentityUser? user = store.FindByNormalizedLogin(normalizedLogin);
         if (user is null || !user.Enabled)
         {
@@ -244,7 +240,7 @@ public sealed class LocalAuthenticationService(
         CassetteDocumentWriteResult result = await documentWriter.AddAsync(
             cassette,
             stream,
-            $"{login}.fog",
+            LocalLoginName.ToFogFileName(login),
             options.MaxFogBytes,
             cancellationToken);
         return new IdentityFogReference
@@ -298,30 +294,6 @@ public sealed class LocalAuthenticationService(
             // An orphaned empty Fog is safer than hiding the identity write failure.
         }
     }
-
-    private static string NormalizeLogin(string login) =>
-        NormalizeCanonicalLogin(CanonicalizeLogin(login));
-
-    private static string CanonicalizeLogin(string login)
-    {
-        if (string.IsNullOrWhiteSpace(login))
-        {
-            throw new ArgumentException("Введите логин.", nameof(login));
-        }
-
-        string canonical = login.Trim().Normalize(NormalizationForm.FormKC);
-        if (!LoginPattern.IsMatch(canonical))
-        {
-            throw new ArgumentException(
-                "Логин должен содержать от 3 до 63 букв, цифр, точек, знаков подчёркивания или дефисов, начинаться с буквы или цифры и не заканчиваться точкой.",
-                nameof(login));
-        }
-
-        return canonical;
-    }
-
-    private static string NormalizeCanonicalLogin(string canonicalLogin) =>
-        canonicalLogin.ToUpperInvariant();
 
     private static void RequirePassword(string password)
     {
