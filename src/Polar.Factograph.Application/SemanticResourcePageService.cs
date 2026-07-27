@@ -169,8 +169,49 @@ public sealed class SemanticResourcePageService(
         CancellationToken cancellationToken)
     {
         Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
-        foreach (string bridgeId in graph.InverseSources(
+        await AddContainingCollectionsAsync(result, graph, root, cancellationToken);
+
+        foreach (string reflectionId in graph.InverseSources(
                      root,
+                     SemanticBridgeVocabulary.Reflected))
+        {
+            ProjectResourcePortrait? reflection = await graph.GetAsync(
+                reflectionId,
+                cancellationToken);
+            if (reflection?.Type != SemanticBridgeVocabulary.Reflection)
+            {
+                continue;
+            }
+
+            foreach (string documentId in graph.DirectTargets(
+                         reflection,
+                         SemanticBridgeVocabulary.InDocument))
+            {
+                ProjectResourcePortrait? document = await graph.GetAsync(
+                    documentId,
+                    cancellationToken);
+                if (document is not null)
+                {
+                    await AddContainingCollectionsAsync(
+                        result,
+                        graph,
+                        document,
+                        cancellationToken);
+                }
+            }
+        }
+
+        return Sort(result.Values);
+    }
+
+    private static async Task AddContainingCollectionsAsync(
+        IDictionary<string, SemanticResourceLink> result,
+        SemanticResourceGraph graph,
+        ProjectResourcePortrait item,
+        CancellationToken cancellationToken)
+    {
+        foreach (string bridgeId in graph.InverseSources(
+                     item,
                      SemanticBridgeVocabulary.CollectionItem))
         {
             ProjectResourcePortrait? bridge = await graph.GetAsync(bridgeId, cancellationToken);
@@ -191,8 +232,6 @@ public sealed class SemanticResourcePageService(
                     cancellationToken);
             }
         }
-
-        return Sort(result.Values);
     }
 
     private static async Task<IReadOnlyList<SemanticResourceLink>> CollectRelatedAsync(
