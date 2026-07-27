@@ -18,6 +18,7 @@ internal static class SemanticBridgeVocabulary
     public const string Participation = "http://fogid.net/o/participation";
     public const string Participant = "http://fogid.net/o/participant";
     public const string InOrganization = "http://fogid.net/o/in-org";
+    public const string Role = "http://fogid.net/o/role";
 
     public const string CollectionMember = "http://fogid.net/o/collection-member";
     public const string InCollection = "http://fogid.net/o/in-collection";
