@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
+import type {
+  LocalLoginRequest,
+  LocalRegisterRequest,
+  LocalUser
+} from "../api/authModels";
 import type { ProjectOverview } from "../api/models";
-import { DiagnosticAccessPopover } from "./DiagnosticAccessPopover";
-import { OidcSessionControls } from "./OidcSessionControls";
+import { LocalAuthenticationPopover } from "./LocalAuthenticationPopover";
 
 interface TopBarAuthentication {
-  token: string;
-  source: "oidc" | "diagnostic" | null;
-  oidcEnabled: boolean;
+  authenticated: boolean;
+  registrationEnabled: boolean;
+  user: LocalUser | null;
   initializing: boolean;
   busy: boolean;
   error: string | null;
-  onLogin: () => void;
-  onLogout: () => void;
-  onDiagnosticToken: (value: string) => void;
+  onLogin: (request: LocalLoginRequest) => Promise<void>;
+  onRegister: (request: LocalRegisterRequest) => Promise<void>;
+  onLogout: () => Promise<void>;
 }
 
 interface TopBarProps {
@@ -31,11 +35,6 @@ export function TopBar(props: TopBarProps) {
   useEffect(() => {
     if (auth.error !== null) setExpanded(true);
   }, [auth.error]);
-
-  function saveDiagnostic(value: string): void {
-    auth.onDiagnosticToken(value);
-    setExpanded(false);
-  }
 
   return (
     <header className="top-bar">
@@ -56,28 +55,34 @@ export function TopBar(props: TopBarProps) {
             Администрирование
           </button>
         )}
-        <button className="button ghost" type="button" onClick={props.onReload} disabled={props.loading}>
+        <button
+          className="button ghost"
+          type="button"
+          onClick={props.onReload}
+          disabled={props.loading}
+        >
           Обновить
         </button>
-        <OidcSessionControls
-          authenticated={auth.source === "oidc"}
-          enabled={auth.oidcEnabled}
-          initializing={auth.initializing}
-          busy={auth.busy}
-          onLogin={auth.onLogin}
-          onLogout={auth.onLogout}
-        />
-        <button className="button" type="button" onClick={() => setExpanded(value => !value)}>
-          Диагностика
+        <button
+          className="button primary"
+          type="button"
+          disabled={auth.initializing || auth.busy}
+          onClick={() => setExpanded(value => !value)}
+        >
+          {auth.user?.displayName ?? "Войти"}
         </button>
       </div>
 
       {expanded && (
-        <DiagnosticAccessPopover
-          token={auth.token}
-          source={auth.source}
+        <LocalAuthenticationPopover
+          authenticated={auth.authenticated}
+          registrationEnabled={auth.registrationEnabled}
+          user={auth.user}
+          busy={auth.busy}
           error={auth.error}
-          onSave={saveDiagnostic}
+          onLogin={auth.onLogin}
+          onRegister={auth.onRegister}
+          onLogout={auth.onLogout}
           onClose={() => setExpanded(false)}
         />
       )}
