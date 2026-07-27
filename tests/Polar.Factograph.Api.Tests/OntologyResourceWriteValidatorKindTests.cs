@@ -40,4 +40,37 @@ public sealed class OntologyResourceWriteValidatorKindTests
         Assert.Throws<ArgumentException>(() =>
             new OntologyResourceWriteValidator().Validate(catalog, request));
     }
+
+    [Fact]
+    public async Task Validate_AllowsDatatypeDeclaredByOntologyRange()
+    {
+        OntologyCatalog catalog = await OntologyWriteTestCatalog.CreateAsync();
+        FogResourceWriteRequest request = new(
+            "child",
+            [new FogProperty(
+                "name",
+                FogPropertyKind.Literal,
+                "Новосибирск",
+                Language: "ru",
+                DataType: "text")]);
+
+        new OntologyResourceWriteValidator().Validate(catalog, request);
+    }
+
+    [Fact]
+    public async Task Validate_RejectsDatatypeOutsideOntologyRange()
+    {
+        OntologyCatalog catalog = await OntologyWriteTestCatalog.CreateAsync();
+        FogResourceWriteRequest request = new(
+            "child",
+            [new FogProperty(
+                "name",
+                FogPropertyKind.Literal,
+                "Новосибирск",
+                Language: "ru",
+                DataType: "Новосибирск")]);
+
+        Assert.Throws<ArgumentException>(() =>
+            new OntologyResourceWriteValidator().Validate(catalog, request));
+    }
 }
