@@ -15,7 +15,7 @@ export function SearchResultList({
     return (
       <div className="empty-state">
         <strong>Результатов пока нет</strong>
-        <span>Введите запрос или измените режим поиска.</span>
+        <span>Введите имя, название или слова из описания.</span>
       </div>
     );
   }
