@@ -5,16 +5,20 @@ interface TopBarProps {
   project: ProjectOverview | null;
   token: string;
   loading: boolean;
+  canAdmin: boolean;
   onTokenSave: (value: string) => void;
   onReload: () => void;
+  onAdmin: () => void;
 }
 
 export function TopBar({
   project,
   token,
   loading,
+  canAdmin,
   onTokenSave,
-  onReload
+  onReload,
+  onAdmin
 }: TopBarProps) {
   const [draft, setDraft] = useState(token);
   const [expanded, setExpanded] = useState(false);
@@ -43,6 +47,11 @@ export function TopBar({
           <span className="user-pill" title={project.userId}>
             {project.userId}
           </span>
+        )}
+        {canAdmin && (
+          <button className="button" onClick={onAdmin}>
+            Администрирование
+          </button>
         )}
         <button className="button ghost" onClick={onReload} disabled={loading}>
           Обновить

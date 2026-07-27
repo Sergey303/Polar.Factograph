@@ -1,0 +1,76 @@
+.admin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgb(15 28 38 / 55%);
+  backdrop-filter: blur(4px);
+}
+
+.admin-dialog {
+  width: min(1100px, 100%);
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-soft);
+  box-shadow: 0 24px 80px rgb(10 25 35 / 28%);
+}
+
+.admin-dialog-header,
+.admin-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-dialog-header {
+  position: sticky;
+  top: -1.25rem;
+  z-index: 2;
+  margin: -1.25rem -1.25rem 1rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: rgb(246 248 250 / 96%);
+  backdrop-filter: blur(10px);
+}
+
+.admin-card-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-card {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.admin-card h2,
+.admin-dialog h1 {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .admin-overlay {
+    padding: 0;
+  }
+
+  .admin-dialog {
+    min-height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .admin-dialog-header,
+  .admin-card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
