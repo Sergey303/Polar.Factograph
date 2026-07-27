@@ -14,7 +14,7 @@ public sealed class LocalAuthenticationService(
     LocalAuthenticationOptions options,
     ProjectPathResolver projectPathResolver,
     ProjectConfigurationLoader projectLoader,
-    ICassetteDocumentWriter documentWriter)
+    ICassetteNamedFogWriter fogWriter)
 {
     private readonly SemaphoreSlim _registrationLock = new(1, 1);
 
@@ -237,7 +237,7 @@ public sealed class LocalAuthenticationService(
     {
         byte[] content = CreateFogXml(userId);
         await using MemoryStream stream = new(content, writable: false);
-        CassetteDocumentWriteResult result = await documentWriter.AddAsync(
+        CassetteDocumentWriteResult result = await fogWriter.AddAsync(
             cassette,
             stream,
             LocalLoginName.ToFogFileName(login),
