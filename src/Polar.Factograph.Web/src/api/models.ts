@@ -86,5 +86,4 @@ export interface DocumentLocation {
   normalPreviewAvailable: boolean;
 }
 
-export type SearchMode = "names" | "words";
 export type DocumentVariant = "original" | "small" | "medium" | "normal";
