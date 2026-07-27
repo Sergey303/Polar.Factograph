@@ -8,6 +8,7 @@ import {
   preferredUriProperty
 } from "../app/documentIntakeDraft";
 import { useDocumentUpload } from "../app/useDocumentUpload";
+import { DocumentUploadFields } from "./DocumentUploadFields";
 
 interface DocumentUploadFormProps {
   schema: OntologyWriteSchema;
@@ -31,7 +32,6 @@ export function DocumentUploadForm(props: DocumentUploadFormProps) {
     preferredUriProperty(firstType)?.id ?? ""
   );
   const selectedType = classes.find(type => type.id === typeId) ?? null;
-  const properties = literalProperties(selectedType);
   const uploader = useDocumentUpload(props.token, result =>
     props.onUploaded(result, typeId, uriPredicate));
 
@@ -41,13 +41,14 @@ export function DocumentUploadForm(props: DocumentUploadFormProps) {
     setUriPredicate(preferredUriProperty(nextType)?.id ?? "");
   }
 
+  const ready = file !== null && cassetteId.length > 0 &&
+    typeId.length > 0 && uriPredicate.length > 0;
   return (
     <form
       className="document-upload-form"
       onSubmit={event => {
         event.preventDefault();
-        if (typeId.length === 0 || uriPredicate.length === 0) return;
-        void uploader.upload(file, cassetteId);
+        if (ready) void uploader.upload(file, cassetteId);
       }}
     >
       <header className="resource-editor-title">
@@ -61,46 +62,25 @@ export function DocumentUploadForm(props: DocumentUploadFormProps) {
       <div className="notice">
         Сначала сохраняется оригинал. Затем мастер создаёт RDF-описание; при ошибке второй этап можно повторить без повторной загрузки файла.
       </div>
+      <DocumentUploadFields
+        cassettes={props.cassettes}
+        classes={classes}
+        properties={literalProperties(selectedType)}
+        cassetteId={cassetteId}
+        typeId={typeId}
+        uriPredicate={uriPredicate}
+        onFileChange={setFile}
+        onCassetteChange={setCassetteId}
+        onTypeChange={changeType}
+        onUriPredicateChange={setUriPredicate}
+      />
 
-      <div className="document-upload-fields">
-        <label>
-          <span>Файл</span>
-          <input type="file" onChange={event => setFile(event.target.files?.[0] ?? null)} />
-        </label>
-        <label>
-          <span>Кассета файла и метаданных</span>
-          <select value={cassetteId} onChange={event => setCassetteId(event.target.value)}>
-            {props.cassettes.map(cassette => (
-              <option key={cassette.id} value={cassette.id}>{cassette.name}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Тип RDF-описания</span>
-          <select value={typeId} onChange={event => changeType(event.target.value)}>
-            <option value="">Выберите тип</option>
-            {classes.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
-          </select>
-        </label>
-        <label>
-          <span>Свойство для iiss:// URI</span>
-          <select value={uriPredicate} onChange={event => setUriPredicate(event.target.value)}>
-            <option value="">Выберите свойство</option>
-            {properties.map(property => (
-              <option key={property.id} value={property.id}>{property.label}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {classes.length === 0 && <div className="notice error">В онтологии нет класса с литеральными свойствами.</div>}
+      {classes.length === 0 && (
+        <div className="notice error">В онтологии нет класса со свободным литеральным свойством.</div>
+      )}
       {uploader.error && <div className="notice error">{uploader.error}</div>}
       <footer className="resource-editor-actions">
-        <button
-          className="button primary"
-          type="submit"
-          disabled={uploader.busy || file === null || typeId.length === 0 || uriPredicate.length === 0}
-        >
+        <button className="button primary" type="submit" disabled={uploader.busy || !ready}>
           {uploader.busy ? "Загрузка…" : "Загрузить оригинал"}
         </button>
       </footer>
