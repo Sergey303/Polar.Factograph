@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { ProjectOverview, ResourcePortrait } from "../api/models";
+import type { ProjectOverview, SemanticResourcePage } from "../api/models";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { cassettesWithRight, cassettesWithRights } from "../app/projectAccess";
 import {
@@ -16,7 +16,7 @@ import {
 
 interface ResourceWorkspaceProps {
   project: ProjectOverview | null;
-  portrait: ResourcePortrait | null;
+  page: SemanticResourcePage | null;
   loading: boolean;
   error: string | null;
   token: string;
@@ -27,6 +27,7 @@ interface ResourceWorkspaceProps {
 export function ResourceWorkspace(props: ResourceWorkspaceProps) {
   const [mode, setMode] = useState<ResourceWorkspaceMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const portrait = props.page?.portrait ?? null;
   const writable = useMemo(
     () => cassettesWithRight(props.project, "writeMetadata"),
     [props.project]
@@ -37,21 +38,21 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
   );
   const cassetteId = preferredResourceCassette(
     props.project,
-    mode === "edit" ? props.portrait : null,
+    mode === "edit" ? portrait : null,
     writable
   );
   const initialDraft = useMemo(() =>
-    mode === "edit" && props.portrait !== null
-      ? resourceDraftFromPortrait(props.portrait, cassetteId)
+    mode === "edit" && portrait !== null
+      ? resourceDraftFromPortrait(portrait, cassetteId)
       : emptyResourceDraft(cassetteId),
-  [mode, props.portrait, cassetteId]);
+  [mode, portrait, cassetteId]);
 
   function saved(result: ResourceWriteResponse): void {
     setNotice(result.indexReady
       ? `Ревизия ${result.resourceId} сохранена.`
       : "Ревизия сохранена, но индекс требует восстановления.");
     setMode(null);
-    const sameResource = props.portrait?.resourceId === result.resourceId;
+    const sameResource = portrait?.resourceId === result.resourceId;
     props.onSelect(result.resourceId);
     if (sameResource) props.onReload();
   }
@@ -75,20 +76,18 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
       <ResourceWorkspaceActions
         canCreate={writable.length > 0}
         canAddDocument={documentCassettes.length > 0}
-        canEdit={writable.length > 0 &&
-          props.portrait !== null && props.portrait.type !== null}
+        canEdit={writable.length > 0 && portrait !== null && portrait.type !== null}
         notice={notice}
         onCreate={() => { setNotice(null); setMode("create"); }}
         onAddDocument={() => { setNotice(null); setMode("document"); }}
         onEdit={() => { setNotice(null); setMode("edit"); }}
       />
       <ResourcePortraitView
-        portrait={props.portrait}
+        page={props.page}
         loading={props.loading}
         error={props.error}
         token={props.token}
         project={props.project}
-        onSelect={props.onSelect}
       />
     </>
   );
