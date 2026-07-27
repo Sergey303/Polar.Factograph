@@ -1,0 +1,254 @@
+namespace Polar.Factograph.Application;
+
+public sealed class SemanticResourcePageService(
+    AuthorizedProjectReadService reads,
+    OntologyResourcePortraitPresenter presenter,
+    OntologyCatalog ontology)
+{
+    public async ValueTask<PresentedSemanticResourcePage?> GetAsync(
+        string resourceId,
+        ProjectAccessSnapshot access,
+        string preferredLanguage = "ru",
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(resourceId);
+        ArgumentNullException.ThrowIfNull(access);
+        ArgumentException.ThrowIfNullOrWhiteSpace(preferredLanguage);
+
+        SemanticResourceGraph graph = new(
+            reads,
+            presenter,
+            ontology,
+            access,
+            preferredLanguage);
+        ProjectResourcePortrait? requested = await graph.GetAsync(resourceId, cancellationToken);
+        if (requested is null)
+        {
+            return null;
+        }
+
+        ProjectResourcePortrait root = await graph.ResolveCanonicalAsync(
+            requested,
+            cancellationToken);
+        if (graph.IsTechnical(root))
+        {
+            return null;
+        }
+
+        IReadOnlyList<SemanticPhotoCard> photos = await new SemanticPhotoCollector(graph)
+            .CollectAsync(root, cancellationToken);
+        IReadOnlyList<SemanticResourceLink> participants = await CollectParticipantsAsync(
+            graph,
+            root,
+            cancellationToken);
+        IReadOnlyList<SemanticResourceLink> organizations = await CollectOrganizationsAsync(
+            graph,
+            root,
+            cancellationToken);
+        IReadOnlyList<SemanticResourceLink> collections = await CollectCollectionsAsync(
+            graph,
+            root,
+            cancellationToken);
+        IReadOnlyList<SemanticResourceLink> related = await CollectRelatedAsync(
+            graph,
+            root,
+            cancellationToken);
+
+        return new PresentedSemanticResourcePage(
+            resourceId,
+            graph.Present(root),
+            photos,
+            participants,
+            organizations,
+            collections,
+            related);
+    }
+
+    private static async Task<IReadOnlyList<SemanticResourceLink>> CollectParticipantsAsync(
+        SemanticResourceGraph graph,
+        ProjectResourcePortrait root,
+        CancellationToken cancellationToken)
+    {
+        Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
+
+        if (graph.IsType(root, SemanticBridgeVocabulary.Organization))
+        {
+            foreach (string bridgeId in graph.InverseSources(
+                         root,
+                         SemanticBridgeVocabulary.InOrganization))
+            {
+                ProjectResourcePortrait? bridge = await graph.GetAsync(bridgeId, cancellationToken);
+                if (bridge?.Type != SemanticBridgeVocabulary.Participation)
+                {
+                    continue;
+                }
+
+                string relation = graph.LiteralValue(bridge, SemanticBridgeVocabulary.Role)
+                    ?? "участник";
+                foreach (string participantId in graph.DirectTargets(
+                             bridge,
+                             SemanticBridgeVocabulary.Participant))
+                {
+                    await AddLinkAsync(result, graph, participantId, relation, cancellationToken);
+                }
+            }
+        }
+
+        if (graph.IsType(root, SemanticBridgeVocabulary.Collection))
+        {
+            foreach (string bridgeId in graph.InverseSources(
+                         root,
+                         SemanticBridgeVocabulary.InCollection))
+            {
+                ProjectResourcePortrait? bridge = await graph.GetAsync(bridgeId, cancellationToken);
+                if (bridge?.Type != SemanticBridgeVocabulary.CollectionMember)
+                {
+                    continue;
+                }
+
+                foreach (string itemId in graph.DirectTargets(
+                             bridge,
+                             SemanticBridgeVocabulary.CollectionItem))
+                {
+                    ProjectResourcePortrait? item = await graph.GetAsync(itemId, cancellationToken);
+                    if (item is null || graph.IsType(item, SemanticBridgeVocabulary.Document))
+                    {
+                        continue;
+                    }
+
+                    await AddLinkAsync(
+                        result,
+                        graph,
+                        itemId,
+                        "элемент коллекции",
+                        cancellationToken);
+                }
+            }
+        }
+
+        return Sort(result.Values);
+    }
+
+    private static async Task<IReadOnlyList<SemanticResourceLink>> CollectOrganizationsAsync(
+        SemanticResourceGraph graph,
+        ProjectResourcePortrait root,
+        CancellationToken cancellationToken)
+    {
+        Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
+        foreach (string bridgeId in graph.InverseSources(
+                     root,
+                     SemanticBridgeVocabulary.Participant))
+        {
+            ProjectResourcePortrait? bridge = await graph.GetAsync(bridgeId, cancellationToken);
+            if (bridge?.Type != SemanticBridgeVocabulary.Participation)
+            {
+                continue;
+            }
+
+            string relation = graph.LiteralValue(bridge, SemanticBridgeVocabulary.Role)
+                ?? "участие";
+            foreach (string organizationId in graph.DirectTargets(
+                         bridge,
+                         SemanticBridgeVocabulary.InOrganization))
+            {
+                await AddLinkAsync(
+                    result,
+                    graph,
+                    organizationId,
+                    relation,
+                    cancellationToken);
+            }
+        }
+
+        return Sort(result.Values);
+    }
+
+    private static async Task<IReadOnlyList<SemanticResourceLink>> CollectCollectionsAsync(
+        SemanticResourceGraph graph,
+        ProjectResourcePortrait root,
+        CancellationToken cancellationToken)
+    {
+        Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
+        foreach (string bridgeId in graph.InverseSources(
+                     root,
+                     SemanticBridgeVocabulary.CollectionItem))
+        {
+            ProjectResourcePortrait? bridge = await graph.GetAsync(bridgeId, cancellationToken);
+            if (bridge?.Type != SemanticBridgeVocabulary.CollectionMember)
+            {
+                continue;
+            }
+
+            foreach (string collectionId in graph.DirectTargets(
+                         bridge,
+                         SemanticBridgeVocabulary.InCollection))
+            {
+                await AddLinkAsync(
+                    result,
+                    graph,
+                    collectionId,
+                    "в коллекции",
+                    cancellationToken);
+            }
+        }
+
+        return Sort(result.Values);
+    }
+
+    private static async Task<IReadOnlyList<SemanticResourceLink>> CollectRelatedAsync(
+        SemanticResourceGraph graph,
+        ProjectResourcePortrait root,
+        CancellationToken cancellationToken)
+    {
+        Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
+        foreach (ResourceDirectLink link in root.DirectLinks)
+        {
+            await AddLinkAsync(
+                result,
+                graph,
+                link.TargetResourceId,
+                graph.PropertyLabel(link.Predicate),
+                cancellationToken);
+        }
+
+        foreach (ResourceInverseLink link in root.InverseLinks)
+        {
+            await AddLinkAsync(
+                result,
+                graph,
+                link.SourceResourceId,
+                graph.InversePropertyLabel(link.Predicate),
+                cancellationToken);
+        }
+
+        return Sort(result.Values);
+    }
+
+    private static async Task AddLinkAsync(
+        IDictionary<string, SemanticResourceLink> result,
+        SemanticResourceGraph graph,
+        string resourceId,
+        string relationLabel,
+        CancellationToken cancellationToken)
+    {
+        if (result.ContainsKey(resourceId))
+        {
+            return;
+        }
+
+        SemanticResourceLink? link = await graph.LinkAsync(
+            resourceId,
+            relationLabel,
+            cancellationToken);
+        if (link is not null)
+        {
+            result.Add(resourceId, link);
+        }
+    }
+
+    private static SemanticResourceLink[] Sort(IEnumerable<SemanticResourceLink> links) =>
+        links
+            .OrderBy(link => link.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(link => link.ResourceId, StringComparer.Ordinal)
+            .ToArray();
+}
