@@ -76,4 +76,7 @@ diagnostics/
 *.fog.bak
 
 # Large preview photos from the SypCassete compatibility fixture
-/cassetes/SypCassete/documents/small/0001/
+
+*.jpg
+*.fog
+*finfo
