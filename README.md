@@ -28,8 +28,8 @@ The current compatibility increment contains:
 - ontology catalog and ontology-aware presentation contracts;
 - safe `iiss://` resolution plus authorized metadata and streamed original/preview content;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
-- production JWT validation, optional public browser OIDC configuration, and a development-only configured identity;
-- browser Authorization Code login with PKCE, session-only token storage, callback cleanup, and expiry handling;
+- local application-cookie authentication with reloadable JSON users and devices;
+- one numbered writable cassette Fog assigned to each registered user;
 - atomic append-only resource, delete, substitute, and collection membership mutations;
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
 - atomic streamed document original upload and replacement with independent cassette rights;
@@ -67,30 +67,80 @@ word-search
 
 All four sets belong to one atomic generation. Readers switch only after all rows and external indexes are complete.
 
-## Start
+## Windows launch shortcuts
 
-Place the Polar.DB repository at the external path shown above, then run the API:
+Before starting, place these files in the repository root:
+
+```text
+factograph.project.json
+ontology.xml
+```
+
+The configured cassette directories and the sibling Polar.DB repository must also exist.
+
+### Development
+
+Run or double-click:
+
+```text
+1-run-dev.cmd
+```
+
+The shortcut:
+
+1. verifies the project configuration and ontology;
+2. installs React dependencies when `node_modules` is absent;
+3. builds React into the API `wwwroot`;
+4. copies a clean runtime `appsettings.json` under ignored `project-data`;
+5. starts `dotnet run -c Debug` at `http://localhost:5000`.
+
+It deliberately does not load `src/Polar.Factograph.Api/appsettings.json`, so local experimental edits or duplicate JSON keys in that source file do not break this launch path.
+
+### Release publish and launch
+
+Run with an explicit destination:
+
+```text
+2-publish-run-release.cmd "D:\Publish\Polar.Factograph"
+```
+
+Without an argument, the default destination is:
+
+```text
+publish\Polar.Factograph
+```
+
+The shortcut performs `dotnet publish -c Release`, writes the clean runtime settings into the published directory, and starts the published API at:
+
+```text
+https://localhost:5001
+```
+
+Production-mode cookies require HTTPS. When the local certificate is missing, create and trust it once:
+
+```powershell
+dotnet dev-certs https --trust
+```
+
+Both shortcuts keep `identity.json`, Data Protection keys, indexes, and runtime data under the repository-level ignored `project-data` directory. They select the `editor` role and `syp-cassette-small` as the default writable cassette through environment overrides.
+
+## Direct command-line development
+
+For other environments, restore and run the API project explicitly:
 
 ```bash
 dotnet restore Polar.Factograph.slnx
 dotnet run --project src/Polar.Factograph.Api
 ```
 
-Run the web workspace in another terminal:
-
-```bash
-cd src/Polar.Factograph.Web
-npm install
-npm run dev
-```
-
-Development configuration selects `examples/syp.project.json` and its existing `admin` member. Production requests require an authenticated identity claim. Configure `Authentication:Browser` to enable the React **Войти** action. Vite proxies `/api` to `http://localhost:5000` by default; `FACTOGRAPH_API_URL` changes that target.
-
 Useful routes:
 
 ```text
 GET  /api/system/health
-GET  /api/auth/browser
+GET  /api/auth/session
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
 GET  /api/project
 GET  /api/ontology/write-schema
 GET  /api/resources/portrait?id={rdf-id}
