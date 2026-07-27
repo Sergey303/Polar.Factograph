@@ -36,12 +36,13 @@ public sealed class IdentityFogSourceResolver(IdentityJsonStore store)
         FogSourceDescriptor? source = sources.FirstOrDefault(value =>
             value.Writable &&
             string.Equals(value.CassetteId, cassetteId, StringComparison.Ordinal) &&
+            string.Equals(value.Owner, userId, StringComparison.Ordinal) &&
             string.Equals(
                 Path.GetFullPath(value.FogPath),
                 expectedPath,
                 StringComparison.OrdinalIgnoreCase));
 
         return source ?? throw new InvalidOperationException(
-            $"The writable Fog assigned to user '{userId}' was not found.");
+            $"The writable Fog assigned to user '{userId}' was not found or has another owner.");
     }
 }
