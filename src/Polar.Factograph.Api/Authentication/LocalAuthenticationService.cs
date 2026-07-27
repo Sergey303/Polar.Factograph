@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using Microsoft.AspNetCore.Identity;
@@ -54,19 +53,20 @@ public sealed class LocalAuthenticationService(
             }
 
             string userId = $"u_{Guid.NewGuid():N}";
+            string canonicalLogin = normalizedLogin.ToLowerInvariant();
             IdentityFogReference fog = await CreateFogAsync(
                 cassette,
                 userId,
-                normalizedLogin.ToLowerInvariant(),
+                canonicalLogin,
                 cancellationToken);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             IdentityUser user = new()
             {
                 Id = userId,
-                Login = normalizedLogin.ToLowerInvariant(),
+                Login = canonicalLogin,
                 NormalizedLogin = normalizedLogin,
                 DisplayName = string.IsNullOrWhiteSpace(displayName)
-                    ? normalizedLogin.ToLowerInvariant()
+                    ? canonicalLogin
                     : displayName.Trim(),
                 PasswordHash = string.Empty,
                 Roles = [options.DefaultRole],
@@ -163,22 +163,25 @@ public sealed class LocalAuthenticationService(
         return new LocalAuthenticationSession(user, device);
     }
 
-    public Task RevokeDeviceAsync(
+    public async Task RevokeDeviceAsync(
         string userId,
         string deviceId,
-        CancellationToken cancellationToken = default) =>
-        store.UpdateAsync(current => current with
+        CancellationToken cancellationToken = default)
+    {
+        _ = await store.UpdateAsync(current => current with
         {
             Devices = current.Devices.Select(device =>
                 device.Id == deviceId && device.UserId == userId
                     ? device with { RevokedAtUtc = DateTimeOffset.UtcNow }
                     : device).ToArray()
         }, cancellationToken);
+    }
 
-    public Task RevokeAllAsync(
+    public async Task RevokeAllAsync(
         string userId,
-        CancellationToken cancellationToken = default) =>
-        store.UpdateAsync(current => current with
+        CancellationToken cancellationToken = default)
+    {
+        _ = await store.UpdateAsync(current => current with
         {
             Users = current.Users.Select(user => user.Id == userId
                 ? user with
@@ -191,6 +194,7 @@ public sealed class LocalAuthenticationService(
                 ? device with { RevokedAtUtc = DateTimeOffset.UtcNow }
                 : device).ToArray()
         }, cancellationToken);
+    }
 
     public IReadOnlyList<IdentityDevice> GetDevices(string userId) => store.Current.Devices
         .Where(device => device.UserId == userId)
@@ -256,21 +260,28 @@ public sealed class LocalAuthenticationService(
 
     private static byte[] CreateFogXml(string userId, string login)
     {
-        StringBuilder text = new();
-        using XmlWriter writer = XmlWriter.Create(text, new XmlWriterSettings
+        using MemoryStream stream = new();
+        using (XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings
         {
             OmitXmlDeclaration = false,
-            Encoding = Encoding.UTF8,
+            Encoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             Indent = true
-        });
-        writer.WriteStartElement("rdf", "RDF", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-        writer.WriteAttributeString("dbid", userId);
-        writer.WriteAttributeString("owner", userId);
-        writer.WriteAttributeString("prefix", login.Replace('.', '_').Replace('-', '_') + "_");
-        writer.WriteAttributeString("counter", "1000");
-        writer.WriteEndElement();
-        writer.Flush();
-        return Encoding.UTF8.GetBytes(text.ToString());
+        }))
+        {
+            writer.WriteStartElement(
+                "rdf",
+                "RDF",
+                "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+            writer.WriteAttributeString("dbid", userId);
+            writer.WriteAttributeString("owner", userId);
+            writer.WriteAttributeString(
+                "prefix",
+                login.Replace('.', '_').Replace('-', '_') + "_");
+            writer.WriteAttributeString("counter", "1000");
+            writer.WriteEndElement();
+        }
+
+        return stream.ToArray();
     }
 
     private static void DeleteFog(CassetteDefinition cassette, string relativePath)
@@ -292,15 +303,15 @@ public sealed class LocalAuthenticationService(
     private static string NormalizeLogin(string login)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(login);
-        string normalized = login.Trim().ToUpperInvariant();
-        if (!LoginPattern.IsMatch(normalized.ToLowerInvariant()))
+        string canonical = login.Trim().ToLowerInvariant();
+        if (!LoginPattern.IsMatch(canonical))
         {
             throw new ArgumentException(
                 "Login must contain 3-63 lowercase Latin letters, digits, dots, underscores, or hyphens.",
                 nameof(login));
         }
 
-        return normalized;
+        return canonical.ToUpperInvariant();
     }
 
     private static void RequirePassword(string password)
