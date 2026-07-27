@@ -80,18 +80,13 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
           project={project.project}
           loading={project.loading}
           error={project.error}
-          token={auth.token}
-          selectedResourceId={selectedId}
-          onSelect={setSelectedId}
         />
 
         <section className="panel results-panel">
           <SearchPanel
-            mode={search.mode}
             query={search.query}
             loading={search.loading}
             error={search.error}
-            onModeChange={search.setMode}
             onQueryChange={search.setQuery}
             onSearch={search.search}
             onClear={() => {
