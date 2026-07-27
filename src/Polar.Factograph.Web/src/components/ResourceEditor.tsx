@@ -18,7 +18,7 @@ interface ResourceEditorProps {
   title?: string;
   lockType?: boolean;
   lockCassette?: boolean;
-  protectedPredicates?: string[];
+  protectedRowIds?: string[];
   onCancel: () => void;
   onSaved: (result: ResourceWriteResponse) => void;
 }
@@ -66,7 +66,7 @@ export function ResourceEditor(props: ResourceEditorProps) {
           typeId={editor.draft.typeId}
           rows={editor.draft.properties}
           schema={props.schema}
-          protectedPredicates={props.protectedPredicates}
+          protectedRowIds={props.protectedRowIds}
           onChange={editor.updateProperty}
           onRemove={editor.removeProperty}
         />
