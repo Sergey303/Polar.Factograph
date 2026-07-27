@@ -12,6 +12,7 @@ import "./styles/resource-editor.css";
 import "./styles/resource-properties.css";
 import "./styles/admin-dialog.css";
 import "./styles/admin-cards.css";
+import "./styles/auth-access.css";
 
 const root = document.getElementById("root");
 if (root === null) {
