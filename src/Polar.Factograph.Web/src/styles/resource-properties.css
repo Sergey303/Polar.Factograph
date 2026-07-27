@@ -33,10 +33,13 @@
   gap: 0.2rem;
 }
 
-.resource-property-metadata {
+.resource-property-language {
   display: grid;
-  grid-template-columns: minmax(8rem, 0.45fr) minmax(12rem, 1fr);
-  gap: 0.55rem;
+  max-width: 12rem;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
 }
 
 .badge.warning {
@@ -57,9 +60,5 @@
   .resource-property-heading {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .resource-property-metadata {
-    grid-template-columns: 1fr;
   }
 }
