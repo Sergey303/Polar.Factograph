@@ -52,6 +52,9 @@ export function DocumentIntakePane(props: DocumentIntakePaneProps) {
   const selectedCassette = props.cassettes.filter(
     cassette => cassette.id === current.upload.cassetteId
   );
+  const protectedRowIds = draft.properties[0] === undefined
+    ? []
+    : [draft.properties[0].rowId];
   function cancelMetadata(): void {
     const leave = window.confirm(
       `Оригинал уже сохранён как ${current.upload.documentUri}. Выйти без RDF-описания?`
@@ -71,7 +74,7 @@ export function DocumentIntakePane(props: DocumentIntakePaneProps) {
         title="Описание загруженного документа"
         lockType
         lockCassette
-        protectedPredicates={[current.uriPredicate]}
+        protectedRowIds={protectedRowIds}
         onCancel={cancelMetadata}
         onSaved={props.onSaved}
       />
