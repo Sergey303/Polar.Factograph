@@ -1,7 +1,12 @@
 import { ApiRequestError } from "./http";
 
 const messages: Record<string, string> = {
-  authentication_required: "Нужна авторизация. Укажите действующий JWT.",
+  authentication_required: "Сначала войдите в систему.",
+  invalid_credentials: "Неверный логин или пароль.",
+  invalid_registration: "Проверьте логин и пароль.",
+  registration_unavailable: "Регистрация сейчас недоступна.",
+  identity_storage_unavailable: "Не удалось сохранить данные пользователя. Повторите попытку.",
+  antiforgery_failed: "Сессия формы устарела. Обновите страницу и повторите попытку.",
   forbidden: "Недостаточно прав для этой операции.",
   resource_not_found: "Ресурс не найден или недоступен.",
   document_not_found: "Документ не найден или недоступен.",
