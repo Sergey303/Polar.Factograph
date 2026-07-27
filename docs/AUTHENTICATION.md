@@ -1,87 +1,92 @@
 # Authentication
 
-Production authentication uses JWT bearer tokens issued by an OpenID Connect authority. The React workspace uses Authorization Code with PKCE and never receives a client secret.
+Polar.Factograph authenticates browser users locally. ASP.NET Core issues an encrypted application cookie; passwords, devices, roles, and the user-to-Fog assignment are stored in a small reloadable JSON file.
+
+No bearer token or external identity provider is required for the first version.
 
 ## Configuration
 
 ```json
 {
   "Authentication": {
-    "Jwt": {
-      "Authority": "https://identity.example.org",
-      "Audience": "polar-factograph",
-      "RequireHttpsMetadata": true
-    },
-    "Browser": {
-      "ClientId": "polar-factograph-web",
-      "Scope": "openid profile polar-factograph"
+    "Local": {
+      "IdentityPath": "project-data/identity.json",
+      "DataProtectionKeysPath": "project-data/data-protection-keys",
+      "CookieName": "Polar.Factograph.Session",
+      "RegistrationEnabled": true,
+      "DefaultRole": "editor",
+      "DefaultCassetteId": "main-cassette",
+      "SessionDays": 30,
+      "MaxFogBytes": 1048576
     }
   }
 }
 ```
 
-`Authority` and `Audience` must be configured together. The authority must be an absolute HTTPS URI while `RequireHttpsMetadata` is enabled.
+`DefaultRole` must exist in the loaded project. `DefaultCassetteId` must identify an enabled writable cassette. It may be omitted only when the project contains exactly one enabled writable cassette.
 
-`Authentication:Browser` is optional. `ClientId` and `Scope` must either both be absent or both be configured, and browser login requires the JWT section because the API must validate the resulting access token. The client id must identify a public client with Authorization Code and PKCE enabled; no client secret belongs in this repository or browser configuration.
+Data Protection keys must be kept in durable storage outside a disposable publish directory. Production cookies are `Secure`, `HttpOnly`, and `SameSite=Lax`.
 
-For a local identity provider over HTTP, disable metadata HTTPS only in a development-specific configuration:
+## identity.json
+
+The file is created when the first account is registered. Its current schema is:
 
 ```json
 {
-  "Authentication": {
-    "Jwt": {
-      "Authority": "http://localhost:8080",
-      "Audience": "polar-factograph",
-      "RequireHttpsMetadata": false
-    },
-    "Browser": {
-      "ClientId": "polar-factograph-web",
-      "Scope": "openid profile polar-factograph"
-    }
-  }
+  "schemaVersion": 1,
+  "users": [],
+  "devices": []
 }
 ```
 
-## Browser client registration
+Each user record contains:
 
-Register the exact React origin and path as an allowed redirect URI. The default development callback is:
+- stable user id;
+- login and normalized login;
+- display name;
+- ASP.NET Core `PasswordHasher` result;
+- enabled state and security version;
+- project roles;
+- assigned cassette id, Fog document URI, and cassette-relative Fog path.
+
+Each device record contains its id, user id, display name, creation and expiry times, last-seen time, and optional revocation time.
+
+The application reads the complete file into memory. Application changes are serialized to a temporary file and published by atomic replacement. External valid edits are picked up through the standard JSON configuration provider with `reloadOnChange`. An invalid external snapshot is rejected and the previous valid in-memory snapshot remains active.
+
+## Registration and user Fog
+
+Registration performs one serialized operation:
+
+1. normalize and reserve the login;
+2. load the current project and verify the configured role and cassette;
+3. allocate a normal numbered cassette document;
+4. create an empty writable `.fog` under `originals/NNNN/`;
+5. store the user, password hash, device, roles, and Fog mapping in `identity.json`;
+6. issue the application cookie.
+
+The Fog filename follows the cassette document numbering rules. The original login is not used as a physical filename. The Fog root stores the stable user id as `dbid` and `owner`.
+
+Registered users are overlaid onto the project membership at request time. Existing explicit entries in `project.json` keep priority. Every RDF mutation made by a registered user is routed only to the Fog assigned to that user. Static project users that are absent from `identity.json` retain the legacy writable-Fog selection behavior.
+
+## Browser session API
 
 ```text
-http://localhost:5173/
+GET  api/auth/session
+POST api/auth/register
+POST api/auth/login
+POST api/auth/logout
+POST api/auth/logout-all
+POST api/auth/devices/{deviceId}/revoke
 ```
 
-The provider must allow that browser origin to call its token endpoint. The workspace loads the provider discovery document, verifies that its `issuer` matches the configured authority, and exchanges the code directly with `code_verifier`; only bearer tokens with a positive `expires_in` are accepted.
+`GET api/auth/session` returns the current user and devices when authenticated and always returns a request-verification token. The React client sends that token in `X-CSRF-TOKEN` for every mutating request.
 
-The API exposes the non-secret public settings through:
+Logging out revokes the current device. Logging out everywhere increments the user's security version and revokes all device records. Cookie validation checks the user, device, expiry, revocation, and security version on subsequent requests.
 
-```text
-GET /api/auth/browser
-```
+## Project and source configuration
 
-The response contains only `enabled`, `authority`, `clientId`, and `scope`. It never contains a client secret, signing key, members, roles, or project configuration.
+Changes to cassette and Fog source configuration may be saved through the administration interface, but the running process continues with the loaded project configuration until the server is restarted. User registration and user-Fog creation do not require a restart.
 
-## Session behavior
+## Development fallback
 
-The access token, its source, expiry time, PKCE verifier, and state exist only in `sessionStorage`. They are removed when the tab closes. Authorization callback parameters are removed from the address bar before the code exchange continues.
-
-The PKCE request state is valid for ten minutes. A mismatched state, redirect URI, expired request, unexpected discovery issuer, unsupported token type, or incomplete token response aborts the login.
-
-When `expires_in` is reached, the workspace clears the local token and project state. **Выйти** ends the Polar.Factograph browser session; the identity provider may retain its own single-sign-on session, so a later login can complete without asking for credentials again.
-
-## Identity mapping
-
-JWT claim mapping is disabled so the original `sub` claim is preserved. The application resolves the project user id from:
-
-1. `ClaimTypes.NameIdentifier`;
-2. `sub`;
-3. `Identity.Name`.
-
-The API never accepts a user id from query parameters or custom headers.
-
-## Development and diagnostics
-
-`Api:DevelopmentUserId` is used only when the host environment is `Development` and no authenticated identity exists. It is ignored in production.
-
-When JWT settings are absent, the host still starts, but protected project routes return `401 authentication_required` unless the development fallback applies.
-
-The React **Диагностика** menu can still accept a bearer token for provider testing. This is not the normal production login path. The diagnostic token is also stored only in `sessionStorage` and is never written to a cookie or local storage.
+`Api:DevelopmentUserId` remains available only when the host environment is `Development` and there is no authenticated cookie. It is ignored in production.
