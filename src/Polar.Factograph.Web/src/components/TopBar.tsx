@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ProjectOverview } from "../api/models";
-import { DiagnosticTokenForm } from "./DiagnosticTokenForm";
+import { DiagnosticAccessPopover } from "./DiagnosticAccessPopover";
 import { OidcSessionControls } from "./OidcSessionControls";
 
 interface TopBarAuthentication {
@@ -50,11 +50,7 @@ export function TopBar(props: TopBarProps) {
       </div>
 
       <div className="top-actions">
-        {props.project && (
-          <span className="user-pill" title={props.project.userId}>
-            {props.project.userId}
-          </span>
-        )}
+        {props.project && <span className="user-pill">{props.project.userId}</span>}
         {props.canAdmin && (
           <button className="button" type="button" onClick={props.onAdmin}>
             Администрирование
@@ -77,24 +73,13 @@ export function TopBar(props: TopBarProps) {
       </div>
 
       {expanded && (
-        <div className="token-popover authentication-popover">
-          {auth.error && <div className="notice error">{auth.error}</div>}
-          {auth.source === "oidc" ? (
-            <p className="muted">
-              Завершите текущую OIDC-сессию перед использованием ручного токена.
-            </p>
-          ) : (
-            <DiagnosticTokenForm
-              token={auth.source === "diagnostic" ? auth.token : ""}
-              onSave={saveDiagnostic}
-            />
-          )}
-          <div className="token-actions">
-            <button className="button ghost" type="button" onClick={() => setExpanded(false)}>
-              Закрыть
-            </button>
-          </div>
-        </div>
+        <DiagnosticAccessPopover
+          token={auth.token}
+          source={auth.source}
+          error={auth.error}
+          onSave={saveDiagnostic}
+          onClose={() => setExpanded(false)}
+        />
       )}
     </header>
   );
