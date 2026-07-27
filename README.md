@@ -37,11 +37,12 @@ The current compatibility increment contains:
 - a configurable hosted preview worker with safe external-process invocation, source-version checks, fair cassette processing, runtime health, and failure counters;
 - a React/TypeScript workspace for search, portraits, relation and collection navigation, document replacement, and ontology-driven resource revisions;
 - an authorized write-schema route exposing only localized classes, allowed properties, value kinds, ranges, and enumeration choices;
+- a two-stage document intake workflow that preserves a committed original while retrying only RDF metadata;
 - index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-New-document metadata workflow, administrative screens, incremental index refresh, a deployment-supplied PDF/image renderer executable, and remaining production hardening remain focused follow-up increments.
+Administrative screens, incremental index refresh, a deployment-supplied PDF/image renderer executable, production authentication UX, and remaining production hardening remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
