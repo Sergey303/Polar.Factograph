@@ -104,30 +104,24 @@
   border-radius: 0.65rem;
 }
 
-.result-list {
-  overflow: auto;
-}
-
 .result-list li {
   border-bottom: 1px solid var(--border);
 }
 
-.result-list button {
+.result-list a {
   display: grid;
   width: 100%;
   gap: 0.3rem;
   padding: 0.9rem 1rem;
-  border: 0;
+  color: inherit;
   text-align: left;
+  text-decoration: none;
   background: var(--surface);
 }
 
-.result-list button:hover,
-.result-list button.selected {
+.result-list a:hover,
+.result-list a:focus-visible {
   background: #f0f8f8;
-}
-
-.result-list button.selected {
   box-shadow: inset 3px 0 var(--accent);
 }
 
