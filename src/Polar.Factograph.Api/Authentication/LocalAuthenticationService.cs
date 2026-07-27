@@ -18,7 +18,7 @@ public sealed class LocalAuthenticationService(
     ICassetteDocumentWriter documentWriter)
 {
     private static readonly Regex LoginPattern = new(
-        "^[\\p{L}\\p{Nd}][\\p{L}\\p{Nd}._-]{2,62}$",
+        "^[\\p{L}\\p{Nd}][\\p{L}\\p{Nd}._-]{1,61}[\\p{L}\\p{Nd}_-]$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private readonly SemaphoreSlim _registrationLock = new(1, 1);
 
@@ -58,6 +58,7 @@ public sealed class LocalAuthenticationService(
             IdentityFogReference fog = await CreateFogAsync(
                 cassette,
                 userId,
+                canonicalLogin,
                 cancellationToken);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             IdentityUser user = new()
@@ -235,6 +236,7 @@ public sealed class LocalAuthenticationService(
     private async Task<IdentityFogReference> CreateFogAsync(
         CassetteDefinition cassette,
         string userId,
+        string login,
         CancellationToken cancellationToken)
     {
         byte[] content = CreateFogXml(userId);
@@ -242,7 +244,7 @@ public sealed class LocalAuthenticationService(
         CassetteDocumentWriteResult result = await documentWriter.AddAsync(
             cassette,
             stream,
-            $"{userId}.fog",
+            $"{login}.fog",
             options.MaxFogBytes,
             cancellationToken);
         return new IdentityFogReference
@@ -311,7 +313,7 @@ public sealed class LocalAuthenticationService(
         if (!LoginPattern.IsMatch(canonical))
         {
             throw new ArgumentException(
-                "Логин должен содержать от 3 до 63 букв, цифр, точек, знаков подчёркивания или дефисов и начинаться с буквы или цифры.",
+                "Логин должен содержать от 3 до 63 букв, цифр, точек, знаков подчёркивания или дефисов, начинаться с буквы или цифры и не заканчиваться точкой.",
                 nameof(login));
         }
 
