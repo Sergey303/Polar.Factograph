@@ -8,6 +8,7 @@ public static class ResourceEndpoints
     public static IEndpointRouteBuilder MapResourceEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/api/resources/portrait", GetPortraitAsync);
+        endpoints.MapGet("/api/resources/page", GetPageAsync);
         return endpoints;
     }
 
@@ -24,11 +25,38 @@ public static class ResourceEndpoints
         PresentedProjectResourcePortrait? portrait = await context.Portraits.GetAsync(
             id,
             context.Access,
-            string.IsNullOrWhiteSpace(lang) ? "ru" : lang,
+            NormalizeLanguage(lang),
             cancellationToken);
 
         return portrait is null
-            ? Results.NotFound(new ApiError("resource_not_found", $"Resource was not found: {id}"))
+            ? NotFound(id)
             : Results.Ok(portrait);
     }
+
+    private static async Task<IResult> GetPageAsync(
+        string id,
+        string? lang,
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        CancellationToken cancellationToken)
+    {
+        ProjectReadContext context = await contextFactory.CreateReadAsync(
+            httpContext,
+            cancellationToken);
+        PresentedSemanticResourcePage? page = await context.SemanticPages.GetAsync(
+            id,
+            context.Access,
+            NormalizeLanguage(lang),
+            cancellationToken);
+
+        return page is null
+            ? NotFound(id)
+            : Results.Ok(page);
+    }
+
+    private static string NormalizeLanguage(string? language) =>
+        string.IsNullOrWhiteSpace(language) ? "ru" : language;
+
+    private static IResult NotFound(string id) =>
+        Results.NotFound(new ApiError("resource_not_found", $"Resource was not found: {id}"));
 }
