@@ -8,6 +8,9 @@ public static class FactographEndpointMapping
     public static WebApplication MapFactographApi(this WebApplication app)
     {
         app.UseMiddleware<ApiExceptionMiddleware>();
+        app.UseMiddleware<DynamicBaseUrlMiddleware>();
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapSystemEndpoints();
@@ -25,6 +28,7 @@ public static class FactographEndpointMapping
         app.MapCollectionMutationEndpoints();
         app.MapDocumentEndpoints();
         app.MapDocumentWriteEndpoints();
+        app.MapFallbackToFile("index.html");
         return app;
     }
 }
