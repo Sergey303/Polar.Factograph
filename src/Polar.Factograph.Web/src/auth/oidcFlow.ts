@@ -22,6 +22,10 @@ const callbackParameters = [
   "error_description"
 ];
 
+function normalizedIssuer(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
 export function enabledOidcConfiguration(
   value: BrowserAuthenticationConfiguration
 ): OidcClientConfiguration | null {
@@ -83,16 +87,22 @@ export async function completeOidcLogin(
 
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
+  const callbackIssuer = url.searchParams.get("iss");
   const providerError = url.searchParams.get("error_description")
     ?? url.searchParams.get("error");
   const pending = takePendingAuthorization();
   clearCallbackUrl(url);
 
   if (providerError) throw new Error(`Вход отклонён: ${providerError}`);
+  if (callbackIssuer !== null &&
+      normalizedIssuer(callbackIssuer) !== normalizedIssuer(configuration.authority)) {
+    throw new Error("Ответ входа получен от неожиданного провайдера.");
+  }
   if (!code || !state || pending === null || pending.state !== state) {
     throw new Error("Не удалось подтвердить состояние входа. Начните вход заново.");
   }
-  if (pending.redirectUri !== currentRedirectUri() ||
+  if (!pending.verifier || !Number.isFinite(pending.createdAt) ||
+      pending.redirectUri !== currentRedirectUri() ||
       Date.now() - pending.createdAt > pendingLifetimeMs ||
       pending.createdAt > Date.now() + 60_000) {
     throw new Error("Запрос на вход устарел. Начните вход заново.");
