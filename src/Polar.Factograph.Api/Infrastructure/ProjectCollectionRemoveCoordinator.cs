@@ -28,6 +28,7 @@ public sealed class ProjectCollectionRemoveCoordinator(
         ProjectFogMutationOutcome<FogDirectiveWriteResult> mutation =
             await mutationRunner.RunAsync(
                 context.Project,
+                context.Access.UserId,
                 cassetteId,
                 (source, token) => directiveWriter.AppendAsync(source, delete, token),
                 cancellationToken,
