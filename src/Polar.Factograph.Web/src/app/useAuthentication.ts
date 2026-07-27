@@ -30,23 +30,22 @@ export function useAuthentication() {
   }
 
   useEffect(() => {
-    const controller = new AbortController();
-    initializeAuthentication(controller.signal)
+    let active = true;
+    initializeAuthentication()
       .then(result => {
+        if (!active) return;
         setConfiguration(result.configuration);
         if (result.completed !== null) {
           apply(result.completed.token, result.completed.session);
         }
       })
       .catch(reason => {
-        if (!controller.signal.aborted) {
-          setError(errorMessage(reason, "Не удалось выполнить вход."));
-        }
+        if (active) setError(errorMessage(reason, "Не удалось выполнить вход."));
       })
       .finally(() => {
-        if (!controller.signal.aborted) setInitializing(false);
+        if (active) setInitializing(false);
       });
-    return () => controller.abort();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
