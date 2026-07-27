@@ -6,7 +6,15 @@ The API is a thin layer over validated project configuration, effective access s
 
 Production requests require an authenticated principal. The user id is read from `ClaimTypes.NameIdentifier`, `sub`, or `Identity.Name` in that order.
 
-The API never accepts a user id from a query parameter or custom request header. JWT bearer setup and development fallback rules are documented in [AUTHENTICATION.md](AUTHENTICATION.md).
+The API never accepts a user id from a query parameter or custom request header. JWT bearer setup, browser Authorization Code with PKCE, and development fallback rules are documented in [AUTHENTICATION.md](AUTHENTICATION.md).
+
+The unauthenticated browser configuration route is:
+
+```text
+GET /api/auth/browser
+```
+
+It returns only whether browser login is enabled plus the public `authority`, `clientId`, and `scope`. It never returns a client secret, signing key, users, roles, or project data.
 
 For local development only, `appsettings.Development.json` may provide:
 

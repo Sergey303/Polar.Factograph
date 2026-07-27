@@ -12,6 +12,7 @@ public static class FactographAuthentication
         ArgumentNullException.ThrowIfNull(configuration);
 
         JwtAuthenticationSettings? settings = JwtAuthenticationSettings.Read(configuration);
+        _ = BrowserAuthenticationSettings.Read(configuration);
         if (settings is null)
         {
             services.AddAuthentication();

@@ -1,0 +1,50 @@
+.authentication-popover {
+  gap: 0.8rem;
+}
+
+.authentication-popover .notice {
+  margin: 0;
+}
+
+.diagnostic-access {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+}
+
+.diagnostic-access summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.diagnostic-access p {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.diagnostic-access label {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.diagnostic-access textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 5rem;
+  padding: 0.7rem;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 720px) {
+  .top-actions .primary {
+    display: inline-flex;
+  }
+}

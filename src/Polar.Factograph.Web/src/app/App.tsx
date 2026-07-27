@@ -1,44 +1,51 @@
 import { useEffect, useState } from "react";
-import { readAccessToken, writeAccessToken } from "../api/tokenStore";
 import { AdminDialog } from "../components/AdminDialog";
 import { NavigationPanel } from "../components/NavigationPanel";
 import { ResourceWorkspace } from "../components/ResourceWorkspace";
 import { SearchPanel } from "../components/SearchPanel";
 import { SearchResultList } from "../components/SearchResultList";
 import { TopBar } from "../components/TopBar";
+import { useAuthentication } from "./useAuthentication";
 import { usePortrait } from "./usePortrait";
 import { useProject } from "./useProject";
 import { useSearch } from "./useSearch";
 
 export function App() {
-  const [token, setToken] = useState(readAccessToken);
+  const auth = useAuthentication();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState(false);
-  const project = useProject(token);
-  const search = useSearch(token);
-  const portrait = usePortrait(selectedId, token);
+  const project = useProject(auth.token);
+  const search = useSearch(auth.token);
+  const portrait = usePortrait(selectedId, auth.token);
   const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
+
+  useEffect(() => {
+    setSelectedId(null);
+    setAdminOpen(false);
+    search.clear();
+  }, [auth.token]);
 
   useEffect(() => {
     if (!canAdmin) setAdminOpen(false);
   }, [canAdmin]);
 
-  function saveToken(value: string): void {
-    writeAccessToken(value);
-    setToken(value.trim());
-    setSelectedId(null);
-    setAdminOpen(false);
-    search.clear();
-  }
-
   return (
     <div className="app-shell">
       <TopBar
         project={project.project}
-        token={token}
-        loading={project.loading}
+        loading={project.loading || auth.initializing}
         canAdmin={canAdmin}
-        onTokenSave={saveToken}
+        authentication={{
+          token: auth.token,
+          source: auth.source,
+          oidcEnabled: auth.oidcEnabled,
+          initializing: auth.initializing,
+          busy: auth.busy,
+          error: auth.error,
+          onLogin: () => { void auth.login(); },
+          onLogout: auth.logout,
+          onDiagnosticToken: auth.saveDiagnosticToken
+        }}
         onReload={project.reload}
         onAdmin={() => setAdminOpen(true)}
       />
@@ -48,7 +55,7 @@ export function App() {
           project={project.project}
           loading={project.loading}
           error={project.error}
-          token={token}
+          token={auth.token}
           selectedResourceId={selectedId}
           onSelect={setSelectedId}
         />
@@ -79,7 +86,7 @@ export function App() {
             portrait={portrait.portrait}
             loading={portrait.loading}
             error={portrait.error}
-            token={token}
+            token={auth.token}
             project={project.project}
             onSelect={setSelectedId}
             onReload={portrait.reload}
@@ -88,7 +95,7 @@ export function App() {
       </main>
 
       {adminOpen && canAdmin && (
-        <AdminDialog token={token} onClose={() => setAdminOpen(false)} />
+        <AdminDialog token={auth.token} onClose={() => setAdminOpen(false)} />
       )}
     </div>
   );

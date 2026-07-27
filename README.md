@@ -28,7 +28,8 @@ The current compatibility increment contains:
 - ontology catalog and ontology-aware presentation contracts;
 - safe `iiss://` resolution plus authorized metadata and streamed original/preview content;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
-- production JWT identity plus a development-only configured identity;
+- production JWT validation, optional public browser OIDC configuration, and a development-only configured identity;
+- browser Authorization Code login with PKCE, session-only token storage, callback cleanup, and expiry handling;
 - atomic append-only resource, delete, substitute, and collection membership mutations;
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
 - atomic streamed document original upload and replacement with independent cassette rights;
@@ -43,7 +44,7 @@ The current compatibility increment contains:
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
 
-Incremental index refresh, a deployment-supplied PDF/image renderer executable, production authentication UX, and remaining production hardening remain focused follow-up increments.
+Incremental index refresh, a deployment-supplied PDF/image renderer executable, remaining production hardening, and final browser/E2E coverage remain focused follow-up increments.
 
 ## Polar.DB source dependency
 
@@ -83,12 +84,13 @@ npm install
 npm run dev
 ```
 
-Development configuration selects `examples/syp.project.json` and its existing `admin` member. Production requests require an authenticated identity claim. Vite proxies `/api` to `http://localhost:5000` by default; `FACTOGRAPH_API_URL` changes that target.
+Development configuration selects `examples/syp.project.json` and its existing `admin` member. Production requests require an authenticated identity claim. Configure `Authentication:Browser` to enable the React **Войти** action. Vite proxies `/api` to `http://localhost:5000` by default; `FACTOGRAPH_API_URL` changes that target.
 
 Useful routes:
 
 ```text
 GET  /api/system/health
+GET  /api/auth/browser
 GET  /api/project
 GET  /api/ontology/write-schema
 GET  /api/resources/portrait?id={rdf-id}
@@ -111,4 +113,4 @@ POST /api/admin/index/rebuild
 GET  /api/admin/previews/status
 ```
 
-See [API](docs/API.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), [web workspace](src/Polar.Factograph.Web/README.md), and [legacy sources](docs/LEGACY_SOURCES.md).
+See [API](docs/API.md), [authentication](docs/AUTHENTICATION.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), [web workspace](src/Polar.Factograph.Web/README.md), and [legacy sources](docs/LEGACY_SOURCES.md).
