@@ -4,9 +4,9 @@ import type {
   DocumentVariant,
   ProjectOverview,
   ResourcePortrait,
-  ResourceSearchResult,
-  SearchMode
+  ResourceSearchResult
 } from "./models";
+import { mergeSearchResults } from "./searchResults";
 
 function query(parameters: Record<string, string | number>): string {
   const values = new URLSearchParams();
@@ -21,18 +21,25 @@ export const factographApi = {
     return requestJson<ProjectOverview>("api/project", token, signal);
   },
 
-  search(
-    mode: SearchMode,
+  async search(
     text: string,
     token: string,
     signal?: AbortSignal
   ): Promise<ResourceSearchResult[]> {
     const parameters = query({ q: text, limit: 50, lang: "ru" });
-    return requestJson<ResourceSearchResult[]>(
-      `api/search/${mode}?${parameters}`,
-      token,
-      signal
-    );
+    const [names, words] = await Promise.all([
+      requestJson<ResourceSearchResult[]>(
+        `api/search/names?${parameters}`,
+        token,
+        signal
+      ),
+      requestJson<ResourceSearchResult[]>(
+        `api/search/words?${parameters}`,
+        token,
+        signal
+      )
+    ]);
+    return mergeSearchResults(names, words);
   },
 
   getPortrait(
