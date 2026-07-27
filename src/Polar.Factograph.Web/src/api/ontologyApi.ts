@@ -7,7 +7,7 @@ export const ontologyApi = {
     signal?: AbortSignal
   ): Promise<OntologyWriteSchema> {
     return requestJson<OntologyWriteSchema>(
-      "/api/ontology/write-schema?lang=ru",
+      "api/ontology/write-schema?lang=ru",
       token,
       signal
     );
