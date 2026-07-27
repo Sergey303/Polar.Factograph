@@ -40,6 +40,15 @@ public sealed class ApiExceptionMiddleware(
         {
             await WriteAsync(context, StatusCodes.Status400BadRequest, "invalid_request", exception.Message);
         }
+        catch (IOException exception) when (context.Request.Path.StartsWithSegments("/api/auth"))
+        {
+            logger.LogError(exception, "Failed to update local identity storage.");
+            await WriteAsync(
+                context,
+                StatusCodes.Status503ServiceUnavailable,
+                "identity_storage_unavailable",
+                "Не удалось сохранить данные пользователя. Повторите попытку.");
+        }
         catch (IOException exception)
         {
             await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "storage_unavailable", exception.Message);
