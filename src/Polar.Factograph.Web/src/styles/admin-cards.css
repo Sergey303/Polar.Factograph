@@ -1,0 +1,83 @@
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.admin-metric {
+  min-width: 0;
+  padding: 0.75rem;
+  border-radius: 0.7rem;
+  background: var(--surface-soft);
+}
+
+.admin-metric dt {
+  margin-bottom: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.admin-metric dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.admin-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-state.ok {
+  color: #23633a;
+  background: #e5f6ea;
+}
+
+.admin-state.danger {
+  color: var(--danger);
+  background: #fff0f0;
+}
+
+.admin-result {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border: 1px solid #bcded0;
+  border-radius: 0.75rem;
+  background: #effaf5;
+}
+
+.admin-table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.65rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-table th {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
