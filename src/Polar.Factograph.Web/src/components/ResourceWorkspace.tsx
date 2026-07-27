@@ -1,17 +1,18 @@
 import { useMemo, useState } from "react";
 import type { ProjectOverview, ResourcePortrait } from "../api/models";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
-import { cassettesWithRight } from "../app/projectAccess";
+import { cassettesWithRight, cassettesWithRights } from "../app/projectAccess";
 import {
   emptyResourceDraft,
   resourceDraftFromPortrait
 } from "../app/resourceDraftFactory";
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
-import { ResourceEditorPane } from "./ResourceEditorPane";
 import { ResourcePortraitView } from "./ResourcePortraitView";
 import { ResourceWorkspaceActions } from "./ResourceWorkspaceActions";
-
-type EditorMode = "create" | "edit" | null;
+import {
+  ResourceWorkspaceModePane,
+  type ResourceWorkspaceMode
+} from "./ResourceWorkspaceModePane";
 
 interface ResourceWorkspaceProps {
   project: ProjectOverview | null;
@@ -24,10 +25,14 @@ interface ResourceWorkspaceProps {
 }
 
 export function ResourceWorkspace(props: ResourceWorkspaceProps) {
-  const [mode, setMode] = useState<EditorMode>(null);
+  const [mode, setMode] = useState<ResourceWorkspaceMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const writable = useMemo(
     () => cassettesWithRight(props.project, "writeMetadata"),
+    [props.project]
+  );
+  const documentCassettes = useMemo(
+    () => cassettesWithRights(props.project, ["addDocuments", "writeMetadata"]),
     [props.project]
   );
   const cassetteId = preferredResourceCassette(
@@ -53,10 +58,11 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
 
   if (mode !== null) {
     return (
-      <ResourceEditorPane
+      <ResourceWorkspaceModePane
         mode={mode}
         initialDraft={initialDraft}
-        cassettes={writable}
+        writableCassettes={writable}
+        documentCassettes={documentCassettes}
         token={props.token}
         onCancel={() => setMode(null)}
         onSaved={saved}
@@ -68,10 +74,12 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
     <>
       <ResourceWorkspaceActions
         canCreate={writable.length > 0}
+        canAddDocument={documentCassettes.length > 0}
         canEdit={writable.length > 0 &&
           props.portrait !== null && props.portrait.type !== null}
         notice={notice}
         onCreate={() => { setNotice(null); setMode("create"); }}
+        onAddDocument={() => { setNotice(null); setMode("document"); }}
         onEdit={() => { setNotice(null); setMode("edit"); }}
       />
       <ResourcePortraitView
