@@ -12,10 +12,11 @@ export function useAuthenticationExpiry(
 
   useEffect(() => {
     if (session?.source !== "oidc" || session.expiresAt === null) return;
+    const expiresAt = session.expiresAt;
     let timeout = 0;
 
     function schedule(): void {
-      const remaining = session.expiresAt! - Date.now();
+      const remaining = expiresAt - Date.now();
       if (remaining <= 0) {
         callback.current();
         return;
