@@ -8,6 +8,7 @@ import { initializeAuthentication } from "../auth/authInitialization";
 import { clearPendingAuthorization } from "../auth/authStorage";
 import type { OidcClientConfiguration } from "../auth/oidcConfiguration";
 import { beginOidcLogin } from "../auth/oidcLogin";
+import { useAuthenticationExpiry } from "./useAuthenticationExpiry";
 
 const initial = readAuthenticationCredentials();
 
@@ -29,6 +30,11 @@ export function useAuthentication() {
     setSession(nextSession);
   }
 
+  useAuthenticationExpiry(session, () => {
+    apply("", null);
+    setError("Сессия истекла. Войдите снова.");
+  });
+
   useEffect(() => {
     let active = true;
     initializeAuthentication()
@@ -47,21 +53,6 @@ export function useAuthentication() {
       });
     return () => { active = false; };
   }, []);
-
-  useEffect(() => {
-    if (session?.source !== "oidc" || session.expiresAt === null) return;
-    const delay = session.expiresAt - Date.now();
-    if (delay <= 0) {
-      apply("", null);
-      setError("Сессия истекла. Войдите снова.");
-      return;
-    }
-    const timeout = window.setTimeout(() => {
-      apply("", null);
-      setError("Сессия истекла. Войдите снова.");
-    }, delay);
-    return () => window.clearTimeout(timeout);
-  }, [session]);
 
   async function login(): Promise<void> {
     if (configuration === null) return;
