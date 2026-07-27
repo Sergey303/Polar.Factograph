@@ -1,18 +1,13 @@
 import { useEffect, useState } from "react";
-import { authApi } from "../api/authApi";
 import type { AuthenticationSession } from "../api/authModels";
 import {
   persistAuthenticationCredentials,
   readAuthenticationCredentials
 } from "../auth/authCredentials";
+import { initializeAuthentication } from "../auth/authInitialization";
 import { clearPendingAuthorization } from "../auth/authStorage";
-import {
-  beginOidcLogin,
-  completeOidcLogin,
-  enabledOidcConfiguration,
-  hasAuthorizationCallback,
-  type OidcClientConfiguration
-} from "../auth/oidcFlow";
+import type { OidcClientConfiguration } from "../auth/oidcConfiguration";
+import { beginOidcLogin } from "../auth/oidcLogin";
 
 const initial = readAuthenticationCredentials();
 
@@ -36,18 +31,11 @@ export function useAuthentication() {
 
   useEffect(() => {
     const controller = new AbortController();
-    authApi.configuration(controller.signal)
-      .then(async value => {
-        const configured = enabledOidcConfiguration(value);
-        setConfiguration(configured);
-        if (!hasAuthorizationCallback()) return;
-        if (configured === null) throw new Error("Браузерный вход не настроен на сервере.");
-        const completed = await completeOidcLogin(configured);
-        if (completed !== null) {
-          apply(completed.accessToken, {
-            source: "oidc",
-            expiresAt: completed.expiresAt
-          });
+    initializeAuthentication(controller.signal)
+      .then(result => {
+        setConfiguration(result.configuration);
+        if (result.completed !== null) {
+          apply(result.completed.token, result.completed.session);
         }
       })
       .catch(reason => {
