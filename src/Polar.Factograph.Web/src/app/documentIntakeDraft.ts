@@ -12,13 +12,13 @@ function localName(id: string): string {
 }
 
 export function documentClasses(schema: OntologyWriteSchema): OntologyWriteClass[] {
-  return schema.classes.filter(type =>
-    type.properties.some(property => property.kind === "literal")
-  );
+  return schema.classes.filter(type => literalProperties(type).length > 0);
 }
 
 export function literalProperties(type: OntologyWriteClass | null): OntologyWriteProperty[] {
-  return type?.properties.filter(property => property.kind === "literal") ?? [];
+  return type?.properties.filter(property =>
+    property.kind === "literal" && property.options.length === 0
+  ) ?? [];
 }
 
 export function preferredUriProperty(
