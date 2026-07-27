@@ -20,7 +20,7 @@
   display: grid;
   place-items: center;
   padding: 1.5rem;
-  background: var(--background);
+  background: #eef2f5;
 }
 
 .authentication-card {
@@ -44,7 +44,7 @@
 .authentication-loading {
   padding: 2rem 0;
   text-align: center;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .local-authentication-form {
