@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { readAccessToken, writeAccessToken } from "../api/tokenStore";
+import { AdminDialog } from "../components/AdminDialog";
 import { NavigationPanel } from "../components/NavigationPanel";
 import { ResourceWorkspace } from "../components/ResourceWorkspace";
 import { SearchPanel } from "../components/SearchPanel";
@@ -12,14 +13,17 @@ import { useSearch } from "./useSearch";
 export function App() {
   const [token, setToken] = useState(readAccessToken);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [adminOpen, setAdminOpen] = useState(false);
   const project = useProject(token);
   const search = useSearch(token);
   const portrait = usePortrait(selectedId, token);
+  const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
 
   function saveToken(value: string): void {
     writeAccessToken(value);
     setToken(value.trim());
     setSelectedId(null);
+    setAdminOpen(false);
     search.clear();
   }
 
@@ -29,8 +33,10 @@ export function App() {
         project={project.project}
         token={token}
         loading={project.loading}
+        canAdmin={canAdmin}
         onTokenSave={saveToken}
         onReload={project.reload}
+        onAdmin={() => setAdminOpen(true)}
       />
 
       <main className="workspace">
@@ -76,6 +82,10 @@ export function App() {
           />
         </section>
       </main>
+
+      {adminOpen && canAdmin && (
+        <AdminDialog token={token} onClose={() => setAdminOpen(false)} />
+      )}
     </div>
   );
 }
