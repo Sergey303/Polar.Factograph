@@ -15,11 +15,10 @@ export interface AuthenticationInitialization {
   } | null;
 }
 
-export async function initializeAuthentication(
-  signal: AbortSignal
-): Promise<AuthenticationInitialization> {
-  const publicConfiguration = await authApi.configuration(signal);
-  signal.throwIfAborted();
+let initialization: Promise<AuthenticationInitialization> | null = null;
+
+async function createInitialization(): Promise<AuthenticationInitialization> {
+  const publicConfiguration = await authApi.configuration();
   const configuration = enabledOidcConfiguration(publicConfiguration);
   if (!hasAuthorizationCallback()) return { configuration, completed: null };
   if (configuration === null) {
@@ -27,7 +26,6 @@ export async function initializeAuthentication(
   }
 
   const result = await completeOidcLogin(configuration);
-  signal.throwIfAborted();
   return {
     configuration,
     completed: result === null ? null : {
@@ -35,4 +33,9 @@ export async function initializeAuthentication(
       session: { source: "oidc", expiresAt: result.expiresAt }
     }
   };
+}
+
+export function initializeAuthentication(): Promise<AuthenticationInitialization> {
+  initialization ??= createInitialization();
+  return initialization;
 }
