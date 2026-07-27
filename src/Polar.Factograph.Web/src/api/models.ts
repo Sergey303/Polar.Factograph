@@ -74,6 +74,32 @@ export interface ResourcePortrait {
   provenance: ResourceProvenance;
 }
 
+export interface SemanticResourceLink {
+  resourceId: string;
+  displayName: string;
+  type: string | null;
+  typeLabel: string | null;
+  relationLabel: string;
+}
+
+export interface SemanticPhotoCard {
+  resourceId: string;
+  displayName: string;
+  documentUri: string | null;
+  contextResourceId: string | null;
+  contextLabel: string | null;
+}
+
+export interface SemanticResourcePage {
+  requestedResourceId: string;
+  portrait: ResourcePortrait;
+  photos: SemanticPhotoCard[];
+  participants: SemanticResourceLink[];
+  organizations: SemanticResourceLink[];
+  collections: SemanticResourceLink[];
+  relatedResources: SemanticResourceLink[];
+}
+
 export interface DocumentLocation {
   cassetteId: string;
   cassetteName: string;
