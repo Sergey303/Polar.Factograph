@@ -28,6 +28,7 @@ public sealed class ProjectResourceWriteCoordinator(
         ProjectFogMutationOutcome<FogResourceWriteResult> mutation =
             await mutationRunner.RunAsync(
                 context.Project,
+                context.Access.UserId,
                 cassetteId,
                 (source, token) => resourceWriter.AppendAsync(source, request, token),
                 cancellationToken,
