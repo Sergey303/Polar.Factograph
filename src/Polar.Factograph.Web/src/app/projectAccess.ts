@@ -18,8 +18,15 @@ export function cassettesWithRight(
   project: ProjectOverview | null,
   right: string
 ): ProjectCassetteOverview[] {
-  return project?.cassettes.filter(
-    cassette => cassette.allowWrite && cassette.rights.includes(right)
+  return cassettesWithRights(project, [right]);
+}
+
+export function cassettesWithRights(
+  project: ProjectOverview | null,
+  rights: string[]
+): ProjectCassetteOverview[] {
+  return project?.cassettes.filter(cassette =>
+    cassette.allowWrite && rights.every(right => cassette.rights.includes(right))
   ) ?? [];
 }
 
