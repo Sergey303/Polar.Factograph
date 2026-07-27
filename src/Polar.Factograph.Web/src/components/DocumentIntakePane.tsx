@@ -48,19 +48,20 @@ export function DocumentIntakePane(props: DocumentIntakePaneProps) {
     );
   }
 
+  const current = prepared;
   const selectedCassette = props.cassettes.filter(
-    cassette => cassette.id === prepared.upload.cassetteId
+    cassette => cassette.id === current.upload.cassetteId
   );
   function cancelMetadata(): void {
     const leave = window.confirm(
-      `Оригинал уже сохранён как ${prepared.upload.documentUri}. Выйти без RDF-описания?`
+      `Оригинал уже сохранён как ${current.upload.documentUri}. Выйти без RDF-описания?`
     );
     if (leave) props.onCancel();
   }
 
   return (
     <div className="document-metadata-stage">
-      <DocumentUploadSummary upload={prepared.upload} />
+      <DocumentUploadSummary upload={current.upload} />
       <ResourceEditor
         mode="create"
         initialDraft={draft}
@@ -70,7 +71,7 @@ export function DocumentIntakePane(props: DocumentIntakePaneProps) {
         title="Описание загруженного документа"
         lockType
         lockCassette
-        protectedPredicates={[prepared.uriPredicate]}
+        protectedPredicates={[current.uriPredicate]}
         onCancel={cancelMetadata}
         onSaved={props.onSaved}
       />
