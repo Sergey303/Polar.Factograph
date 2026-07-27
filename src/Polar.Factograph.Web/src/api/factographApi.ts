@@ -4,7 +4,8 @@ import type {
   DocumentVariant,
   ProjectOverview,
   ResourcePortrait,
-  ResourceSearchResult
+  ResourceSearchResult,
+  SemanticResourcePage
 } from "./models";
 import { mergeSearchResults } from "./searchResults";
 
@@ -14,6 +15,10 @@ function query(parameters: Record<string, string | number>): string {
     values.set(name, String(value));
   }
   return values.toString();
+}
+
+export function documentContentUrl(uri: string, variant: DocumentVariant): string {
+  return `api/documents/content?${query({ uri, variant })}`;
 }
 
 export const factographApi = {
@@ -55,6 +60,19 @@ export const factographApi = {
     );
   },
 
+  getResourcePage(
+    resourceId: string,
+    token: string,
+    signal?: AbortSignal
+  ): Promise<SemanticResourcePage> {
+    const parameters = query({ id: resourceId, lang: "ru" });
+    return requestJson<SemanticResourcePage>(
+      `api/resources/page?${parameters}`,
+      token,
+      signal
+    );
+  },
+
   getDocumentLocation(
     uri: string,
     token: string,
@@ -74,7 +92,7 @@ export const factographApi = {
     signal?: AbortSignal
   ): Promise<Blob> {
     return requestBlob(
-      `api/documents/content?${query({ uri, variant })}`,
+      documentContentUrl(uri, variant),
       token,
       signal
     );
