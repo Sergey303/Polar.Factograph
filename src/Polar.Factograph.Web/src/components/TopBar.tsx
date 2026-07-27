@@ -5,6 +5,7 @@ import type {
   LocalUser
 } from "../api/authModels";
 import type { ProjectOverview } from "../api/models";
+import { searchHref } from "../app/routes";
 import { LocalAuthenticationPopover } from "./LocalAuthenticationPopover";
 
 interface TopBarAuthentication {
@@ -38,7 +39,7 @@ export function TopBar(props: TopBarProps) {
 
   return (
     <header className="top-bar">
-      <div className="brand-block">
+      <a className="brand-block" href={searchHref}>
         <span className="brand-mark">PF</span>
         <div>
           <strong>Polar.Factograph</strong>
@@ -46,10 +47,10 @@ export function TopBar(props: TopBarProps) {
             {props.project?.name ?? "Подключение к проекту"}
           </div>
         </div>
-      </div>
+      </a>
 
       <div className="top-actions">
-        {props.project && <span className="user-pill">{props.project.userId}</span>}
+        <a className="button ghost" href={searchHref}>Поиск</a>
         {props.canAdmin && (
           <button className="button" type="button" onClick={props.onAdmin}>
             Администрирование
