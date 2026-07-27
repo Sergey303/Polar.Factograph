@@ -33,6 +33,7 @@ internal static class OntologyWriteTestCatalog
           <Class rdf:about="organization" />
           <DatatypeProperty rdf:about="name">
             <domain rdf:resource="base" />
+            <range rdf:resource="text" />
           </DatatypeProperty>
           <ObjectProperty rdf:about="mentor">
             <domain rdf:resource="child" />
