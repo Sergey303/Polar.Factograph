@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { authApi } from "../api/authApi";
+import { errorText } from "../api/errorText";
 import type {
   LocalLoginRequest,
   LocalRegisterRequest,
@@ -7,7 +8,10 @@ import type {
 } from "../api/authModels";
 
 function errorMessage(reason: unknown, fallback: string): string {
-  return reason instanceof Error ? reason.message : fallback;
+  if (reason instanceof Error) {
+    return errorText(reason);
+  }
+  return fallback;
 }
 
 export function useAuthentication() {
