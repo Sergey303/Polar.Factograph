@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
 import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
-import type { ResourceSearchResult, SearchMode } from "../api/models";
+import type { ResourceSearchResult } from "../api/models";
 
 export function useSearch(token: string) {
-  const [mode, setMode] = useState<SearchMode>("names");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ResourceSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,7 +24,7 @@ export function useSearch(token: string) {
     setLoading(true);
     setError(null);
     try {
-      setResults(await factographApi.search(mode, text, token, controller.signal));
+      setResults(await factographApi.search(text, token, controller.signal));
     } catch (reason) {
       if (!controller.signal.aborted) {
         setResults([]);
@@ -48,8 +47,6 @@ export function useSearch(token: string) {
   }
 
   return {
-    mode,
-    setMode,
     query,
     setQuery,
     results,
