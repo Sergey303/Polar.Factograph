@@ -4,8 +4,35 @@ export type AppRoute =
   | { page: "search" }
   | { page: "resource"; resourceId: string };
 
+function applicationBase(): URL {
+  const explicitBase = document
+    .querySelector<HTMLBaseElement>("base[href]")
+    ?.getAttribute("href")
+    ?.trim();
+
+  if (!explicitBase) {
+    return new URL("/", window.location.origin);
+  }
+
+  try {
+    const candidate = new URL(explicitBase, `${window.location.origin}/`);
+    if (candidate.origin !== window.location.origin) {
+      return new URL("/", window.location.origin);
+    }
+
+    candidate.search = "";
+    candidate.hash = "";
+    if (!candidate.pathname.endsWith("/")) {
+      candidate.pathname += "/";
+    }
+    return candidate;
+  } catch {
+    return new URL("/", window.location.origin);
+  }
+}
+
 function applicationHref(hash: string): string {
-  const target = new URL(document.baseURI);
+  const target = applicationBase();
   target.hash = hash;
   return target.href;
 }
