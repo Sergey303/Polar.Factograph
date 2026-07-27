@@ -14,4 +14,5 @@ public sealed record ProjectReadContext(
     PolarDbTypedProjectStore Store,
     AuthorizedProjectReadService Reads,
     AuthorizedPresentedPortraitService Portraits,
+    SemanticResourcePageService SemanticPages,
     AuthorizedProjectCollectionService Collections);
