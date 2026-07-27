@@ -36,15 +36,15 @@ export function App() {
         loading={project.loading || auth.initializing}
         canAdmin={canAdmin}
         authentication={{
-          token: auth.token,
-          source: auth.source,
-          oidcEnabled: auth.oidcEnabled,
+          authenticated: auth.authenticated,
+          registrationEnabled: auth.registrationEnabled,
+          user: auth.user,
           initializing: auth.initializing,
           busy: auth.busy,
           error: auth.error,
-          onLogin: () => { void auth.login(); },
-          onLogout: auth.logout,
-          onDiagnosticToken: auth.saveDiagnosticToken
+          onLogin: auth.login,
+          onRegister: auth.register,
+          onLogout: auth.logout
         }}
         onReload={project.reload}
         onAdmin={() => setAdminOpen(true)}

@@ -16,7 +16,7 @@ export const documentWriteApi = {
       values.cassetteId = cassetteId;
     }
     return requestBinaryBody<DocumentWriteResponse>(
-      `/api/documents/files?${query(values)}`,
+      `api/documents/files?${query(values)}`,
       "POST",
       file,
       token
@@ -25,7 +25,7 @@ export const documentWriteApi = {
 
   replace(uri: string, file: File, token: string): Promise<DocumentWriteResponse> {
     return requestBinaryBody<DocumentWriteResponse>(
-      `/api/documents/files?${query({ uri, fileName: file.name })}`,
+      `api/documents/files?${query({ uri, fileName: file.name })}`,
       "PUT",
       file,
       token

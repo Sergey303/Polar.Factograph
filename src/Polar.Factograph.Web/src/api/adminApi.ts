@@ -9,7 +9,7 @@ import type {
 export const adminApi = {
   getIndexStatus(token: string, signal?: AbortSignal): Promise<ProjectIndexRuntimeStatus> {
     return requestJson<ProjectIndexRuntimeStatus>(
-      "/api/admin/index/status",
+      "api/admin/index/status",
       token,
       signal
     );
@@ -17,7 +17,7 @@ export const adminApi = {
 
   getPreviewStatus(token: string, signal?: AbortSignal): Promise<PreviewSubsystemStatus> {
     return requestJson<PreviewSubsystemStatus>(
-      "/api/admin/previews/status",
+      "api/admin/previews/status",
       token,
       signal
     );
@@ -28,7 +28,7 @@ export const adminApi = {
     signal?: AbortSignal
   ): Promise<FogMaterializationStatistics> {
     return requestJson<FogMaterializationStatistics>(
-      "/api/admin/project/materialization-summary",
+      "api/admin/project/materialization-summary",
       token,
       signal
     );
@@ -36,7 +36,7 @@ export const adminApi = {
 
   rebuildIndex(token: string): Promise<ProjectIndexRebuildResult> {
     return requestJsonBody<ProjectIndexRebuildResult>(
-      "/api/admin/index/rebuild",
+      "api/admin/index/rebuild",
       "POST",
       {},
       token

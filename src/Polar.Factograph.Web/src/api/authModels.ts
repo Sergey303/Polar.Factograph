@@ -1,30 +1,47 @@
-export interface BrowserAuthenticationConfiguration {
-  enabled: boolean;
-  authority: string | null;
-  clientId: string | null;
-  scope: string | null;
+export interface LocalUser {
+  id: string;
+  login: string;
+  displayName: string;
+  roles: string[];
+  fogCassetteId: string;
+  fogDocumentUri: string;
 }
 
-export interface OidcDiscoveryDocument {
-  issuer: string;
-  authorization_endpoint: string;
-  token_endpoint: string;
+export interface LocalDevice {
+  id: string;
+  name: string;
+  createdAtUtc: string;
+  lastSeenAtUtc: string;
+  expiresAtUtc: string;
+  revokedAtUtc: string | null;
+  current: boolean;
 }
 
-export interface OidcTokenResponse {
-  access_token: string;
-  token_type?: string;
-  expires_in?: number | string;
+export interface LocalSession {
+  authenticated: boolean;
+  registrationEnabled: boolean;
+  antiforgeryToken: string;
+  user: LocalUser | null;
+  devices: LocalDevice[];
 }
 
-export interface AuthenticationSession {
-  source: "oidc" | "diagnostic";
-  expiresAt: number | null;
+export interface LocalAuthenticatedResponse {
+  userId: string;
+  login: string;
+  displayName: string;
+  roles: string[];
+  fogCassetteId: string;
+  fogDocumentUri: string;
+  deviceId: string;
+  expiresAtUtc: string;
 }
 
-export interface PendingAuthorization {
-  state: string;
-  verifier: string;
-  redirectUri: string;
-  createdAt: number;
+export interface LocalLoginRequest {
+  login: string;
+  password: string;
+  deviceName?: string;
+}
+
+export interface LocalRegisterRequest extends LocalLoginRequest {
+  displayName?: string;
 }

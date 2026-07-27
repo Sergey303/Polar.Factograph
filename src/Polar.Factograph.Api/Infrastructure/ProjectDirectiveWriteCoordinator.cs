@@ -49,6 +49,7 @@ public sealed class ProjectDirectiveWriteCoordinator(
         ProjectFogMutationOutcome<FogDirectiveWriteResult> mutation =
             await mutationRunner.RunAsync(
                 context.Project,
+                context.Access.UserId,
                 cassetteId,
                 (source, token) => directiveWriter.AppendAsync(source, request, token),
                 cancellationToken);

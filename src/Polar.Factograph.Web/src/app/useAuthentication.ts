@@ -1,53 +1,29 @@
 import { useEffect, useState } from "react";
-import type { AuthenticationSession } from "../api/authModels";
-import {
-  persistAuthenticationCredentials,
-  readAuthenticationCredentials
-} from "../auth/authCredentials";
-import { initializeAuthentication } from "../auth/authInitialization";
-import { clearPendingAuthorization } from "../auth/authStorage";
-import type { OidcClientConfiguration } from "../auth/oidcConfiguration";
-import { beginOidcLogin } from "../auth/oidcLogin";
-import { useAuthenticationExpiry } from "./useAuthenticationExpiry";
-
-const initial = readAuthenticationCredentials();
+import { authApi } from "../api/authApi";
+import type {
+  LocalLoginRequest,
+  LocalRegisterRequest,
+  LocalSession
+} from "../api/authModels";
 
 function errorMessage(reason: unknown, fallback: string): string {
   return reason instanceof Error ? reason.message : fallback;
 }
 
 export function useAuthentication() {
-  const [token, setToken] = useState(initial.token);
-  const [session, setSession] = useState(initial.session);
-  const [configuration, setConfiguration] = useState<OidcClientConfiguration | null>(null);
+  const [session, setSession] = useState<LocalSession | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function apply(nextToken: string, nextSession: AuthenticationSession | null): void {
-    persistAuthenticationCredentials(nextToken, nextSession);
-    setToken(nextToken);
-    setSession(nextSession);
-  }
-
-  useAuthenticationExpiry(session, () => {
-    apply("", null);
-    setError("Сессия истекла. Войдите снова.");
-  });
-
   useEffect(() => {
     let active = true;
-    initializeAuthentication()
-      .then(result => {
-        if (!active) return;
-        setConfiguration(result.configuration);
-        setError(result.callbackError);
-        if (result.completed !== null) {
-          apply(result.completed.token, result.completed.session);
-        }
+    authApi.session()
+      .then(value => {
+        if (active) setSession(value);
       })
       .catch(reason => {
-        if (active) setError(errorMessage(reason, "Не удалось выполнить вход."));
+        if (active) setError(errorMessage(reason, "Не удалось проверить сессию."));
       })
       .finally(() => {
         if (active) setInitializing(false);
@@ -55,41 +31,54 @@ export function useAuthentication() {
     return () => { active = false; };
   }, []);
 
-  async function login(): Promise<void> {
-    if (configuration === null) return;
+  async function login(request: LocalLoginRequest): Promise<void> {
     setBusy(true);
     setError(null);
     try {
-      await beginOidcLogin(configuration);
+      setSession(await authApi.login(request));
     } catch (reason) {
-      setError(errorMessage(reason, "Не удалось начать вход."));
+      setError(errorMessage(reason, "Не удалось войти."));
+    } finally {
       setBusy(false);
     }
   }
 
-  function logout(): void {
-    clearPendingAuthorization();
-    apply("", null);
+  async function register(request: LocalRegisterRequest): Promise<void> {
+    setBusy(true);
     setError(null);
+    try {
+      setSession(await authApi.register(request));
+    } catch (reason) {
+      setError(errorMessage(reason, "Не удалось зарегистрироваться."));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function saveDiagnosticToken(value: string): void {
-    const normalized = value.trim();
-    apply(normalized, normalized.length === 0
-      ? null
-      : { source: "diagnostic", expiresAt: null });
+  async function logout(): Promise<void> {
+    setBusy(true);
     setError(null);
+    try {
+      setSession(await authApi.logout());
+    } catch (reason) {
+      setError(errorMessage(reason, "Не удалось выйти."));
+    } finally {
+      setBusy(false);
+    }
   }
 
+  const authenticated = session?.authenticated === true && session.user !== null;
   return {
-    token,
-    source: session?.source ?? null,
-    oidcEnabled: configuration !== null,
+    token: authenticated ? session.user!.id : "",
+    authenticated,
+    registrationEnabled: session?.registrationEnabled ?? false,
+    user: session?.user ?? null,
+    devices: session?.devices ?? [],
     initializing,
     busy,
     error,
     login,
-    logout,
-    saveDiagnosticToken
+    register,
+    logout
   };
 }

@@ -1,3 +1,4 @@
+using Polar.Factograph.Api.Authentication;
 using Polar.Factograph.Application;
 using Polar.Factograph.Domain;
 using Polar.Factograph.Storage;
@@ -8,6 +9,7 @@ public sealed class ProjectRequestContextFactory(
     ProjectPathResolver projectPathResolver,
     ProjectConfigurationLoader projectLoader,
     CurrentUserResolver userResolver,
+    IdentityProjectMemberOverlay memberOverlay,
     ProjectAccessService accessService,
     ProjectStoreProvider storeProvider,
     OntologyCatalogProvider ontologyProvider)
@@ -19,6 +21,7 @@ public sealed class ProjectRequestContextFactory(
         string projectPath = projectPathResolver.GetRequiredPath();
         ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
         string userId = userResolver.Resolve(httpContext);
+        project = memberOverlay.Apply(project, userId);
         ProjectAccessSnapshot access = accessService.Evaluate(project, userId);
         return new ProjectAccessContext(project, access);
     }
