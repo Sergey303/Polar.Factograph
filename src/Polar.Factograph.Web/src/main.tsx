@@ -10,6 +10,8 @@ import "./styles/document-actions.css";
 import "./styles/document-intake.css";
 import "./styles/resource-editor.css";
 import "./styles/resource-properties.css";
+import "./styles/admin-dialog.css";
+import "./styles/admin-cards.css";
 
 const root = document.getElementById("root");
 if (root === null) {
