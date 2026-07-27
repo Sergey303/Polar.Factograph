@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { readAccessToken, writeAccessToken } from "../api/tokenStore";
 import { AdminDialog } from "../components/AdminDialog";
 import { NavigationPanel } from "../components/NavigationPanel";
@@ -18,6 +18,10 @@ export function App() {
   const search = useSearch(token);
   const portrait = usePortrait(selectedId, token);
   const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
+
+  useEffect(() => {
+    if (!canAdmin) setAdminOpen(false);
+  }, [canAdmin]);
 
   function saveToken(value: string): void {
     writeAccessToken(value);
