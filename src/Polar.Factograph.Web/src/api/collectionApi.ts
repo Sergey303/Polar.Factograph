@@ -20,7 +20,7 @@ export const collectionApi = {
   ): Promise<CollectionContents> {
     const query = parameters({ id: collectionId, limit: 100, lang: "ru" });
     return requestJson<CollectionContents>(
-      `/api/collections/items?${query}`,
+      `api/collections/items?${query}`,
       token,
       signal
     );
@@ -33,7 +33,7 @@ export const collectionApi = {
     token: string
   ): Promise<CollectionMutationResponse> {
     return requestJsonBody<CollectionMutationResponse>(
-      "/api/collections/items",
+      "api/collections/items",
       "POST",
       { collectionId, resourceId, cassetteId },
       token
@@ -48,7 +48,7 @@ export const collectionApi = {
     token: string
   ): Promise<CollectionMutationResponse> {
     return requestJsonBody<CollectionMutationResponse>(
-      "/api/collections/items/remove",
+      "api/collections/items/remove",
       "POST",
       { membershipResourceId, collectionId, resourceId, cassetteId },
       token
