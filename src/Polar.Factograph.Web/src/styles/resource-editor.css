@@ -4,6 +4,12 @@
   padding: 1rem 1.1rem 0;
 }
 
+.resource-workspace-actions .button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
 .resource-editor {
   display: grid;
   gap: 1.15rem;
