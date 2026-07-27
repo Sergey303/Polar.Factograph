@@ -38,6 +38,7 @@ ScaffoldingReadMe.txt
 # JavaScript dependencies and builds
 node_modules/
 src/Polar.Factograph.Web/dist/
+src/Polar.Factograph.Api/wwwroot/
 
 # dotenv environment variables file
 .env
