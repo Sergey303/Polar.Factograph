@@ -27,9 +27,7 @@ export function LocalAuthenticationPopover(
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
-    const deviceName = navigator.userAgentData?.platform
-      ?? navigator.platform
-      ?? "Browser";
+    const deviceName = navigator.platform || "Browser";
     if (registering) {
       await props.onRegister({ login, password, displayName, deviceName });
     } else {
