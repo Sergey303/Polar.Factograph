@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "projectId": "polar-factograph-iis",
+  "name": "Polar.Factograph IIS",
+  "ontology": {
+    "path": "./ontology.xml"
+  },
+  "index": {
+    "path": "./project-data/index",
+    "rebuildMode": "whenSourcesChanged"
+  },
+  "cassettes": [
+    {
+      "id": "syp-cassette-full",
+      "name": "SypCassete",
+      "path": "./cassetes/SypCassete",
+      "enabled": false,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "syp-cassette-small",
+      "name": "SypCassete _small",
+      "path": "./cassetes/SypCassete _small",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": true
+    }
+  ],
+  "roles": {
+    "viewer": {
+      "projectRights": [
+        "read",
+        "search"
+      ],
+      "cassetteRights": {
+        "syp-cassette-full": [
+          "read"
+        ],
+        "syp-cassette-small": [
+          "read"
+        ]
+      }
+    },
+    "editor": {
+      "projectRights": [
+        "read",
+        "search"
+      ],
+      "cassetteRights": {
+        "syp-cassette-full": [
+          "read"
+        ],
+        "syp-cassette-small": [
+          "read",
+          "writeMetadata",
+          "addDocuments",
+          "replaceDocuments"
+        ]
+      }
+    },
+    "administrator": {
+      "projectRights": [
+        "read",
+        "search",
+        "export",
+        "manageUsers",
+        "manageCassettes",
+        "rebuildIndex"
+      ],
+      "cassetteRights": {
+        "*": [
+          "read",
+          "writeMetadata",
+          "addDocuments",
+          "replaceDocuments",
+          "delete",
+          "substitute",
+          "manage"
+        ]
+      }
+    }
+  },
+  "members": [
+    {
+      "userId": "admin",
+      "roles": [
+        "administrator"
+      ],
+      "cassetteOverrides": {}
+    }
+  ],
+  "writeRouting": {
+    "defaultCassetteByRole": {
+      "editor": "syp-cassette-small",
+      "administrator": "syp-cassette-small"
+    }
+  }
+}
