@@ -5,6 +5,7 @@ import "./styles/base.css";
 import "./styles/layout.css";
 import "./styles/components.css";
 import "./styles/portrait.css";
+import "./styles/semantic-resource.css";
 import "./styles/collections.css";
 import "./styles/document-actions.css";
 import "./styles/document-intake.css";
