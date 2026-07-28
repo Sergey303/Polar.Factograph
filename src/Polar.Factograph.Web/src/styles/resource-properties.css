@@ -33,13 +33,87 @@
   gap: 0.2rem;
 }
 
-.resource-property-language {
+.resource-property-language,
+.resource-reference-input > label,
+.complex-relation-select > label {
   display: grid;
-  max-width: 12rem;
   gap: 0.35rem;
   color: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 650;
+}
+
+.resource-property-language {
+  max-width: 12rem;
+}
+
+.resource-reference-input,
+.resource-reference-results,
+.relation-choice-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.resource-reference-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.resource-reference-search > input {
+  flex: 1 1 16rem;
+}
+
+.resource-reference-results,
+.relation-choice-list {
+  max-height: 22rem;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.relation-row {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  color: inherit;
+  text-align: left;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.relation-row:hover,
+.relation-row:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(22 124 130 / 12%);
+}
+
+.reference-create-dialog {
+  width: min(74rem, 100%);
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-soft);
+  box-shadow: 0 24px 80px rgb(10 25 35 / 28%);
+}
+
+.complex-relation-select {
+  min-height: 24rem;
+}
+
+.complex-relation-select .section-heading-row > div:first-child {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.complex-relation-select .section-heading-row h3,
+.complex-relation-select .section-heading-row p {
+  margin: 0;
 }
 
 .badge.warning {
@@ -55,9 +129,18 @@
   background: #fff8f8;
 }
 
+@media (max-width: 720px) {
+  .reference-create-dialog {
+    min-height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+
 @media (max-width: 640px) {
   .resource-property-add,
-  .resource-property-heading {
+  .resource-property-heading,
+  .resource-reference-search {
     align-items: stretch;
     flex-direction: column;
   }
