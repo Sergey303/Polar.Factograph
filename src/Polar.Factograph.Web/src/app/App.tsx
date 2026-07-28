@@ -41,7 +41,8 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   const project = useProject(auth.token);
   const search = useSearch(auth.token);
   const resourceId = route.page === "resource" ? route.resourceId : null;
-  const resource = useResourcePage(resourceId, auth.token);
+  const routeAddress = route.page === "resource" ? window.location.href : null;
+  const resource = useResourcePage(resourceId, routeAddress, auth.token);
   const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
 
   useEffect(() => {
@@ -55,15 +56,10 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
 
   useEffect(() => {
     const canonicalId = resource.page?.portrait.resourceId;
-    if (
-      resourceId !== null &&
-      resource.loadedResourceId === resourceId &&
-      canonicalId &&
-      canonicalId !== resourceId
-    ) {
+    if (resourceId !== null && canonicalId && canonicalId !== resourceId) {
       navigateToResource(canonicalId, true);
     }
-  }, [resourceId, resource.loadedResourceId, resource.page]);
+  }, [resourceId, resource.page]);
 
   return (
     <div className="app-shell">
