@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Polar.Factograph.Fog;
 
 internal static class FogDirectiveWrittenFileValidator
@@ -28,12 +30,20 @@ internal static class FogDirectiveWrittenFileValidator
         string? targetId = request.SubstituteTargetId is null
             ? null
             : FogIdentifier.Clean(request.SubstituteTargetId);
+        string expectedModifiedAtRaw = expectedModifiedAtUtc
+            .ToUniversalTime()
+            .ToString("u", CultureInfo.InvariantCulture);
 
         await foreach (FogSourceRecord record in new FileSystemFogRecordReader()
                            .ReadAsync(temporarySource, cancellationToken)
                            .WithCancellation(cancellationToken))
         {
-            if (Matches(record, request.Kind, resourceId, targetId, expectedModifiedAtUtc))
+            if (Matches(
+                    record,
+                    request.Kind,
+                    resourceId,
+                    targetId,
+                    expectedModifiedAtRaw))
             {
                 return;
             }
@@ -48,9 +58,9 @@ internal static class FogDirectiveWrittenFileValidator
         FogRecordKind kind,
         string resourceId,
         string? targetId,
-        DateTime modifiedAtUtc) =>
+        string modifiedAtRaw) =>
         record.Kind == kind &&
         string.Equals(record.ResourceId, resourceId, StringComparison.Ordinal) &&
         string.Equals(record.SubstituteTargetId, targetId, StringComparison.Ordinal) &&
-        record.ModifiedAt == modifiedAtUtc;
+        string.Equals(record.ModifiedAtRaw, modifiedAtRaw, StringComparison.Ordinal);
 }
