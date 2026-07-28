@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Polar.Factograph.Fog;
 
 internal static class FogWrittenFileValidator
@@ -25,6 +27,9 @@ internal static class FogWrittenFileValidator
             Length = file.Length,
             LastWriteTimeUtc = file.LastWriteTimeUtc
         };
+        string expectedModifiedAtRaw = expectedModifiedAtUtc
+            .ToUniversalTime()
+            .ToString("u", CultureInfo.InvariantCulture);
 
         bool found = false;
         await foreach (FogSourceRecord record in new FileSystemFogRecordReader()
@@ -33,9 +38,13 @@ internal static class FogWrittenFileValidator
         {
             if (record.Kind == FogRecordKind.Resource &&
                 string.Equals(record.ResourceId, resourceId, StringComparison.Ordinal) &&
-                record.ModifiedAt == expectedModifiedAtUtc)
+                string.Equals(
+                    record.ModifiedAtRaw,
+                    expectedModifiedAtRaw,
+                    StringComparison.Ordinal))
             {
                 found = true;
+                break;
             }
         }
 
