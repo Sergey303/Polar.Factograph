@@ -23,14 +23,16 @@ export function resourceDraftFromPortrait(
   portrait: ResourcePortrait,
   cassetteId: string
 ): ResourceDraft {
-  const literals: ResourcePropertyDraft[] = portrait.literals.map(field => ({
-    rowId: rowId(),
-    predicate: field.predicate,
-    value: field.value,
-    kind: "literal",
-    language: field.language ?? "",
-    dataType: field.dataType ?? ""
-  }));
+  const literals: ResourcePropertyDraft[] = portrait.literals
+    .filter(field => field.value.length > 0)
+    .map(field => ({
+      rowId: rowId(),
+      predicate: field.predicate,
+      value: field.value,
+      kind: "literal",
+      language: field.language ?? "",
+      dataType: field.dataType ?? ""
+    }));
   const links: ResourcePropertyDraft[] = portrait.directLinks.map(link => ({
     rowId: rowId(),
     predicate: link.predicate,
