@@ -49,4 +49,32 @@ public sealed class FileSystemCassetteDocumentWriterAddTests
         Assert.Equal("0002", result.DocumentNumber);
         Assert.Equal("0002.txt", result.FileName);
     }
+
+    [Fact]
+    public async Task AddAsync_DoesNotReuseNumberHeldByOrphanPreview()
+    {
+        using WritableDocumentCassette cassette = WritableDocumentCassette.Create();
+        string previewDirectory = Path.Combine(
+            cassette.Root,
+            "documents",
+            "small",
+            "0001");
+        Directory.CreateDirectory(previewDirectory);
+        await File.WriteAllTextAsync(Path.Combine(previewDirectory, "0002.jpg"), "old-preview");
+        string originalsDirectory = Path.Combine(cassette.Root, "originals", "0001");
+        Directory.CreateDirectory(originalsDirectory);
+        await File.WriteAllTextAsync(Path.Combine(originalsDirectory, "0001.jpg"), "old-original");
+        FileSystemCassetteDocumentWriter writer = new();
+        await using MemoryStream content = WritableDocumentCassette.Content("new-original");
+
+        CassetteDocumentWriteResult result = await writer.AddAsync(
+            cassette.Definition,
+            content,
+            "new.png",
+            1024);
+
+        Assert.Equal("0001", result.FolderName);
+        Assert.Equal("0003", result.DocumentNumber);
+        Assert.Equal("0003.png", result.FileName);
+    }
 }
