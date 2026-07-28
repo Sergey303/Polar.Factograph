@@ -39,7 +39,7 @@ export function ResourceEditor(props: ResourceEditorProps) {
       <header className="resource-editor-title">
         <div>
           <span className="eyebrow">Метаданные</span>
-          <h1>{props.title ?? (props.mode === "create" ? "Новый ресурс" : "Редактирование ресурса")}</h1>
+          <h1>{props.title ?? (props.mode === "create" ? "Новая сущность" : "Редактирование сущности")}</h1>
         </div>
         <button className="button subtle" type="button" onClick={props.onCancel}>
           Отмена
