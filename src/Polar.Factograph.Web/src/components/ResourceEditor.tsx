@@ -1,4 +1,7 @@
-import type { OntologyWriteSchema } from "../api/ontologyModels";
+import type {
+  OntologyWriteProperty,
+  OntologyWriteSchema
+} from "../api/ontologyModels";
 import type { ProjectCassetteOverview } from "../api/models";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { findWriteClass } from "../app/ontologySchemaLookup";
@@ -9,24 +12,38 @@ import { ResourceEditorHeader } from "./ResourceEditorHeader";
 import { ResourcePropertyAdd } from "./ResourcePropertyAdd";
 import { ResourcePropertyList } from "./ResourcePropertyList";
 
-interface ResourceEditorProps {
+export interface ResourceEditorProps {
   mode: "create" | "edit";
   initialDraft: ResourceDraft;
   schema: OntologyWriteSchema;
   cassettes: ProjectCassetteOverview[];
   token: string;
   title?: string;
+  typeLabel?: string;
+  allowedTypeIds?: string[];
   lockType?: boolean;
   lockCassette?: boolean;
   protectedRowIds?: string[];
   onCancel: () => void;
   onSaved: (result: ResourceWriteResponse) => void;
+  onCreateReference?: (
+    property: OntologyWriteProperty,
+    onCreated: (resourceId: string) => void
+  ) => void;
 }
 
 export function ResourceEditor(props: ResourceEditorProps) {
   const editor = useResourceDraft(props.initialDraft);
   const writer = useResourceWrite(props.token, props.schema, props.onSaved);
   const type = findWriteClass(props.schema, editor.draft.typeId);
+
+  function changeType(typeId: string): void {
+    const nextType = findWriteClass(props.schema, typeId);
+    editor.setType(
+      typeId,
+      nextType?.properties.filter(property => property.isEssential) ?? []
+    );
+  }
 
   return (
     <form
@@ -53,7 +70,9 @@ export function ResourceEditor(props: ResourceEditorProps) {
         cassettes={props.cassettes}
         lockType={props.lockType}
         lockCassette={props.lockCassette}
-        onTypeChange={editor.setType}
+        allowedTypeIds={props.allowedTypeIds}
+        typeLabel={props.typeLabel}
+        onTypeChange={changeType}
         onFieldChange={editor.setField}
       />
 
@@ -66,9 +85,11 @@ export function ResourceEditor(props: ResourceEditorProps) {
           typeId={editor.draft.typeId}
           rows={editor.draft.properties}
           schema={props.schema}
+          token={props.token}
           protectedRowIds={props.protectedRowIds}
           onChange={editor.updateProperty}
           onRemove={editor.removeProperty}
+          onCreateReference={props.onCreateReference}
         />
       </section>
 
