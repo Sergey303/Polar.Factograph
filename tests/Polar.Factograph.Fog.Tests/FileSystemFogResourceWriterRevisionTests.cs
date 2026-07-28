@@ -33,4 +33,35 @@ public sealed class FileSystemFogResourceWriterRevisionTests
         Assert.Contains(resource.Properties, property => property.Value == "Updated");
         Assert.DoesNotContain(resource.Properties, property => property.Value == "Existing");
     }
+
+    [Fact]
+    public async Task AppendAsync_AcceptsRealClockFractionalSeconds()
+    {
+        await using WritableFogFixture fog = await WritableFogFixture.CreateAsync();
+        DateTimeOffset now = new(2026, 7, 28, 12, 34, 56, 789, TimeSpan.Zero);
+        FileSystemFogResourceWriter writer = new(new FixedTimeProvider(now));
+        FogResourceWriteRequest request = new(
+            "photo-doc",
+            [
+                new FogProperty("uri", FogPropertyKind.Literal, "iiss://Cassette@iis/0001/0002"),
+                new FogProperty("name", FogPropertyKind.Literal, "Описание фотографии")
+            ]);
+
+        FogResourceWriteResult result = await writer.AppendAsync(fog.Source, request);
+
+        Assert.Equal(
+            new DateTime(2026, 7, 28, 12, 34, 56, DateTimeKind.Utc),
+            result.ModifiedAtUtc);
+        FileSystemFogRecordReader reader = new();
+        List<FogSourceRecord> records = [];
+        await foreach (FogSourceRecord record in reader.ReadAsync(fog.Source))
+        {
+            records.Add(record);
+        }
+
+        Assert.Contains(records, record =>
+            record.Kind == FogRecordKind.Resource &&
+            record.ResourceId == result.ResourceId &&
+            record.ModifiedAt == result.ModifiedAtUtc);
+    }
 }
