@@ -13,12 +13,23 @@ internal static class LegacyFogTime
             return DateTime.MinValue;
         }
 
-        DateTimeStyles styles = DateTimeStyles.AllowWhiteSpaces;
-        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, styles, out DateTime parsed) ||
-            DateTime.TryParse(value, RussianCulture, styles, out parsed) ||
-            DateTime.TryParse(value, CultureInfo.CurrentCulture, styles, out parsed))
+        DateTimeStyles offsetStyles =
+            DateTimeStyles.AllowWhiteSpaces |
+            DateTimeStyles.AssumeUniversal |
+            DateTimeStyles.AdjustToUniversal;
+        if (DateTimeOffset.TryParse(
+                value,
+                CultureInfo.InvariantCulture,
+                offsetStyles,
+                out DateTimeOffset offset) ||
+            DateTimeOffset.TryParse(value, RussianCulture, offsetStyles, out offset) ||
+            DateTimeOffset.TryParse(
+                value,
+                CultureInfo.CurrentCulture,
+                offsetStyles,
+                out offset))
         {
-            return parsed;
+            return offset.UtcDateTime;
         }
 
         throw new InvalidDataException($"Fog mT value cannot be parsed in '{fogPath}': {value}");
