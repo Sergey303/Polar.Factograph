@@ -1,15 +1,20 @@
 interface ResourceWorkspaceActionsProps {
   canCreate: boolean;
   canAddDocument: boolean;
+  canAddRelation: boolean;
   canEdit: boolean;
   notice: string | null;
   onCreate: () => void;
   onAddDocument: () => void;
+  onAddRelation: () => void;
   onEdit: () => void;
 }
 
 export function ResourceWorkspaceActions(props: ResourceWorkspaceActionsProps) {
-  const hasActions = props.canCreate || props.canAddDocument || props.canEdit;
+  const hasActions = props.canCreate ||
+    props.canAddDocument ||
+    props.canAddRelation ||
+    props.canEdit;
   if (!hasActions && props.notice === null) return null;
 
   return (
@@ -23,6 +28,11 @@ export function ResourceWorkspaceActions(props: ResourceWorkspaceActionsProps) {
         {props.canAddDocument && (
           <button className="button subtle" type="button" onClick={props.onAddDocument}>
             Добавить документ
+          </button>
+        )}
+        {props.canAddRelation && (
+          <button className="button subtle" type="button" onClick={props.onAddRelation}>
+            Добавить связь
           </button>
         )}
         {props.canEdit && (
