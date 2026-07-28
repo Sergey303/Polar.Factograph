@@ -67,14 +67,22 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
 
   function relationSaved(result: ResourceWriteResponse): void {
     setNotice(result.indexReady
-      ? "Связь создана."
-      : "Связь создана, но индекс требует восстановления.");
+      ? "Связь сохранена."
+      : "Связь сохранена, но индекс требует восстановления.");
     setMode(null);
     props.onReload();
   }
 
-  if (mode === "relation" && portrait !== null) {
-    return (
+  if (mode === "relation") {
+    return portrait === null ? (
+      <ResourcePortraitView
+        page={props.page}
+        loading={props.loading}
+        error={props.error}
+        token={props.token}
+        project={props.project}
+      />
+    ) : (
       <ComplexRelationCreatePane
         portrait={portrait}
         cassettes={writable}
