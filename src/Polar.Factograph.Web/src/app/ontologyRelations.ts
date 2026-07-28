@@ -22,9 +22,10 @@ export function ontologyAncestorsAndSelf(
   while (current !== null && !visited.has(current.id)) {
     result.push(current.id);
     visited.add(current.id);
-    current = current.parentClassId === null
+    const parentClassId = current.parentClassId;
+    current = parentClassId === null
       ? null
-      : schema.classes.find(item => item.id === current?.parentClassId) ?? null;
+      : schema.classes.find(item => item.id === parentClassId) ?? null;
   }
 
   return result;
