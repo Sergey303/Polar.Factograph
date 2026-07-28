@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { OntologyWriteSchema } from "../api/ontologyModels";
 import type {
   ProjectCassetteOverview,
   ResourcePortrait
@@ -69,7 +70,7 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
     setLoadingExisting(true);
     setExistingError(null);
 
-    async function load(): Promise<void> {
+    async function load(currentSchema: OntologyWriteSchema): Promise<void> {
       const loaded = await Promise.allSettled(
         sourceIds.map(id => factographApi.getPortrait(id, props.token, controller.signal))
       );
@@ -79,7 +80,7 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
       for (const result of loaded) {
         if (result.status !== "fulfilled") continue;
         const relationPortrait = result.value;
-        const relationType = schema.classes.find(type =>
+        const relationType = currentSchema.classes.find(type =>
           type.id === relationPortrait.type && !type.isEntityType && !type.isAbstract
         );
         if (relationType === undefined) continue;
@@ -114,7 +115,7 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
       setExisting(relations);
     }
 
-    load()
+    load(schema)
       .catch(reason => {
         if (!controller.signal.aborted) setExistingError(errorText(reason));
       })
