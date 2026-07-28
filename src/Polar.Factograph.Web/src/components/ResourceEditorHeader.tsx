@@ -14,17 +14,21 @@ interface ResourceEditorHeaderProps {
 }
 
 export function ResourceEditorHeader(props: ResourceEditorHeaderProps) {
+  const selectableClasses = props.mode === "create"
+    ? props.classes.filter(type => !type.isAbstract)
+    : props.classes;
+
   return (
     <div className="resource-editor-header-fields">
       <label>
-        <span>Тип ресурса</span>
+        <span>Тип сущности</span>
         <select
           value={props.draft.typeId}
           onChange={event => props.onTypeChange(event.target.value)}
           disabled={props.mode === "edit" || props.lockType}
         >
-          <option value="">Выберите тип</option>
-          {props.classes.map(type => (
+          <option value="">Выберите тип сущности</option>
+          {selectableClasses.map(type => (
             <option key={type.id} value={type.id}>{type.label}</option>
           ))}
         </select>
