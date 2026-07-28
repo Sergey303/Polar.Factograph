@@ -6,13 +6,15 @@ interface DocumentSectionProps {
   token: string;
   project: ProjectOverview | null;
   previewOnly?: boolean;
+  minimumPreviewImageWidth?: number;
 }
 
 export function DocumentSection({
   uris,
   token,
   project,
-  previewOnly = false
+  previewOnly = false,
+  minimumPreviewImageWidth = 0
 }: DocumentSectionProps) {
   if (uris.length === 0) return null;
 
@@ -27,6 +29,7 @@ export function DocumentSection({
             token={token}
             project={project}
             previewOnly={previewOnly}
+            minimumPreviewImageWidth={minimumPreviewImageWidth}
           />
         ))}
       </div>
