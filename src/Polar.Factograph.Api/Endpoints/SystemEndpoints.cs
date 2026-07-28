@@ -8,7 +8,6 @@ public static class SystemEndpoints
     public static IEndpointRouteBuilder MapSystemEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/api/system/health", GetHealth);
-        endpoints.MapGet("/", () => Results.Redirect("/api/system/health"));
         return endpoints;
     }
 
