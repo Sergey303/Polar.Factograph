@@ -3,14 +3,21 @@ import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
 import type { DocumentLocation, DocumentVariant } from "../api/models";
 
-function preferredVariant(location: DocumentLocation): DocumentVariant {
+function preferredVariant(
+  location: DocumentLocation,
+  previewOnly: boolean
+): DocumentVariant | null {
   if (location.normalPreviewAvailable) return "normal";
   if (location.mediumPreviewAvailable) return "medium";
   if (location.smallPreviewAvailable) return "small";
-  return "original";
+  return previewOnly ? null : "original";
 }
 
-export function useDocumentAsset(uri: string, token: string) {
+export function useDocumentAsset(
+  uri: string,
+  token: string,
+  previewOnly = false
+) {
   const [location, setLocation] = useState<DocumentLocation | null>(null);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [contentType, setContentType] = useState("");
@@ -26,6 +33,7 @@ export function useDocumentAsset(uri: string, token: string) {
     setError(null);
     setLocation(null);
     setObjectUrl(null);
+    setContentType("");
 
     async function load(): Promise<void> {
       const nextLocation = await factographApi.getDocumentLocation(
@@ -33,14 +41,20 @@ export function useDocumentAsset(uri: string, token: string) {
         token,
         controller.signal
       );
+      setLocation(nextLocation);
+
+      const variant = preferredVariant(nextLocation, previewOnly);
+      if (variant === null) {
+        return;
+      }
+
       const blob = await factographApi.getDocumentBlob(
         uri,
-        preferredVariant(nextLocation),
+        variant,
         token,
         controller.signal
       );
       createdUrl = URL.createObjectURL(blob);
-      setLocation(nextLocation);
       setContentType(blob.type);
       setObjectUrl(createdUrl);
     }
@@ -57,7 +71,7 @@ export function useDocumentAsset(uri: string, token: string) {
       controller.abort();
       if (createdUrl !== null) URL.revokeObjectURL(createdUrl);
     };
-  }, [uri, token, revision]);
+  }, [uri, token, previewOnly, revision]);
 
   return { location, objectUrl, contentType, loading, error, reload };
 }
