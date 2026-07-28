@@ -5,7 +5,6 @@ import { LiteralFields } from "./LiteralFields";
 import { SemanticResourceSections } from "./SemanticResourceSections";
 
 const photoDocumentType = "http://fogid.net/o/photo-doc";
-const minimumPhotoPreviewWidth = 1200;
 
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
@@ -65,8 +64,9 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
         uris={documents}
         token={props.token}
         project={props.project}
-        previewOnly={isPhotoDocument}
-        minimumPreviewImageWidth={isPhotoDocument ? minimumPhotoPreviewWidth : 0}
+        title={isPhotoDocument ? "Изображение" : "Документы"}
+        previewPolicy={isPhotoDocument ? "largest-preview" : "smallest"}
+        imageDocument={isPhotoDocument}
       />
       <SemanticResourceSections page={page} />
     </article>
