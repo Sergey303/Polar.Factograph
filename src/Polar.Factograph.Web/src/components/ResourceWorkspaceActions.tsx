@@ -17,7 +17,7 @@ export function ResourceWorkspaceActions(props: ResourceWorkspaceActionsProps) {
       <div className="button-row">
         {props.canCreate && (
           <button className="button primary" type="button" onClick={props.onCreate}>
-            Создать ресурс
+            Создать сущность
           </button>
         )}
         {props.canAddDocument && (
