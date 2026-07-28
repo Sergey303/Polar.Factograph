@@ -8,6 +8,7 @@ internal static class WritableApiProjectFog
                  dbid="write-test" owner="editor" prefix="p" counter="1">
           <person rdf:about="existing" mT="2020-01-01 00:00:00Z">
             <name>Existing</name>
+            <height>2592</height>
           </person>
           <person rdf:about="target" mT="2020-01-01 00:00:01Z">
             <name>Target</name>
