@@ -55,10 +55,15 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
 
   useEffect(() => {
     const canonicalId = resource.page?.portrait.resourceId;
-    if (resourceId !== null && canonicalId && canonicalId !== resourceId) {
+    if (
+      resourceId !== null &&
+      resource.loadedResourceId === resourceId &&
+      canonicalId &&
+      canonicalId !== resourceId
+    ) {
       navigateToResource(canonicalId, true);
     }
-  }, [resourceId, resource.page]);
+  }, [resourceId, resource.loadedResourceId, resource.page]);
 
   return (
     <div className="app-shell">
