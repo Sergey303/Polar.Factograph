@@ -29,4 +29,5 @@ public sealed record OntologyTerm(
     IReadOnlyList<OntologyEnumerationState> EnumerationStates)
 {
     public bool IsAbstract { get; init; }
+    public bool IsEssential { get; init; }
 }
