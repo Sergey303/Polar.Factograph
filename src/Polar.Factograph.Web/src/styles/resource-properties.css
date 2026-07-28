@@ -65,9 +65,14 @@
   flex: 1 1 16rem;
 }
 
-.resource-reference-results,
-.relation-choice-list {
+.resource-reference-results {
   max-height: 22rem;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.relation-choice-list {
+  min-height: 0;
   overflow: auto;
   padding-right: 0.25rem;
 }
@@ -103,7 +108,13 @@
 }
 
 .complex-relation-select {
-  min-height: 24rem;
+  display: flex;
+  min-height: max(24rem, calc(100vh - 15rem));
+  flex-direction: column;
+}
+
+.complex-relation-select .relation-choice-list {
+  flex: 1 1 auto;
 }
 
 .complex-relation-select .section-heading-row > div:first-child {
@@ -134,6 +145,10 @@
     min-height: 100vh;
     max-height: 100vh;
     border-radius: 0;
+  }
+
+  .complex-relation-select {
+    min-height: calc(100vh - 8rem);
   }
 }
 
