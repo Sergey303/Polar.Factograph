@@ -61,7 +61,9 @@ public sealed class OntologyWriteSchemaBuilder
         string language) => new(
         property.Id,
         catalog.LabelOf(property.Id, language) ?? property.Id,
+        catalog.InverseLabelOf(property.Id, language),
         property.Kind == OntologyTermKind.ObjectProperty ? "resource" : "literal",
+        property.IsEssential,
         property.Ranges.ToArray(),
         BuildOptions(catalog, property, language));
 
