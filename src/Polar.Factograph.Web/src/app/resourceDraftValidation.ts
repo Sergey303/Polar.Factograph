@@ -1,5 +1,5 @@
 import type { OntologyWriteSchema } from "../api/ontologyModels";
-import { findWriteClass, findWriteProperty } from "./ontologySchemaLookup";
+import { findWriteClass } from "./ontologySchemaLookup";
 import type { ResourceDraft } from "./resourceDraftModels";
 
 export function validateResourceDraft(
@@ -18,10 +18,9 @@ export function validateResourceDraft(
     return "Значения свойств не могут быть пустыми.";
   }
 
-  const unsupported = draft.properties.find(item =>
-    findWriteProperty(schema, draft.typeId, item.predicate) === null);
-  if (unsupported !== undefined) {
-    return `Свойство ${unsupported.predicate} не разрешено текущей схемой записи.`;
-  }
+  // Legacy records may contain properties that are absent from the current
+  // authoring ontology. The editor preserves those values instead of making
+  // an otherwise valid historical record impossible to revise. New properties
+  // are still selected from the write schema by the editor UI.
   return null;
 }
