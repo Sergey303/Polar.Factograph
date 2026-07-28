@@ -45,7 +45,15 @@ public sealed class OntologyWriteSchemaBuilderTests
                 child.Properties,
                 item => item.Id == "mentor");
             Assert.Equal("resource", mentor.Kind);
+            Assert.Equal("Ученики", mentor.InverseLabel);
+            Assert.True(mentor.IsEssential);
             Assert.Equal(new[] { "child" }, mentor.Ranges);
+
+            OntologyWritePropertyResponse name = Assert.Single(
+                child.Properties,
+                item => item.Id == "name");
+            Assert.False(name.IsEssential);
+            Assert.Null(name.InverseLabel);
 
             OntologyWritePropertyResponse status = Assert.Single(
                 child.Properties,
@@ -83,8 +91,9 @@ public sealed class OntologyWriteSchemaBuilderTests
           <DatatypeProperty rdf:about="name" priority="01">
             <label xml:lang="ru">Имя</label><domain rdf:resource="base" />
           </DatatypeProperty>
-          <ObjectProperty rdf:about="mentor" priority="02">
+          <ObjectProperty rdf:about="mentor" priority="02" essential="yes">
             <label xml:lang="ru">Наставник</label>
+            <inverse-label xml:lang="ru">Ученики</inverse-label>
             <domain rdf:resource="base" /><range rdf:resource="child" />
           </ObjectProperty>
           <EnumerationType rdf:about="status-enum">
