@@ -6,7 +6,10 @@ import type {
 import type { ResourceSearchResult } from "../api/models";
 import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
-import { ontologyTypeMatchesRanges } from "../app/ontologyRelations";
+import {
+  entityTypesMatchingRanges,
+  ontologyTypeMatchesRanges
+} from "../app/ontologyRelations";
 
 interface ResourceReferenceInputProps {
   property: OntologyWriteProperty;
@@ -27,6 +30,10 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeRequest = useRef<AbortController | null>(null);
+  const canCreateTarget = entityTypesMatchingRanges(
+    props.schema,
+    props.property.ranges
+  ).length > 0;
 
   async function search(): Promise<void> {
     const text = query.trim();
@@ -93,7 +100,7 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
         <button className="button subtle compact" type="button" onClick={() => void search()} disabled={loading}>
           {loading ? "Поиск…" : "Найти"}
         </button>
-        {props.onCreateNew && (
+        {props.onCreateNew && canCreateTarget && (
           <button
             className="button subtle compact"
             type="button"
