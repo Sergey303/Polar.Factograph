@@ -60,12 +60,15 @@ public sealed class ProjectResourceWriteValidationService(
                 continue;
             }
 
-            if (!shapes.TryGetValue(triple.Predicate, out HashSet<FogPropertyKind>? kinds))
+            if (!shapes.TryGetValue(
+                    triple.Predicate,
+                    out HashSet<FogPropertyKind>? existingKinds) ||
+                existingKinds is null)
             {
-                kinds = [];
-                shapes.Add(triple.Predicate, kinds);
+                existingKinds = [];
+                shapes.Add(triple.Predicate, existingKinds);
             }
-            kinds.Add(kind.Value);
+            existingKinds.Add(kind.Value);
         }
 
         return shapes.ToDictionary(
