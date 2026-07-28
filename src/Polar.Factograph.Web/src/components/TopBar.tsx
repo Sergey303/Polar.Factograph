@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import type {
   LocalLoginRequest,
   LocalRegisterRequest,
   LocalUser
 } from "../api/authModels";
 import type { ProjectOverview } from "../api/models";
-import { searchHref } from "../app/routes";
+import { navigateToSearch, searchHref } from "../app/routes";
 import { LocalAuthenticationPopover } from "./LocalAuthenticationPopover";
 
 interface TopBarAuthentication {
@@ -29,6 +29,21 @@ interface TopBarProps {
   onAdmin: () => void;
 }
 
+function followSearchRoute(event: MouseEvent<HTMLAnchorElement>): void {
+  if (
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  navigateToSearch();
+}
+
 export function TopBar(props: TopBarProps) {
   const [expanded, setExpanded] = useState(false);
   const auth = props.authentication;
@@ -39,7 +54,7 @@ export function TopBar(props: TopBarProps) {
 
   return (
     <header className="top-bar">
-      <a className="brand-block" href={searchHref}>
+      <a className="brand-block" href={searchHref} onClick={followSearchRoute}>
         <span className="brand-mark">PF</span>
         <div>
           <strong>Polar.Factograph</strong>
@@ -50,7 +65,13 @@ export function TopBar(props: TopBarProps) {
       </a>
 
       <div className="top-actions">
-        <a className="button ghost" href={searchHref}>Поиск</a>
+        <a
+          className="button ghost"
+          href={searchHref}
+          onClick={followSearchRoute}
+        >
+          Поиск
+        </a>
         {props.canAdmin && (
           <button className="button" type="button" onClick={props.onAdmin}>
             Администрирование
