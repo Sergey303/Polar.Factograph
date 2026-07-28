@@ -7,7 +7,8 @@ public sealed class OntologyResourceWriteValidator
 {
     public void Validate(
         OntologyCatalog catalog,
-        FogResourceWriteRequest request)
+        FogResourceWriteRequest request,
+        IReadOnlyDictionary<string, IReadOnlySet<FogPropertyKind>>? legacyProperties = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(request);
@@ -26,7 +27,16 @@ public sealed class OntologyResourceWriteValidator
             .ToDictionary(term => term.Id, StringComparer.Ordinal);
         foreach (FogProperty property in request.Properties)
         {
-            ValidateProperty(catalog, allowed, property, type.Id);
+            bool preservesLegacyProperty =
+                legacyProperties is not null &&
+                legacyProperties.TryGetValue(property.Predicate, out IReadOnlySet<FogPropertyKind>? kinds) &&
+                kinds.Contains(property.Kind);
+            ValidateProperty(
+                catalog,
+                allowed,
+                property,
+                type.Id,
+                preservesLegacyProperty);
         }
     }
 
@@ -34,8 +44,18 @@ public sealed class OntologyResourceWriteValidator
         OntologyCatalog catalog,
         IReadOnlyDictionary<string, OntologyTerm> allowed,
         FogProperty property,
-        string typeId)
+        string typeId,
+        bool preservesLegacyProperty)
     {
+        if (preservesLegacyProperty &&
+            (!catalog.TryGetTerm(property.Predicate, out OntologyTerm? legacyTerm) ||
+             legacyTerm is null ||
+             !allowed.ContainsKey(legacyTerm.Id)))
+        {
+            ValidateLegacyMetadata(property);
+            return;
+        }
+
         OntologyTerm term = OntologyWriteTermResolver.Require(
             catalog,
             property.Predicate,
@@ -72,6 +92,17 @@ public sealed class OntologyResourceWriteValidator
         }
 
         OntologyEnumerationWriteValidator.Validate(catalog, term, property);
+    }
+
+    private static void ValidateLegacyMetadata(FogProperty property)
+    {
+        if (property.Kind == FogPropertyKind.Resource &&
+            (!string.IsNullOrWhiteSpace(property.Language) ||
+             !string.IsNullOrWhiteSpace(property.DataType)))
+        {
+            throw new ArgumentException(
+                $"Resource property '{property.Predicate}' cannot have language or datatype metadata.");
+        }
     }
 
     private static string ExpectedValue(OntologyTermKind kind) =>
