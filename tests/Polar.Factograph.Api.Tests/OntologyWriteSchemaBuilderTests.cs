@@ -23,6 +23,7 @@ public sealed class OntologyWriteSchemaBuilderTests
                 schema.Classes,
                 item => item.Id == "base");
             Assert.True(baseClass.IsAbstract);
+            Assert.False(baseClass.IsEntityType);
 
             OntologyWriteClassResponse child = Assert.Single(
                 schema.Classes,
@@ -30,8 +31,15 @@ public sealed class OntologyWriteSchemaBuilderTests
             Assert.Equal("Дочерний класс", child.Label);
             Assert.Equal("base", child.ParentClassId);
             Assert.False(child.IsAbstract);
+            Assert.True(child.IsEntityType);
             Assert.Equal(new[] { "name", "mentor", "status" },
                 child.Properties.Select(item => item.Id));
+
+            OntologyWriteClassResponse participation = Assert.Single(
+                schema.Classes,
+                item => item.Id == "participation");
+            Assert.False(participation.IsAbstract);
+            Assert.False(participation.IsEntityType);
 
             OntologyWritePropertyResponse mentor = Assert.Single(
                 child.Properties,
@@ -56,10 +64,21 @@ public sealed class OntologyWriteSchemaBuilderTests
     private const string OntologyXml = """
         <?xml version="1.0" encoding="utf-8"?>
         <Ontology xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-          <Class rdf:about="base" abstract="yes"><label xml:lang="ru">Базовый класс</label></Class>
+          <Class rdf:about="http://fogid.net/o/entity" abstract="yes" />
+          <Class rdf:about="http://fogid.net/o/sys-obj" abstract="yes">
+            <SubClassOf rdf:resource="http://fogid.net/o/entity" />
+          </Class>
+          <Class rdf:about="base" abstract="yes">
+            <label xml:lang="ru">Базовый класс</label>
+            <SubClassOf rdf:resource="http://fogid.net/o/sys-obj" />
+          </Class>
           <Class rdf:about="child">
             <label xml:lang="ru">Дочерний класс</label>
             <SubClassOf rdf:resource="base" />
+          </Class>
+          <Class rdf:about="participation">
+            <label xml:lang="ru">Участие</label>
+            <SubClassOf rdf:resource="http://fogid.net/o/entity" />
           </Class>
           <DatatypeProperty rdf:about="name" priority="01">
             <label xml:lang="ru">Имя</label><domain rdf:resource="base" />
