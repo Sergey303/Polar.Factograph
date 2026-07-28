@@ -29,7 +29,10 @@ public sealed class OntologyResourceWriteValidator
         {
             bool preservesLegacyProperty =
                 legacyProperties is not null &&
-                legacyProperties.TryGetValue(property.Predicate, out IReadOnlySet<FogPropertyKind>? kinds) &&
+                legacyProperties.TryGetValue(
+                    property.Predicate,
+                    out IReadOnlySet<FogPropertyKind>? kinds) &&
+                kinds is not null &&
                 kinds.Contains(property.Kind);
             ValidateProperty(
                 catalog,
