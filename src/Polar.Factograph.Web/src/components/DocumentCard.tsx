@@ -10,15 +10,22 @@ interface DocumentCardProps {
   token: string;
   project: ProjectOverview | null;
   previewOnly?: boolean;
+  minimumPreviewImageWidth?: number;
 }
 
 export function DocumentCard({
   uri,
   token,
   project,
-  previewOnly = false
+  previewOnly = false,
+  minimumPreviewImageWidth = 0
 }: DocumentCardProps) {
-  const asset = useDocumentAsset(uri, token, previewOnly);
+  const asset = useDocumentAsset(
+    uri,
+    token,
+    previewOnly,
+    minimumPreviewImageWidth
+  );
   const canReplace = asset.location !== null && hasCassetteRight(
     project,
     asset.location.cassetteId,

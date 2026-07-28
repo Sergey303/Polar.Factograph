@@ -5,6 +5,7 @@ import { LiteralFields } from "./LiteralFields";
 import { SemanticResourceSections } from "./SemanticResourceSections";
 
 const photoDocumentType = "http://fogid.net/o/photo-doc";
+const minimumPhotoPreviewWidth = 1200;
 
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
@@ -40,6 +41,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const page = props.page;
   const portrait = page.portrait;
   const documents = resourceDocumentUris(portrait);
+  const isPhotoDocument = portrait.type === photoDocumentType;
   const modified = new Intl.DateTimeFormat("ru-RU", {
     dateStyle: "medium",
     timeStyle: "short"
@@ -63,7 +65,8 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
         uris={documents}
         token={props.token}
         project={props.project}
-        previewOnly={portrait.type === photoDocumentType}
+        previewOnly={isPhotoDocument}
+        minimumPreviewImageWidth={isPhotoDocument ? minimumPhotoPreviewWidth : 0}
       />
       <SemanticResourceSections page={page} />
     </article>

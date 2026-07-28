@@ -31,7 +31,8 @@ public sealed class ProjectResourceWriteValidationService(
             FogResourceWriteRequest request,
             CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.ResourceId))
+        if (string.IsNullOrWhiteSpace(request.ResourceId) ||
+            FileSystemIndexGeneration.GetCurrentGenerationPath(context.Project.Index.Path) is null)
         {
             return new Dictionary<string, IReadOnlySet<FogPropertyKind>>(
                 StringComparer.Ordinal);
