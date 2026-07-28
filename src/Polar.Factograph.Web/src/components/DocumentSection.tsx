@@ -5,9 +5,15 @@ interface DocumentSectionProps {
   uris: string[];
   token: string;
   project: ProjectOverview | null;
+  previewOnly?: boolean;
 }
 
-export function DocumentSection({ uris, token, project }: DocumentSectionProps) {
+export function DocumentSection({
+  uris,
+  token,
+  project,
+  previewOnly = false
+}: DocumentSectionProps) {
   if (uris.length === 0) return null;
 
   return (
@@ -15,7 +21,13 @@ export function DocumentSection({ uris, token, project }: DocumentSectionProps) 
       <h3>Документы</h3>
       <div className="document-grid">
         {uris.map(uri => (
-          <DocumentCard key={uri} uri={uri} token={token} project={project} />
+          <DocumentCard
+            key={uri}
+            uri={uri}
+            token={token}
+            project={project}
+            previewOnly={previewOnly}
+          />
         ))}
       </div>
     </section>
