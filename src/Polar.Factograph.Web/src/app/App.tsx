@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { AdminDialog } from "../components/AdminDialog";
 import { AuthenticationPage } from "../components/AuthenticationPage";
+import { EntityCreatePage } from "../components/EntityCreatePage";
 import { ResourcePage } from "../components/ResourcePage";
 import { SearchPage } from "../components/SearchPage";
 import { TopBar } from "../components/TopBar";
-import { navigateToResource, useAppRoute } from "./routes";
+import {
+  navigateToCreateEntity,
+  navigateToResource,
+  useAppRoute
+} from "./routes";
 import { useAuthentication } from "./useAuthentication";
 import { useProject } from "./useProject";
 import { useResourcePage } from "./useResourcePage";
@@ -85,13 +90,16 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
         onAdmin={() => setAdminOpen(true)}
       />
 
-      {route.page === "search" ? (
-        <SearchPage search={search} />
-      ) : (
+      {route.page === "search" && <SearchPage search={search} />}
+      {route.page === "create-entity" && (
+        <EntityCreatePage project={project.project} token={auth.token} />
+      )}
+      {route.page === "resource" && (
         <ResourcePage
           project={project.project}
           token={auth.token}
           resource={resource}
+          onCreate={navigateToCreateEntity}
           onSelect={resourceId => navigateToResource(resourceId)}
         />
       )}
