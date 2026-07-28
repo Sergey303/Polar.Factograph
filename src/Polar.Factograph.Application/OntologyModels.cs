@@ -26,4 +26,7 @@ public sealed record OntologyTerm(
     string? ParentClassId,
     IReadOnlyList<string> Domains,
     IReadOnlyList<string> Ranges,
-    IReadOnlyList<OntologyEnumerationState> EnumerationStates);
+    IReadOnlyList<OntologyEnumerationState> EnumerationStates)
+{
+    public bool IsAbstract { get; init; }
+}
