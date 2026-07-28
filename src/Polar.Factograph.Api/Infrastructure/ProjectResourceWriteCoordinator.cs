@@ -22,7 +22,7 @@ public sealed class ProjectResourceWriteCoordinator(
             context.Access,
             requestedCassetteId);
         await validationService.ValidateAsync(
-            context.Project,
+            context,
             request,
             cancellationToken);
         ProjectFogMutationOutcome<FogResourceWriteResult> mutation =
