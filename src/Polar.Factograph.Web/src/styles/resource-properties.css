@@ -109,7 +109,8 @@
 
 .complex-relation-select {
   display: flex;
-  min-height: max(24rem, calc(100vh - 15rem));
+  height: max(24rem, calc(100vh - 15rem));
+  min-height: 24rem;
   flex-direction: column;
 }
 
@@ -148,7 +149,7 @@
   }
 
   .complex-relation-select {
-    min-height: calc(100vh - 8rem);
+    height: max(24rem, calc(100vh - 8rem));
   }
 }
 
