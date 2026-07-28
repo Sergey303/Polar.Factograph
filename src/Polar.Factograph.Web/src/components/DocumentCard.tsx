@@ -46,10 +46,16 @@ export function DocumentCard({
   return (
     <article className="document-card">
       <div className="document-preview">
-        {asset.loading && <span className="muted">Загрузка изображения…</span>}
+        {asset.loading && (
+          <span className="muted">
+            {imageDocument ? "Загрузка изображения…" : "Загрузка превью…"}
+          </span>
+        )}
         {asset.error && <span className="notice error">{asset.error}</span>}
         {!asset.loading && !asset.error && !asset.objectUrl && (
-          <span className="file-placeholder">Изображение недоступно</span>
+          <span className="file-placeholder">
+            {imageDocument ? "Изображение недоступно" : "Превью недоступно"}
+          </span>
         )}
         {asset.objectUrl && asset.contentType.startsWith("image/") && (
           <img
