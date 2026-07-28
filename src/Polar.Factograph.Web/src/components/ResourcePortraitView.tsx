@@ -4,6 +4,8 @@ import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
 import { SemanticResourceSections } from "./SemanticResourceSections";
 
+const photoDocumentType = "http://fogid.net/o/photo-doc";
+
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
   loading: boolean;
@@ -57,7 +59,12 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
       </header>
 
       <LiteralFields fields={portrait.literals} />
-      <DocumentSection uris={documents} token={props.token} project={props.project} />
+      <DocumentSection
+        uris={documents}
+        token={props.token}
+        project={props.project}
+        previewOnly={portrait.type === photoDocumentType}
+      />
       <SemanticResourceSections page={page} />
     </article>
   );
