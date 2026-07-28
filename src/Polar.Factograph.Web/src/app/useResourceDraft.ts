@@ -11,10 +11,17 @@ export function useResourceDraft(initial: ResourceDraft) {
 
   useEffect(() => setDraft(initial), [initial]);
 
-  function setType(typeId: string): void {
+  function setType(
+    typeId: string,
+    requiredProperties: OntologyWriteProperty[] = []
+  ): void {
     setDraft(current => current.typeId === typeId
       ? current
-      : { ...current, typeId, properties: [] });
+      : {
+          ...current,
+          typeId,
+          properties: requiredProperties.map(newPropertyDraft)
+        });
   }
 
   function setField(field: "resourceId" | "cassetteId", value: string): void {
