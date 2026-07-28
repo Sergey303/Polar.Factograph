@@ -8,6 +8,7 @@ import {
 } from "../app/resourceDraftFactory";
 import { resourceDocumentUris } from "../app/resourceDocuments";
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
+import { ComplexRelationCreatePane } from "./ComplexRelationCreatePane";
 import { DocumentSection } from "./DocumentSection";
 import { ResourcePortraitView } from "./ResourcePortraitView";
 import { ResourceWorkspaceActions } from "./ResourceWorkspaceActions";
@@ -18,7 +19,7 @@ import {
 
 const photoDocumentType = "http://fogid.net/o/photo-doc";
 
-type LocalWorkspaceMode = Exclude<ResourceWorkspaceMode, "create">;
+type LocalWorkspaceMode = Exclude<ResourceWorkspaceMode, "create"> | "relation";
 
 interface ResourceWorkspaceProps {
   project: ProjectOverview | null;
@@ -45,7 +46,7 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
   );
   const cassetteId = preferredResourceCassette(
     props.project,
-    mode === "edit" ? portrait : null,
+    mode === "edit" || mode === "relation" ? portrait : null,
     writable
   );
   const initialDraft = useMemo(() =>
@@ -62,6 +63,27 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
     const sameResource = portrait?.resourceId === result.resourceId;
     props.onSelect(result.resourceId);
     if (sameResource) props.onReload();
+  }
+
+  function relationSaved(result: ResourceWriteResponse): void {
+    setNotice(result.indexReady
+      ? "Связь создана."
+      : "Связь создана, но индекс требует восстановления.");
+    setMode(null);
+    props.onReload();
+  }
+
+  if (mode === "relation" && portrait !== null) {
+    return (
+      <ComplexRelationCreatePane
+        portrait={portrait}
+        cassettes={writable}
+        cassetteId={cassetteId}
+        token={props.token}
+        onCancel={() => setMode(null)}
+        onSaved={relationSaved}
+      />
+    );
   }
 
   if (mode !== null) {
@@ -92,15 +114,18 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
     );
   }
 
+  const canWriteEntity = writable.length > 0 && portrait !== null && portrait.type !== null;
   return (
     <>
       <ResourceWorkspaceActions
         canCreate={writable.length > 0}
         canAddDocument={documentCassettes.length > 0}
-        canEdit={writable.length > 0 && portrait !== null && portrait.type !== null}
+        canAddRelation={canWriteEntity}
+        canEdit={canWriteEntity}
         notice={notice}
         onCreate={() => { setNotice(null); props.onCreate(); }}
         onAddDocument={() => { setNotice(null); setMode("document"); }}
+        onAddRelation={() => { setNotice(null); setMode("relation"); }}
         onEdit={() => { setNotice(null); setMode("edit"); }}
       />
       <ResourcePortraitView
