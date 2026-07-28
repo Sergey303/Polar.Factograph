@@ -2,37 +2,37 @@ import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
 import type { ProjectOverview } from "../api/models";
 import { hasCassetteRight } from "../app/projectAccess";
-import { useDocumentAsset } from "../app/useDocumentAsset";
+import {
+  useDocumentAsset,
+  type DocumentPreviewPolicy
+} from "../app/useDocumentAsset";
 import { DocumentReplaceControl } from "./DocumentReplaceControl";
 
 interface DocumentCardProps {
   uri: string;
   token: string;
   project: ProjectOverview | null;
-  previewOnly?: boolean;
-  minimumPreviewImageWidth?: number;
+  previewPolicy?: DocumentPreviewPolicy;
+  imageDocument?: boolean;
+  allowReplace?: boolean;
 }
 
 export function DocumentCard({
   uri,
   token,
   project,
-  previewOnly = false,
-  minimumPreviewImageWidth = 0
+  previewPolicy = "smallest",
+  imageDocument = false,
+  allowReplace = false
 }: DocumentCardProps) {
-  const asset = useDocumentAsset(
-    uri,
-    token,
-    previewOnly,
-    minimumPreviewImageWidth
-  );
-  const canReplace = asset.location !== null && hasCassetteRight(
+  const asset = useDocumentAsset(uri, token, previewPolicy);
+  const canReplace = allowReplace && asset.location !== null && hasCassetteRight(
     project,
     asset.location.cassetteId,
     "replaceDocuments"
   );
 
-  async function openOriginal(): Promise<void> {
+  async function openFile(): Promise<void> {
     try {
       const blob = await factographApi.getDocumentBlob(uri, "original", token);
       const url = URL.createObjectURL(blob);
@@ -46,13 +46,16 @@ export function DocumentCard({
   return (
     <article className="document-card">
       <div className="document-preview">
-        {asset.loading && <span className="muted">Загрузка превью…</span>}
+        {asset.loading && <span className="muted">Загрузка изображения…</span>}
         {asset.error && <span className="notice error">{asset.error}</span>}
         {!asset.loading && !asset.error && !asset.objectUrl && (
-          <span className="file-placeholder">Превью недоступно</span>
+          <span className="file-placeholder">Изображение недоступно</span>
         )}
         {asset.objectUrl && asset.contentType.startsWith("image/") && (
-          <img src={asset.objectUrl} alt="Предварительный просмотр документа" />
+          <img
+            src={asset.objectUrl}
+            alt={imageDocument ? "Изображение" : "Предварительный просмотр документа"}
+          />
         )}
         {asset.objectUrl && asset.contentType === "application/pdf" && (
           <iframe src={asset.objectUrl} title="Предварительный просмотр PDF" />
@@ -64,12 +67,14 @@ export function DocumentCard({
           )}
       </div>
       <div className="document-info">
-        <strong>{asset.location?.documentNumber ?? "Документ"}</strong>
+        <strong>{asset.location?.documentNumber ?? (imageDocument ? "Изображение" : "Документ")}</strong>
         <span className="muted mono">{uri}</span>
         {asset.location && <span className="muted">Кассета: {asset.location.cassetteName}</span>}
-        <button className="button primary" onClick={openOriginal} disabled={!asset.location?.originalAvailable}>
-          Открыть оригинал
-        </button>
+        {asset.location?.originalAvailable && (
+          <button className="button primary" type="button" onClick={openFile}>
+            {imageDocument ? "Открыть изображение" : "Открыть файл"}
+          </button>
+        )}
         <DocumentReplaceControl
           uri={uri}
           token={token}
