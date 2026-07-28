@@ -7,7 +7,9 @@ public sealed record OntologyWriteOptionResponse(
 public sealed record OntologyWritePropertyResponse(
     string Id,
     string Label,
+    string? InverseLabel,
     string Kind,
+    bool IsEssential,
     IReadOnlyList<string> Ranges,
     IReadOnlyList<OntologyWriteOptionResponse> Options);
 
