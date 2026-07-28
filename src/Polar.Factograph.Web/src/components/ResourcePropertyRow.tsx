@@ -1,21 +1,33 @@
-import type { OntologyWriteProperty } from "../api/ontologyModels";
+import type {
+  OntologyWriteProperty,
+  OntologyWriteSchema
+} from "../api/ontologyModels";
 import type { ResourcePropertyDraft } from "../app/resourceDraftModels";
 import { ResourceValueInput } from "./ResourceValueInput";
 
 interface ResourcePropertyRowProps {
   row: ResourcePropertyDraft;
   property: OntologyWriteProperty | null;
+  schema: OntologyWriteSchema | null;
+  token: string;
   protectedValue?: boolean;
   onChange: (changes: Partial<ResourcePropertyDraft>) => void;
   onRemove: () => void;
+  onCreateReference?: (
+    property: OntologyWriteProperty,
+    onCreated: (resourceId: string) => void
+  ) => void;
 }
 
 export function ResourcePropertyRow({
   row,
   property,
+  schema,
+  token,
   protectedValue = false,
   onChange,
-  onRemove
+  onRemove,
+  onCreateReference
 }: ResourcePropertyRowProps) {
   const label = property?.label ?? row.predicate;
   const ranges = property?.ranges.join(", ") ?? "";
@@ -29,18 +41,23 @@ export function ResourcePropertyRow({
         </div>
         <div className="badge-row">
           <span className="badge">{row.kind === "resource" ? "связь" : "значение"}</span>
-          {protectedValue && <span className="badge accent">обязательно</span>}
+          {(protectedValue || property?.isEssential) && (
+            <span className="badge accent">обязательно</span>
+          )}
           {property === null && <span className="badge warning">неизвестно схеме</span>}
         </div>
       </div>
 
       <ResourceValueInput
         property={property}
+        schema={schema}
+        token={token}
         value={row.value}
         readOnly={protectedValue}
         onChange={value => onChange({ value })}
+        onCreateReference={onCreateReference}
       />
-      {ranges.length > 0 && <span className="muted">Диапазон: {ranges}</span>}
+      {ranges.length > 0 && <span className="muted">Допустимые типы: {ranges}</span>}
 
       {row.kind === "literal" && !protectedValue && (
         <label className="resource-property-language">
@@ -56,7 +73,7 @@ export function ResourcePropertyRow({
         <span className="muted mono">Тип данных задаётся онтологией: {row.dataType}</span>
       )}
 
-      {!protectedValue && (
+      {!protectedValue && !property?.isEssential && (
         <button className="button danger compact" type="button" onClick={onRemove}>
           Удалить значение
         </button>
