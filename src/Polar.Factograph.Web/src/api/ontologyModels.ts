@@ -16,6 +16,7 @@ export interface OntologyWriteClass {
   label: string;
   parentClassId: string | null;
   isAbstract: boolean;
+  isEntityType: boolean;
   properties: OntologyWriteProperty[];
 }
 
