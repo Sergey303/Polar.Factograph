@@ -15,7 +15,7 @@ interface ResourceEditorHeaderProps {
 
 export function ResourceEditorHeader(props: ResourceEditorHeaderProps) {
   const selectableClasses = props.mode === "create"
-    ? props.classes.filter(type => !type.isAbstract)
+    ? props.classes.filter(type => type.isEntityType && !type.isAbstract)
     : props.classes;
 
   return (
