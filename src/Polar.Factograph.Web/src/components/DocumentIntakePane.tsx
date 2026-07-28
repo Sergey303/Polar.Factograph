@@ -6,7 +6,7 @@ import { documentResourceDraft } from "../app/documentIntakeDraft";
 import { useOntologySchema } from "../app/useOntologySchema";
 import { DocumentUploadForm } from "./DocumentUploadForm";
 import { DocumentUploadSummary } from "./DocumentUploadSummary";
-import { ResourceEditor } from "./ResourceEditor";
+import { ResourceEditorHost } from "./ResourceEditorHost";
 import { ResourceEditorLoadState } from "./ResourceEditorLoadState";
 
 interface PreparedDocument {
@@ -57,7 +57,7 @@ export function DocumentIntakePane(props: DocumentIntakePaneProps) {
     : [draft.properties[0].rowId];
   function cancelMetadata(): void {
     const leave = window.confirm(
-      `Оригинал уже сохранён как ${current.upload.documentUri}. Выйти без RDF-описания?`
+      `Файл уже сохранён как ${current.upload.documentUri}. Выйти без описания?`
     );
     if (leave) props.onCancel();
   }
@@ -65,7 +65,7 @@ export function DocumentIntakePane(props: DocumentIntakePaneProps) {
   return (
     <div className="document-metadata-stage">
       <DocumentUploadSummary upload={current.upload} />
-      <ResourceEditor
+      <ResourceEditorHost
         mode="create"
         initialDraft={draft}
         schema={schema.schema}
