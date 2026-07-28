@@ -32,7 +32,7 @@ export function ResourceWorkspaceActions(props: ResourceWorkspaceActionsProps) {
         )}
         {props.canAddRelation && (
           <button className="button subtle" type="button" onClick={props.onAddRelation}>
-            Добавить связь
+            Связи
           </button>
         )}
         {props.canEdit && (
