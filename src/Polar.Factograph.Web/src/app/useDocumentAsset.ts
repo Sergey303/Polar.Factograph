@@ -3,73 +3,29 @@ import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
 import type { DocumentLocation, DocumentVariant } from "../api/models";
 
+export type DocumentPreviewPolicy = "smallest" | "largest-preview";
+
 function preferredVariant(
   location: DocumentLocation,
-  previewOnly: boolean
+  policy: DocumentPreviewPolicy
 ): DocumentVariant | null {
-  if (location.normalPreviewAvailable) return "normal";
-  if (location.mediumPreviewAvailable) return "medium";
-  if (location.smallPreviewAvailable) return "small";
-  return previewOnly ? null : "original";
-}
-
-async function imageWidth(blob: Blob): Promise<number | null> {
-  const objectUrl = URL.createObjectURL(blob);
-  try {
-    const image = new Image();
-    image.decoding = "async";
-    image.src = objectUrl;
-    await image.decode();
-    return image.naturalWidth;
-  } catch {
-    return null;
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
-}
-
-async function sharperImageWhenNeeded(
-  blob: Blob,
-  variant: DocumentVariant,
-  location: DocumentLocation,
-  uri: string,
-  token: string,
-  minimumPreviewImageWidth: number,
-  signal: AbortSignal
-): Promise<Blob> {
-  if (
-    minimumPreviewImageWidth <= 0 ||
-    variant === "original" ||
-    !location.originalAvailable ||
-    !blob.type.startsWith("image/")
-  ) {
-    return blob;
+  if (policy === "smallest") {
+    if (location.smallPreviewAvailable) return "small";
+    if (location.mediumPreviewAvailable) return "medium";
+    if (location.normalPreviewAvailable) return "normal";
+  } else {
+    if (location.normalPreviewAvailable) return "normal";
+    if (location.mediumPreviewAvailable) return "medium";
+    if (location.smallPreviewAvailable) return "small";
   }
 
-  const width = await imageWidth(blob);
-  if (width === null || width >= minimumPreviewImageWidth) {
-    return blob;
-  }
-
-  try {
-    const original = await factographApi.getDocumentBlob(
-      uri,
-      "original",
-      token,
-      signal
-    );
-    return original.type.startsWith("image/") ? original : blob;
-  } catch (reason) {
-    if (signal.aborted) throw reason;
-    return blob;
-  }
+  return location.originalAvailable ? "original" : null;
 }
 
 export function useDocumentAsset(
   uri: string,
   token: string,
-  previewOnly = false,
-  minimumPreviewImageWidth = 0
+  policy: DocumentPreviewPolicy = "smallest"
 ) {
   const [location, setLocation] = useState<DocumentLocation | null>(null);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -96,24 +52,15 @@ export function useDocumentAsset(
       );
       setLocation(nextLocation);
 
-      const variant = preferredVariant(nextLocation, previewOnly);
+      const variant = preferredVariant(nextLocation, policy);
       if (variant === null) {
         return;
       }
 
-      const preview = await factographApi.getDocumentBlob(
+      const blob = await factographApi.getDocumentBlob(
         uri,
         variant,
         token,
-        controller.signal
-      );
-      const blob = await sharperImageWhenNeeded(
-        preview,
-        variant,
-        nextLocation,
-        uri,
-        token,
-        minimumPreviewImageWidth,
         controller.signal
       );
       createdUrl = URL.createObjectURL(blob);
@@ -133,7 +80,7 @@ export function useDocumentAsset(
       controller.abort();
       if (createdUrl !== null) URL.revokeObjectURL(createdUrl);
     };
-  }, [uri, token, previewOnly, minimumPreviewImageWidth, revision]);
+  }, [uri, token, policy, revision]);
 
   return { location, objectUrl, contentType, loading, error, reload };
 }
