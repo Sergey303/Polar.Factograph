@@ -33,7 +33,9 @@ internal static class OntologyTermParser
                 OntologyXmlValueReader.ReadEnumerationStates(element))
             {
                 IsAbstract = kind == OntologyTermKind.Class &&
-                    IsEnabledFlag(element.Attribute("abstract")?.Value)
+                    IsEnabledFlag(element.Attribute("abstract")?.Value),
+                IsEssential = kind is OntologyTermKind.DatatypeProperty or OntologyTermKind.ObjectProperty &&
+                    IsEnabledFlag(element.Attribute("essential")?.Value)
             };
 
             if (!terms.TryAdd(id, term))
