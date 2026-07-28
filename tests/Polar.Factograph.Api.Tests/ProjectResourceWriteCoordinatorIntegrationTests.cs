@@ -7,6 +7,8 @@ namespace Polar.Factograph.Api.Tests;
 
 public sealed class ProjectResourceWriteCoordinatorIntegrationTests
 {
+    private const string FogNamespace = "http://fogid.net/o/";
+
     [Fact]
     public async Task WriteAsync_WritesFogRebuildsIndexAndExposesResource()
     {
@@ -44,7 +46,10 @@ public sealed class ProjectResourceWriteCoordinatorIntegrationTests
             "person",
             [
                 new FogProperty("name", FogPropertyKind.Literal, "Updated"),
-                new FogProperty("height", FogPropertyKind.Literal, "2600")
+                new FogProperty(
+                    FogNamespace + "height",
+                    FogPropertyKind.Literal,
+                    "2600")
             ],
             ResourceId: "existing");
 
@@ -64,7 +69,7 @@ public sealed class ProjectResourceWriteCoordinatorIntegrationTests
             triples.Add(triple);
         }
         Assert.Contains(triples, triple =>
-            triple.Predicate == "height" &&
+            triple.Predicate == FogNamespace + "height" &&
             triple.ObjectKind == TripleObjectKind.Literal &&
             triple.ObjectValue == "2600");
     }
@@ -80,7 +85,10 @@ public sealed class ProjectResourceWriteCoordinatorIntegrationTests
             "person",
             [
                 new FogProperty("name", FogPropertyKind.Literal, "Updated"),
-                new FogProperty("width", FogPropertyKind.Literal, "3456")
+                new FogProperty(
+                    FogNamespace + "width",
+                    FogPropertyKind.Literal,
+                    "3456")
             ],
             ResourceId: "existing");
 
