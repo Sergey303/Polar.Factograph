@@ -6,17 +6,21 @@ internal static class FogWriteTimestamp
         DateTime requestedUtc,
         DateTime? latestExisting)
     {
-        DateTime requested = AsUtc(requestedUtc);
+        DateTime requested = ToFogPrecision(AsUtc(requestedUtc));
         if (latestExisting is null)
         {
             return requested;
         }
 
-        DateTime latest = AsUtc(latestExisting.Value);
+        DateTime latest = ToFogPrecision(AsUtc(latestExisting.Value));
         return latest < requested
             ? requested
             : latest.AddSeconds(1);
     }
+
+    private static DateTime ToFogPrecision(DateTime value) => new(
+        value.Ticks - value.Ticks % TimeSpan.TicksPerSecond,
+        DateTimeKind.Utc);
 
     private static DateTime AsUtc(DateTime value) => value.Kind switch
     {
