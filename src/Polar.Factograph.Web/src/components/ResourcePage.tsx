@@ -7,6 +7,7 @@ interface ResourcePageProps {
   project: ProjectOverview | null;
   token: string;
   resource: ReturnType<typeof useResourcePage>;
+  onCreate: () => void;
   onSelect: (resourceId: string) => void;
 }
 
@@ -23,6 +24,7 @@ export function ResourcePage(props: ResourcePageProps) {
           error={props.resource.error}
           token={props.token}
           project={props.project}
+          onCreate={props.onCreate}
           onSelect={props.onSelect}
           onReload={props.resource.reload}
         />
