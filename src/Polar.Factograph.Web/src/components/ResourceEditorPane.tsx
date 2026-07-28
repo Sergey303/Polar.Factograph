@@ -2,7 +2,7 @@ import type { ProjectCassetteOverview } from "../api/models";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import type { ResourceDraft } from "../app/resourceDraftModels";
 import { useOntologySchema } from "../app/useOntologySchema";
-import { ResourceEditor } from "./ResourceEditor";
+import { ResourceEditorHost } from "./ResourceEditorHost";
 import { ResourceEditorLoadState } from "./ResourceEditorLoadState";
 
 interface ResourceEditorPaneProps {
@@ -27,7 +27,7 @@ export function ResourceEditorPane(props: ResourceEditorPaneProps) {
   }
 
   return (
-    <ResourceEditor
+    <ResourceEditorHost
       mode={props.mode}
       initialDraft={props.initialDraft}
       schema={schema.schema}
