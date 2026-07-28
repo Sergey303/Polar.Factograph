@@ -77,16 +77,17 @@ public sealed class CassetteDocumentPathResolver
             documentUri,
             "normal preview");
 
+        string? original = NullWhenMissing(originalPath);
         return new CassetteDocumentLocation(
             cassette.Id,
             cassette.Name,
             documentUri,
             folderName,
             documentNumber,
-            NullWhenMissing(originalPath),
-            NullWhenMissing(smallPreviewPath),
-            NullWhenMissing(mediumPreviewPath),
-            NullWhenMissing(normalPreviewPath));
+            original,
+            CurrentPreviewOrNull(smallPreviewPath, original),
+            CurrentPreviewOrNull(mediumPreviewPath, original),
+            CurrentPreviewOrNull(normalPreviewPath, original));
     }
 
     private static void ValidatePathPart(
@@ -137,6 +138,19 @@ public sealed class CassetteDocumentPathResolver
             _ => throw new InvalidDataException(
                 $"Document URI has multiple {kind} files in '{directory}': {documentUri}")
         };
+    }
+
+    private static string? CurrentPreviewOrNull(string previewPath, string? originalPath)
+    {
+        string? preview = NullWhenMissing(previewPath);
+        if (preview is null || originalPath is null)
+        {
+            return preview;
+        }
+
+        return File.GetLastWriteTimeUtc(preview) >= File.GetLastWriteTimeUtc(originalPath)
+            ? preview
+            : null;
     }
 
     private static string? NullWhenMissing(string value) =>
