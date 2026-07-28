@@ -242,6 +242,26 @@ public sealed class SemanticResourcePageService(
         Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
         foreach (ResourceDirectLink link in root.DirectLinks)
         {
+            ProjectResourcePortrait? target = await graph.GetAsync(
+                link.TargetResourceId,
+                cancellationToken);
+            if (target is not null && graph.IsComplexRelation(target))
+            {
+                if (!graph.IsTechnical(target))
+                {
+                    await AddComplexRelationTargetsAsync(
+                        result,
+                        graph,
+                        root,
+                        target,
+                        BuildComplexRelationLabel(
+                            graph.PropertyLabel(link.Predicate),
+                            graph.TypeLabel(target)),
+                        cancellationToken);
+                }
+                continue;
+            }
+
             await AddLinkAsync(
                 result,
                 graph,
@@ -252,6 +272,26 @@ public sealed class SemanticResourcePageService(
 
         foreach (ResourceInverseLink link in root.InverseLinks)
         {
+            ProjectResourcePortrait? source = await graph.GetAsync(
+                link.SourceResourceId,
+                cancellationToken);
+            if (source is not null && graph.IsComplexRelation(source))
+            {
+                if (!graph.IsTechnical(source))
+                {
+                    await AddComplexRelationTargetsAsync(
+                        result,
+                        graph,
+                        root,
+                        source,
+                        BuildComplexRelationLabel(
+                            graph.InversePropertyLabel(link.Predicate),
+                            graph.TypeLabel(source)),
+                        cancellationToken);
+                }
+                continue;
+            }
+
             await AddLinkAsync(
                 result,
                 graph,
@@ -262,6 +302,46 @@ public sealed class SemanticResourcePageService(
 
         return Sort(result.Values);
     }
+
+    private static async Task AddComplexRelationTargetsAsync(
+        IDictionary<string, SemanticResourceLink> result,
+        SemanticResourceGraph graph,
+        ProjectResourcePortrait root,
+        ProjectResourcePortrait relation,
+        string relationLabel,
+        CancellationToken cancellationToken)
+    {
+        foreach (ResourceDirectLink targetLink in relation.DirectLinks)
+        {
+            if (string.Equals(
+                    targetLink.TargetResourceId,
+                    root.ResourceId,
+                    StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            ProjectResourcePortrait? target = await graph.GetAsync(
+                targetLink.TargetResourceId,
+                cancellationToken);
+            if (target is null || !graph.IsEntity(target))
+            {
+                continue;
+            }
+
+            await AddLinkAsync(
+                result,
+                graph,
+                target.ResourceId,
+                relationLabel,
+                cancellationToken);
+        }
+    }
+
+    private static string BuildComplexRelationLabel(string roleLabel, string? relationTypeLabel) =>
+        string.IsNullOrWhiteSpace(relationTypeLabel)
+            ? roleLabel
+            : $"{roleLabel} · {relationTypeLabel}";
 
     private static async Task AddLinkAsync(
         IDictionary<string, SemanticResourceLink> result,
