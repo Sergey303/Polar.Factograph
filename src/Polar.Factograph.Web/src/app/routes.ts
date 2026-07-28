@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 export type AppRoute =
   | { page: "search" }
+  | { page: "create-entity" }
   | { page: "resource"; resourceId: string };
 
 const routeChangedEvent = "factograph:route-changed";
@@ -74,6 +75,7 @@ function navigate(hash: string, replace = false): void {
 }
 
 export const searchHref = applicationHref("/search");
+export const createEntityHref = applicationHref("/entity/new");
 
 export function resourceHref(resourceId: string): string {
   return applicationHref(`/resource/${encodeURIComponent(resourceId)}`);
@@ -83,12 +85,20 @@ export function navigateToSearch(replace = false): void {
   navigate("/search", replace);
 }
 
+export function navigateToCreateEntity(replace = false): void {
+  navigate("/entity/new", replace);
+}
+
 export function navigateToResource(resourceId: string, replace = false): void {
   navigate(`/resource/${encodeURIComponent(resourceId)}`, replace);
 }
 
 function currentRoute(): AppRoute {
   normalizeApplicationLocation();
+
+  if (window.location.hash === "#/entity/new") {
+    return { page: "create-entity" };
+  }
 
   const prefix = "#/resource/";
   if (window.location.hash.startsWith(prefix)) {
