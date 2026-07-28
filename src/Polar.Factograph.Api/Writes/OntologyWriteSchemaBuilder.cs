@@ -34,6 +34,7 @@ public sealed class OntologyWriteSchemaBuilder
             type.Id,
             catalog.LabelOf(type.Id, language) ?? type.Id,
             type.ParentClassId,
+            type.IsAbstract,
             properties);
     }
 
