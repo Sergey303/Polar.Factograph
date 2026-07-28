@@ -6,7 +6,9 @@ import {
   emptyResourceDraft,
   resourceDraftFromPortrait
 } from "../app/resourceDraftFactory";
+import { resourceDocumentUris } from "../app/resourceDocuments";
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
+import { DocumentSection } from "./DocumentSection";
 import { ResourcePortraitView } from "./ResourcePortraitView";
 import { ResourceWorkspaceActions } from "./ResourceWorkspaceActions";
 import {
@@ -14,18 +16,23 @@ import {
   type ResourceWorkspaceMode
 } from "./ResourceWorkspaceModePane";
 
+const photoDocumentType = "http://fogid.net/o/photo-doc";
+
+type LocalWorkspaceMode = Exclude<ResourceWorkspaceMode, "create">;
+
 interface ResourceWorkspaceProps {
   project: ProjectOverview | null;
   page: SemanticResourcePage | null;
   loading: boolean;
   error: string | null;
   token: string;
+  onCreate: () => void;
   onSelect: (resourceId: string) => void;
   onReload: () => void;
 }
 
 export function ResourceWorkspace(props: ResourceWorkspaceProps) {
-  const [mode, setMode] = useState<ResourceWorkspaceMode | null>(null);
+  const [mode, setMode] = useState<LocalWorkspaceMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const portrait = props.page?.portrait ?? null;
   const writable = useMemo(
@@ -58,16 +65,30 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
   }
 
   if (mode !== null) {
+    const editingPhoto = mode === "edit" && portrait?.type === photoDocumentType;
     return (
-      <ResourceWorkspaceModePane
-        mode={mode}
-        initialDraft={initialDraft}
-        writableCassettes={writable}
-        documentCassettes={documentCassettes}
-        token={props.token}
-        onCancel={() => setMode(null)}
-        onSaved={saved}
-      />
+      <>
+        <ResourceWorkspaceModePane
+          mode={mode}
+          initialDraft={initialDraft}
+          writableCassettes={writable}
+          documentCassettes={documentCassettes}
+          token={props.token}
+          onCancel={() => setMode(null)}
+          onSaved={saved}
+        />
+        {editingPhoto && portrait !== null && (
+          <DocumentSection
+            uris={resourceDocumentUris(portrait)}
+            token={props.token}
+            project={props.project}
+            title="Изображение"
+            previewPolicy="largest-preview"
+            imageDocument
+            allowReplace
+          />
+        )}
+      </>
     );
   }
 
@@ -78,7 +99,7 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
         canAddDocument={documentCassettes.length > 0}
         canEdit={writable.length > 0 && portrait !== null && portrait.type !== null}
         notice={notice}
-        onCreate={() => { setNotice(null); setMode("create"); }}
+        onCreate={() => { setNotice(null); props.onCreate(); }}
         onAddDocument={() => { setNotice(null); setMode("document"); }}
         onEdit={() => { setNotice(null); setMode("edit"); }}
       />
