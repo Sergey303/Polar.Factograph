@@ -9,19 +9,29 @@ interface ResourceEditorHeaderProps {
   cassettes: ProjectCassetteOverview[];
   lockType?: boolean;
   lockCassette?: boolean;
+  allowedTypeIds?: string[];
+  typeLabel?: string;
   onTypeChange: (value: string) => void;
   onFieldChange: (field: "resourceId" | "cassetteId", value: string) => void;
 }
 
 export function ResourceEditorHeader(props: ResourceEditorHeaderProps) {
-  const selectableClasses = props.mode === "create"
-    ? props.classes.filter(type => type.isEntityType && !type.isAbstract)
-    : props.classes;
+  const allowed = props.allowedTypeIds === undefined
+    ? null
+    : new Set(props.allowedTypeIds);
+  const selectableClasses = props.lockType
+    ? props.classes.filter(type => type.id === props.draft.typeId)
+    : props.mode === "create"
+      ? props.classes.filter(type =>
+          type.isEntityType &&
+          !type.isAbstract &&
+          (allowed === null || allowed.has(type.id)))
+      : props.classes;
 
   return (
     <div className="resource-editor-header-fields">
       <label>
-        <span>Тип сущности</span>
+        <span>{props.typeLabel ?? "Тип сущности"}</span>
         <select
           value={props.draft.typeId}
           onChange={event => props.onTypeChange(event.target.value)}
