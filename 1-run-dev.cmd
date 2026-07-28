@@ -48,13 +48,11 @@ exit /b 0
 
 :build_web
 pushd "%WEB_DIR%" || exit /b 1
-if not exist "node_modules\" (
-  echo Installing React dependencies...
-  call npm install --package-lock=false --no-audit --no-fund
-  if errorlevel 1 (
-    popd
-    exit /b 1
-  )
+echo Installing or updating React dependencies...
+call npm install --package-lock=false --no-audit --no-fund
+if errorlevel 1 (
+  popd
+  exit /b 1
 )
 echo Building React workspace...
 call npm run build
