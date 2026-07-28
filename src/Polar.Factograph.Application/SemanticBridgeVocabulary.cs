@@ -5,6 +5,7 @@ internal static class SemanticBridgeVocabulary
     public const string Name = "http://fogid.net/o/name";
     public const string Uri = "http://fogid.net/o/uri";
 
+    public const string Entity = "http://fogid.net/o/entity";
     public const string SystemObject = "http://fogid.net/o/sys-obj";
     public const string Organization = "http://fogid.net/o/org-sys";
     public const string Collection = "http://fogid.net/o/collection";
