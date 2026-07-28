@@ -84,6 +84,7 @@
 
 .semantic-link-list li {
   display: grid;
+  min-width: 0;
   gap: 0.25rem;
   padding: 0.75rem;
   border: 1px solid var(--border);
@@ -92,11 +93,15 @@
 }
 
 .semantic-link-list a {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: inherit;
   font-weight: 750;
   text-decoration: none;
 }
 
 .semantic-link-list span {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 0.78rem;
 }
