@@ -43,6 +43,13 @@ internal sealed class SemanticResourceGraph(
             .Contains(classId, StringComparer.Ordinal);
     }
 
+    public bool IsEntity(ProjectResourcePortrait portrait) =>
+        IsType(portrait, SemanticBridgeVocabulary.SystemObject);
+
+    public bool IsComplexRelation(ProjectResourcePortrait portrait) =>
+        IsType(portrait, SemanticBridgeVocabulary.Entity) &&
+        !IsEntity(portrait);
+
     public bool IsTechnical(ProjectResourcePortrait portrait) =>
         portrait.Type is not null &&
         SemanticBridgeVocabulary.TechnicalTypes.Contains(portrait.Type);
