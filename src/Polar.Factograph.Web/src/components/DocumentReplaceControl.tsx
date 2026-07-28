@@ -21,7 +21,7 @@ export function DocumentReplaceControl({
 
   async function replace(file: File): Promise<void> {
     const confirmed = window.confirm(
-      `Заменить оригинал документа файлом «${file.name}»? Адрес документа останется прежним.`
+      `Заменить изображение файлом «${file.name}»? Адрес сущности останется прежним.`
     );
     if (!confirmed) return;
 
@@ -29,7 +29,9 @@ export function DocumentReplaceControl({
     setMessage(null);
     try {
       const result = await documentWriteApi.replace(uri, file, token);
-      setMessage(result.previewState === "queued" ? "Файл заменён, превью поставлено в очередь." : "Файл заменён.");
+      setMessage(result.previewState === "queued"
+        ? "Изображение заменено. Подготавливаются размеры для просмотра."
+        : "Изображение заменено.");
       onReplaced();
     } catch (reason) {
       setMessage(errorText(reason));
@@ -54,9 +56,7 @@ export function DocumentReplaceControl({
     if (selected !== null) void replace(selected);
   }
 
-  if (!enabled) {
-    return <span className="muted">Замена недоступна.</span>;
-  }
+  if (!enabled) return null;
 
   return (
     <div className="document-replace-control">
@@ -64,7 +64,8 @@ export function DocumentReplaceControl({
         ref={inputRef}
         type="file"
         hidden
-        aria-label="Выбрать новый оригинал документа"
+        accept="image/*"
+        aria-label="Выбрать новое изображение"
         onChange={selectedReplacement}
       />
       <button
@@ -73,7 +74,7 @@ export function DocumentReplaceControl({
         disabled={busy}
         onClick={chooseReplacement}
       >
-        {busy ? "Замена…" : "Заменить оригинал…"}
+        {busy ? "Замена…" : "Заменить изображение…"}
       </button>
       {message && <span className="muted">{message}</span>}
     </div>
