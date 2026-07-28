@@ -42,6 +42,7 @@ internal sealed class WritableApiMutationHarness : IDisposable
             new FileSystemFogResourceWriter(),
             new ProjectWriteCassetteResolver(),
             new ProjectResourceWriteValidationService(
+                _stores,
                 ontology,
                 new OntologyResourceWriteValidator()),
             new ProjectResourceTargetValidationService(
