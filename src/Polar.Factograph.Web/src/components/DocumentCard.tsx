@@ -9,10 +9,16 @@ interface DocumentCardProps {
   uri: string;
   token: string;
   project: ProjectOverview | null;
+  previewOnly?: boolean;
 }
 
-export function DocumentCard({ uri, token, project }: DocumentCardProps) {
-  const asset = useDocumentAsset(uri, token);
+export function DocumentCard({
+  uri,
+  token,
+  project,
+  previewOnly = false
+}: DocumentCardProps) {
+  const asset = useDocumentAsset(uri, token, previewOnly);
   const canReplace = asset.location !== null && hasCassetteRight(
     project,
     asset.location.cassetteId,
@@ -35,6 +41,9 @@ export function DocumentCard({ uri, token, project }: DocumentCardProps) {
       <div className="document-preview">
         {asset.loading && <span className="muted">Загрузка превью…</span>}
         {asset.error && <span className="notice error">{asset.error}</span>}
+        {!asset.loading && !asset.error && !asset.objectUrl && (
+          <span className="file-placeholder">Превью недоступно</span>
+        )}
         {asset.objectUrl && asset.contentType.startsWith("image/") && (
           <img src={asset.objectUrl} alt="Предварительный просмотр документа" />
         )}
