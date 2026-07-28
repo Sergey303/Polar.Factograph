@@ -16,6 +16,7 @@ public sealed record OntologyWriteClassResponse(
     string Label,
     string? ParentClassId,
     bool IsAbstract,
+    bool IsEntityType,
     IReadOnlyList<OntologyWritePropertyResponse> Properties);
 
 public sealed record OntologyWriteSchemaResponse(
