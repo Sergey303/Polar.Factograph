@@ -4,7 +4,7 @@ import { AuthenticationPage } from "../components/AuthenticationPage";
 import { ResourcePage } from "../components/ResourcePage";
 import { SearchPage } from "../components/SearchPage";
 import { TopBar } from "../components/TopBar";
-import { resourceHref, useAppRoute } from "./routes";
+import { navigateToResource, useAppRoute } from "./routes";
 import { useAuthentication } from "./useAuthentication";
 import { useProject } from "./useProject";
 import { useResourcePage } from "./useResourcePage";
@@ -56,13 +56,9 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   useEffect(() => {
     const canonicalId = resource.page?.portrait.resourceId;
     if (resourceId !== null && canonicalId && canonicalId !== resourceId) {
-      window.location.replace(resourceHref(canonicalId));
+      navigateToResource(canonicalId, true);
     }
   }, [resourceId, resource.page]);
-
-  function openResource(id: string): void {
-    window.location.hash = resourceHref(id).slice(1);
-  }
 
   return (
     <div className="app-shell">
@@ -95,7 +91,7 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
           project={project.project}
           token={auth.token}
           resource={resource}
-          onSelect={openResource}
+          onSelect={resourceId => navigateToResource(resourceId)}
         />
       )}
 
