@@ -30,7 +30,11 @@ internal static class OntologyTermParser
                 OntologyXmlValueReader.ReadFirstResource(element, "SubClassOf"),
                 OntologyXmlValueReader.ReadResources(element, "domain"),
                 OntologyXmlValueReader.ReadResources(element, "range"),
-                OntologyXmlValueReader.ReadEnumerationStates(element));
+                OntologyXmlValueReader.ReadEnumerationStates(element))
+            {
+                IsAbstract = kind == OntologyTermKind.Class &&
+                    IsEnabledFlag(element.Attribute("abstract")?.Value)
+            };
 
             if (!terms.TryAdd(id, term))
             {
@@ -41,4 +45,9 @@ internal static class OntologyTermParser
 
         return terms;
     }
+
+    private static bool IsEnabledFlag(string? value) =>
+        string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(value, "1", StringComparison.Ordinal);
 }
