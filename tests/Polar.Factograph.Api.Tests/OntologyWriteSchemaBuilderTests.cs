@@ -19,11 +19,17 @@ public sealed class OntologyWriteSchemaBuilderTests
             OntologyWriteSchemaResponse schema = new OntologyWriteSchemaBuilder()
                 .Build(catalog, "ru");
 
+            OntologyWriteClassResponse baseClass = Assert.Single(
+                schema.Classes,
+                item => item.Id == "base");
+            Assert.True(baseClass.IsAbstract);
+
             OntologyWriteClassResponse child = Assert.Single(
                 schema.Classes,
                 item => item.Id == "child");
             Assert.Equal("Дочерний класс", child.Label);
             Assert.Equal("base", child.ParentClassId);
+            Assert.False(child.IsAbstract);
             Assert.Equal(new[] { "name", "mentor", "status" },
                 child.Properties.Select(item => item.Id));
 
@@ -50,7 +56,7 @@ public sealed class OntologyWriteSchemaBuilderTests
     private const string OntologyXml = """
         <?xml version="1.0" encoding="utf-8"?>
         <Ontology xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-          <Class rdf:about="base"><label xml:lang="ru">Базовый класс</label></Class>
+          <Class rdf:about="base" abstract="yes"><label xml:lang="ru">Базовый класс</label></Class>
           <Class rdf:about="child">
             <label xml:lang="ru">Дочерний класс</label>
             <SubClassOf rdf:resource="base" />
