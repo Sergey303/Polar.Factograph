@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { documentWriteApi } from "../api/documentWriteApi";
 import { errorText } from "../api/errorText";
 
@@ -47,7 +47,7 @@ export function DocumentReplaceControl({
     input.click();
   }
 
-  function selectedReplacement(event: React.ChangeEvent<HTMLInputElement>): void {
+  function selectedReplacement(event: ChangeEvent<HTMLInputElement>): void {
     const input = event.currentTarget;
     const selected = input.files?.[0] ?? null;
     input.value = "";
