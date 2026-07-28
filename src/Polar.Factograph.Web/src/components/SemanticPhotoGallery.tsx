@@ -15,7 +15,7 @@ function SemanticPhoto({ photo }: { photo: SemanticPhotoCard }) {
       <a className="semantic-photo-image" href={resourceHref(photo.resourceId)}>
         {photo.documentUri !== null && !failed ? (
           <img
-            src={documentContentUrl(photo.documentUri, "medium")}
+            src={documentContentUrl(photo.documentUri, "small")}
             alt={photo.displayName}
             loading="lazy"
             onError={() => setFailed(true)}
