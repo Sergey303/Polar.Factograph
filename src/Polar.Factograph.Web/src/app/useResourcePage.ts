@@ -1,55 +1,29 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { errorText } from "../api/errorText";
 import { factographApi } from "../api/factographApi";
-import type { SemanticResourcePage } from "../api/models";
 
-interface LoadedResourcePage {
-  requestedResourceId: string;
-  page: SemanticResourcePage;
-}
-
-export function useResourcePage(resourceId: string | null, token: string) {
-  const [loaded, setLoaded] = useState<LoadedResourcePage | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    if (resourceId === null) {
-      setLoaded(null);
-      setError(null);
-      setLoading(false);
-      return;
+export function useResourcePage(
+  resourceId: string | null,
+  routeAddress: string | null,
+  token: string
+) {
+  const query = useQuery({
+    queryKey: ["semantic-resource-page", routeAddress, token],
+    enabled: resourceId !== null && routeAddress !== null,
+    queryFn: ({ signal }) => {
+      if (resourceId === null) {
+        throw new Error("Resource route is not selected.");
+      }
+      return factographApi.getResourcePage(resourceId, token, signal);
     }
-
-    const controller = new AbortController();
-    setLoaded(null);
-    setLoading(true);
-    setError(null);
-    factographApi.getResourcePage(resourceId, token, controller.signal)
-      .then(page => {
-        if (!controller.signal.aborted) {
-          setLoaded({ requestedResourceId: resourceId, page });
-        }
-      })
-      .catch(reason => {
-        if (!controller.signal.aborted) {
-          setLoaded(null);
-          setError(errorText(reason));
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [resourceId, token, revision]);
+  });
 
   return {
-    page: loaded?.page ?? null,
-    loadedResourceId: loaded?.requestedResourceId ?? null,
-    loading,
-    error,
-    reload: () => setRevision(value => value + 1)
+    page: query.data ?? null,
+    loading: query.isFetching,
+    error: query.error === null ? null : errorText(query.error),
+    reload: () => {
+      void query.refetch();
+    }
   };
 }
