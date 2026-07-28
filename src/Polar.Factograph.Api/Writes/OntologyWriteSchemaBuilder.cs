@@ -4,6 +4,8 @@ namespace Polar.Factograph.Api.Writes;
 
 public sealed class OntologyWriteSchemaBuilder
 {
+    private const string EntityTypeRoot = "http://fogid.net/o/sys-obj";
+
     public OntologyWriteSchemaResponse Build(
         OntologyCatalog catalog,
         string preferredLanguage)
@@ -35,7 +37,22 @@ public sealed class OntologyWriteSchemaBuilder
             catalog.LabelOf(type.Id, language) ?? type.Id,
             type.ParentClassId,
             type.IsAbstract,
+            IsEntityType(catalog, type),
             properties);
+    }
+
+    private static bool IsEntityType(OntologyCatalog catalog, OntologyTerm type)
+    {
+        if (type.IsAbstract ||
+            !catalog.TryGetTerm(EntityTypeRoot, out OntologyTerm? root) ||
+            root?.Kind != OntologyTermKind.Class)
+        {
+            return false;
+        }
+
+        return catalog
+            .AncestorsAndSelf(type.Id)
+            .Contains(EntityTypeRoot, StringComparer.Ordinal);
     }
 
     private static OntologyWritePropertyResponse BuildProperty(
