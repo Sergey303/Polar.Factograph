@@ -73,6 +73,8 @@
 
 .relation-choice-list {
   min-height: 0;
+  align-content: start;
+  grid-auto-rows: max-content;
   overflow: auto;
   padding-right: 0.25rem;
 }
