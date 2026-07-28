@@ -30,6 +30,41 @@ public sealed class CassetteDocumentPathResolverTests
     }
 
     [Fact]
+    public void Resolve_HidesPreviewOlderThanOriginal()
+    {
+        using TemporaryCassette cassette = TemporaryCassette.Create();
+        string preview = cassette.CreateFile("documents", "small", "0001", "0042.jpg");
+        string original = cassette.CreateFile("originals", "0001", "0042.png");
+        File.SetLastWriteTimeUtc(preview, DateTime.UtcNow.AddMinutes(-5));
+        File.SetLastWriteTimeUtc(original, DateTime.UtcNow);
+        ProjectDefinition project = CreateProject(cassette.Path);
+        CassetteDocumentPathResolver resolver = new();
+
+        CassetteDocumentLocation location = resolver.Resolve(
+            project,
+            "iiss://TestCassette@iis.nsk.su/0001/0042");
+
+        Assert.Equal(Path.GetFullPath(original), location.OriginalPath);
+        Assert.Null(location.SmallPreviewPath);
+    }
+
+    [Fact]
+    public void Resolve_KeepsPreviewWhenLegacyOriginalIsMissing()
+    {
+        using TemporaryCassette cassette = TemporaryCassette.Create();
+        string preview = cassette.CreateFile("documents", "small", "0001", "0042.jpg");
+        ProjectDefinition project = CreateProject(cassette.Path);
+        CassetteDocumentPathResolver resolver = new();
+
+        CassetteDocumentLocation location = resolver.Resolve(
+            project,
+            "iiss://TestCassette@iis.nsk.su/0001/0042");
+
+        Assert.Null(location.OriginalPath);
+        Assert.Equal(Path.GetFullPath(preview), location.SmallPreviewPath);
+    }
+
+    [Fact]
     public void Resolve_RejectsAmbiguousOriginalFiles()
     {
         using TemporaryCassette cassette = TemporaryCassette.Create();
