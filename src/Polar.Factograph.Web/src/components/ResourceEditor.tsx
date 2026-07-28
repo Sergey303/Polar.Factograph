@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type {
   OntologyWriteProperty,
   OntologyWriteSchema
@@ -5,6 +6,7 @@ import type {
 import type { ProjectCassetteOverview } from "../api/models";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { findWriteClass } from "../app/ontologySchemaLookup";
+import { newPropertyDraft } from "../app/resourceDraftFactory";
 import type { ResourceDraft } from "../app/resourceDraftModels";
 import { useResourceDraft } from "../app/useResourceDraft";
 import { useResourceWrite } from "../app/useResourceWrite";
@@ -33,7 +35,27 @@ export interface ResourceEditorProps {
 }
 
 export function ResourceEditor(props: ResourceEditorProps) {
-  const editor = useResourceDraft(props.initialDraft);
+  const initialDraft = useMemo(() => {
+    if (props.mode !== "create" || props.initialDraft.typeId.length === 0) {
+      return props.initialDraft;
+    }
+
+    const initialType = findWriteClass(props.schema, props.initialDraft.typeId);
+    if (initialType === null) return props.initialDraft;
+    const existingPredicates = new Set(
+      props.initialDraft.properties.map(property => property.predicate)
+    );
+    const missingRequired = initialType.properties
+      .filter(property => property.isEssential && !existingPredicates.has(property.id))
+      .map(newPropertyDraft);
+    return missingRequired.length === 0
+      ? props.initialDraft
+      : {
+          ...props.initialDraft,
+          properties: [...props.initialDraft.properties, ...missingRequired]
+        };
+  }, [props.initialDraft, props.mode, props.schema]);
+  const editor = useResourceDraft(initialDraft);
   const writer = useResourceWrite(props.token, props.schema, props.onSaved);
   const type = findWriteClass(props.schema, editor.draft.typeId);
 
