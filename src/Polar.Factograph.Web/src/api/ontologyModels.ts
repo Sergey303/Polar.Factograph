@@ -6,7 +6,9 @@ export interface OntologyWriteOption {
 export interface OntologyWriteProperty {
   id: string;
   label: string;
+  inverseLabel: string | null;
   kind: "literal" | "resource";
+  isEssential: boolean;
   ranges: string[];
   options: OntologyWriteOption[];
 }
