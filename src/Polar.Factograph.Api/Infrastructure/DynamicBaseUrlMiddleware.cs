@@ -1,9 +1,12 @@
 using System.Text;
+using System.Text.Encodings.Web;
 
 namespace Polar.Factograph.Api.Infrastructure;
 
 public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
 {
+    private const string ApplicationBaseMetaName = "factograph-app-base";
+
     public async Task InvokeAsync(HttpContext context)
     {
         if (!ShouldInspect(context.Request))
@@ -32,7 +35,7 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
                 detectEncodingFromByteOrderMarks: true,
                 leaveOpen: true);
             string html = await reader.ReadToEndAsync(context.RequestAborted);
-            string rewritten = InsertBase(html, BaseHref(context.Request.PathBase));
+            string rewritten = InsertApplicationBase(html, BaseHref(context.Request.PathBase));
             byte[] bytes = Encoding.UTF8.GetBytes(rewritten);
             context.Response.ContentLength = bytes.Length;
             await originalBody.WriteAsync(bytes, context.RequestAborted);
@@ -43,19 +46,33 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         }
     }
 
-    internal static string InsertBase(string html, string href)
+    internal static string InsertApplicationBase(string html, string href)
     {
         ArgumentNullException.ThrowIfNull(html);
         ArgumentException.ThrowIfNullOrWhiteSpace(href);
-        if (html.Contains("<base ", StringComparison.OrdinalIgnoreCase))
+
+        int head = html.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
+        if (head < 0)
         {
             return html;
         }
 
-        int head = html.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
-        return head < 0
+        string encodedHref = HtmlEncoder.Default.Encode(href);
+        StringBuilder tags = new();
+        if (!html.Contains("<base ", StringComparison.OrdinalIgnoreCase))
+        {
+            tags.Append($"<base href=\"{encodedHref}\">");
+        }
+
+        if (!html.Contains(ApplicationBaseMetaName, StringComparison.OrdinalIgnoreCase))
+        {
+            tags.Append(
+                $"<meta name=\"{ApplicationBaseMetaName}\" content=\"{encodedHref}\">");
+        }
+
+        return tags.Length == 0
             ? html
-            : html.Insert(head + "<head>".Length, $"<base href=\"{href}\">");
+            : html.Insert(head + "<head>".Length, tags.ToString());
     }
 
     private static bool ShouldInspect(HttpRequest request)
