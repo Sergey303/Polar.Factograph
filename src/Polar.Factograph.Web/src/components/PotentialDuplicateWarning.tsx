@@ -1,5 +1,5 @@
 import type { PotentialDuplicateResource } from "../api/models";
-import { followAppLink, resourceHref } from "../app/routes";
+import { resourceHref } from "../app/routes";
 
 interface PotentialDuplicateWarningProps {
   candidates: PotentialDuplicateResource[];
@@ -52,9 +52,8 @@ export function PotentialDuplicateWarning(
             <div>
               <a
                 href={resourceHref(candidate.resourceId)}
-                onClick={followAppLink}
-                target={props.onUseExisting ? undefined : "_blank"}
-                rel={props.onUseExisting ? undefined : "noopener noreferrer"}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 {candidate.displayName}
               </a>
