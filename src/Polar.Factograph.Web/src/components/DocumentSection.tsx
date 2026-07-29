@@ -6,7 +6,7 @@ interface DocumentSectionProps {
   uris: string[];
   token: string;
   project: ProjectOverview | null;
-  title?: string;
+  title?: string | null;
   previewPolicy?: DocumentPreviewPolicy;
   imageDocument?: boolean;
   allowReplace?: boolean;
@@ -24,8 +24,8 @@ export function DocumentSection({
   if (uris.length === 0) return null;
 
   return (
-    <section className="portrait-section">
-      <h3>{title}</h3>
+    <section className="portrait-section public-media-section">
+      {title !== null && <h3>{title}</h3>}
       <div className="document-grid">
         {uris.map(uri => (
           <DocumentCard
