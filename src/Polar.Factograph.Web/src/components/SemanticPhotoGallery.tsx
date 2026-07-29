@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { documentContentUrl } from "../api/factographApi";
 import type { SemanticPhotoCard } from "../api/models";
-import { resourceHref } from "../app/routes";
+import { followAppLink, resourceHref } from "../app/routes";
 
 interface SemanticPhotoGalleryProps {
   photos: SemanticPhotoCard[];
@@ -12,7 +12,11 @@ function SemanticPhoto({ photo }: { photo: SemanticPhotoCard }) {
 
   return (
     <article className="semantic-photo-card">
-      <a className="semantic-photo-image" href={resourceHref(photo.resourceId)}>
+      <a
+        className="semantic-photo-image"
+        href={resourceHref(photo.resourceId)}
+        onClick={followAppLink}
+      >
         {photo.documentUri !== null && !failed ? (
           <img
             src={documentContentUrl(photo.documentUri, "small")}
@@ -25,9 +29,15 @@ function SemanticPhoto({ photo }: { photo: SemanticPhotoCard }) {
         )}
       </a>
       <div className="semantic-photo-caption">
-        <a href={resourceHref(photo.resourceId)}>{photo.displayName}</a>
+        <a href={resourceHref(photo.resourceId)} onClick={followAppLink}>
+          {photo.displayName}
+        </a>
         {photo.contextResourceId !== null && photo.contextLabel !== null && (
-          <a className="muted" href={resourceHref(photo.contextResourceId)}>
+          <a
+            className="muted"
+            href={resourceHref(photo.contextResourceId)}
+            onClick={followAppLink}
+          >
             {photo.contextLabel}
           </a>
         )}
