@@ -36,7 +36,7 @@ internal static partial class SemanticDateParser
         }
 
         string display = value.Trim();
-        string compact = Regex.Replace(display.ToLowerInvariant(), @"\s+", string.Empty);
+        string compact = Whitespace().Replace(display.ToLowerInvariant(), string.Empty);
 
         Match numeric = NumericDate().Match(compact);
         if (numeric.Success &&
@@ -95,6 +95,9 @@ internal static partial class SemanticDateParser
 
     private static string SortKey(int year, int month, int day) =>
         FormattableString.Invariant($"{year:D4}-{month:D2}-{day:D2}");
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Whitespace();
 
     [GeneratedRegex(@"^(?<year>\d{4})(?:[-./]?(?<month>\d{1,2})(?:[-./]?(?<day>\d{1,2}))?)?$")]
     private static partial Regex NumericDate();
