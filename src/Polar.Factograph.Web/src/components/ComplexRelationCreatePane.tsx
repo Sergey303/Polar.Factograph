@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import type { OntologyWriteSchema } from "../api/ontologyModels";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import type {
   ProjectCassetteOverview,
   ResourcePortrait
 } from "../api/models";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { errorText } from "../api/errorText";
-import { factographApi } from "../api/factographApi";
 import {
   relationRolesForType,
   type OntologyRelationRole
 } from "../app/ontologyRelations";
+import { portraitQueryOptions } from "../app/queryOptions";
 import {
   relationDraft,
   type RelationDraftResult
@@ -49,90 +49,79 @@ type RelationEditorState =
 export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps) {
   const schemaState = useOntologySchema(props.token, true);
   const [state, setState] = useState<RelationEditorState>({ mode: "list" });
-  const [existing, setExisting] = useState<ExistingRelation[]>([]);
-  const [loadingExisting, setLoadingExisting] = useState(true);
-  const [existingError, setExistingError] = useState<string | null>(null);
+  const currentResourceId = props.portrait.resourceId;
+  const currentPortraitQuery = useQuery(
+    portraitQueryOptions(currentResourceId, props.token)
+  );
+  const currentPortrait = currentPortraitQuery.data ?? props.portrait;
+  const sourceIds = useMemo(
+    () => [...new Set(
+      currentPortrait.inverseLinks.map(link => link.sourceResourceId)
+    )],
+    [currentPortrait.inverseLinks]
+  );
+  const relationQueries = useQueries({
+    queries: sourceIds.map(resourceId =>
+      portraitQueryOptions(resourceId, props.token))
+  });
   const roles = useMemo(
-    () => schemaState.schema === null || props.portrait.type === null
+    () => schemaState.schema === null || currentPortrait.type === null
       ? []
-      : relationRolesForType(schemaState.schema, props.portrait.type),
-    [schemaState.schema, props.portrait.type]
+      : relationRolesForType(schemaState.schema, currentPortrait.type),
+    [schemaState.schema, currentPortrait.type]
   );
 
-  useEffect(() => {
+  const existing = useMemo(() => {
     const schema = schemaState.schema;
-    if (schema === null) return;
+    if (schema === null) return [];
 
-    const controller = new AbortController();
-    const currentResourceId = props.portrait.resourceId;
-    setLoadingExisting(true);
-    setExistingError(null);
-
-    async function load(currentSchema: OntologyWriteSchema): Promise<void> {
-      // The semantic page can still contain the portrait cached before a relation
-      // was written. Read the current portrait before collecting inverse links so
-      // the first opening of the relation manager sees newly created relations.
-      const currentPortrait = await factographApi.getPortrait(
-        currentResourceId,
-        props.token,
-        controller.signal);
-      const sourceIds = [...new Set(
-        currentPortrait.inverseLinks.map(link => link.sourceResourceId)
-      )];
-      const loaded = await Promise.allSettled(
-        sourceIds.map(id => factographApi.getPortrait(id, props.token, controller.signal))
+    const relations: ExistingRelation[] = [];
+    for (const query of relationQueries) {
+      const relationPortrait = query.data;
+      if (relationPortrait === undefined) continue;
+      const relationType = schema.classes.find(type =>
+        type.id === relationPortrait.type && !type.isEntityType && !type.isAbstract
       );
-      if (controller.signal.aborted) return;
+      if (relationType === undefined) continue;
 
-      const relations: ExistingRelation[] = [];
-      for (const result of loaded) {
-        if (result.status !== "fulfilled") continue;
-        const relationPortrait = result.value;
-        const relationType = currentSchema.classes.find(type =>
-          type.id === relationPortrait.type && !type.isEntityType && !type.isAbstract
-        );
-        if (relationType === undefined) continue;
-
-        const anchorLink = relationPortrait.directLinks.find(link =>
-          link.targetResourceId === currentResourceId &&
-          relationType.properties.some(property =>
-            property.id === link.predicate && property.kind === "resource")
-        );
-        if (anchorLink === undefined) continue;
-
-        const anchorProperty = relationType.properties.find(
-          property => property.id === anchorLink.predicate
-        );
-        if (anchorProperty === undefined) continue;
-
-        relations.push({
-          portrait: relationPortrait,
-          role: {
-            key: `${relationType.id}\n${anchorProperty.id}`,
-            relationType,
-            anchorProperty,
-            label: `${relationType.label}: ${anchorProperty.inverseLabel ?? anchorProperty.label}`
-          }
-        });
-      }
-
-      relations.sort((left, right) =>
-        left.role.label.localeCompare(right.role.label, "ru") ||
-        left.portrait.resourceId.localeCompare(right.portrait.resourceId, "ru")
+      const anchorLink = relationPortrait.directLinks.find(link =>
+        link.targetResourceId === currentResourceId &&
+        relationType.properties.some(property =>
+          property.id === link.predicate && property.kind === "resource")
       );
-      setExisting(relations);
+      if (anchorLink === undefined) continue;
+
+      const anchorProperty = relationType.properties.find(
+        property => property.id === anchorLink.predicate
+      );
+      if (anchorProperty === undefined) continue;
+
+      relations.push({
+        portrait: relationPortrait,
+        role: {
+          key: `${relationType.id}\n${anchorProperty.id}`,
+          relationType,
+          anchorProperty,
+          label: `${relationType.label}: ${anchorProperty.inverseLabel ?? anchorProperty.label}`
+        }
+      });
     }
 
-    load(schema)
-      .catch(reason => {
-        if (!controller.signal.aborted) setExistingError(errorText(reason));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoadingExisting(false);
-      });
+    return relations.sort((left, right) =>
+      left.role.label.localeCompare(right.role.label, "ru") ||
+      left.portrait.resourceId.localeCompare(right.portrait.resourceId, "ru")
+    );
+  }, [schemaState.schema, relationQueries, currentResourceId]);
 
-    return () => controller.abort();
-  }, [schemaState.schema, props.portrait.resourceId, props.token]);
+  const loadingExisting = currentPortraitQuery.isFetching ||
+    relationQueries.some(query => query.isFetching);
+  const existingErrors = [
+    currentPortraitQuery.error,
+    ...relationQueries.map(query => query.error)
+  ].filter(error => error !== null);
+  const existingError = existingErrors.length === 0
+    ? null
+    : [...new Set(existingErrors.map(errorText))].join(" · ");
 
   if (schemaState.schema === null) {
     return (
@@ -213,7 +202,7 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
                   role,
                   relation: relationDraft(
                     role,
-                    props.portrait.resourceId,
+                    currentResourceId,
                     props.cassetteId)
                 })}
               >
@@ -237,7 +226,7 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
       .filter(row =>
         row.kind === "resource" &&
         row.predicate === relation.role.anchorProperty.id &&
-        row.value === props.portrait.resourceId)
+        row.value === currentResourceId)
       .map(row => row.rowId);
     setState({ mode: "edit", relation, draft, protectedRowIds });
   }
