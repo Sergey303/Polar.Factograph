@@ -30,7 +30,7 @@ internal sealed class SemanticPhotoCollector(SemanticResourceGraph graph)
 
         return result
             .OrderBy(card => card.SortDate is null ? 1 : 0)
-            .ThenBy(card => card.SortDate, StringComparer.Ordinal)
+            .ThenBy(card => card.SortDate ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(card => card.ContextLabel ?? string.Empty, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(card => card.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToArray();
