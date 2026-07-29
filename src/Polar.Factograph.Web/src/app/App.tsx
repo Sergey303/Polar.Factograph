@@ -10,6 +10,7 @@ import {
   navigateToResource,
   navigateToResourceMode,
   navigateToSearch,
+  type ResourceRouteMode,
   useAppRoute
 } from "./routes";
 import { useAuthentication } from "./useAuthentication";
@@ -49,7 +50,11 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   const searchQuery = route.page === "search" ? route.query : null;
   const search = useSearch(searchQuery, auth.token);
   const resourceId = route.page === "resource" ? route.resourceId : null;
+  const resourceMode: ResourceRouteMode = route.page === "resource"
+    ? route.mode
+    : "view";
   const resource = useResourcePage(resourceId, auth.token);
+  const canonicalResourceId = resource.page?.portrait.resourceId ?? null;
   const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
 
   useEffect(() => {
@@ -61,11 +66,14 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   }, [canAdmin]);
 
   useEffect(() => {
-    const canonicalId = resource.page?.portrait.resourceId;
-    if (route.page === "resource" && canonicalId && canonicalId !== route.resourceId) {
-      navigateToResourceMode(canonicalId, route.mode, true);
+    if (
+      resourceId !== null &&
+      canonicalResourceId !== null &&
+      canonicalResourceId !== resourceId
+    ) {
+      navigateToResourceMode(canonicalResourceId, resourceMode, true);
     }
-  }, [route, resource.page?.portrait.resourceId]);
+  }, [resourceId, resourceMode, canonicalResourceId]);
 
   return (
     <div className="app-shell">
