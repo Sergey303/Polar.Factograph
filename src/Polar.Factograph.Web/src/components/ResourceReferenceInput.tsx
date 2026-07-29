@@ -1,15 +1,15 @@
-import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import type {
   OntologyWriteProperty,
   OntologyWriteSchema
 } from "../api/ontologyModels";
-import type { ResourceSearchResult } from "../api/models";
 import { errorText } from "../api/errorText";
-import { factographApi } from "../api/factographApi";
 import {
   entityTypesMatchingRanges,
   ontologyTypeMatchesRanges
 } from "../app/ontologyRelations";
+import { searchQueryOptions } from "../app/queryOptions";
 
 interface ResourceReferenceInputProps {
   property: OntologyWriteProperty;
@@ -26,49 +26,30 @@ interface ResourceReferenceInputProps {
 
 export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ResourceSearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const activeRequest = useRef<AbortController | null>(null);
+  const [submittedQuery, setSubmittedQuery] = useState("");
+  const search = useQuery({
+    ...searchQueryOptions(submittedQuery, props.token),
+    enabled: submittedQuery.length > 0
+  });
+  const results = useMemo(
+    () => (search.data ?? []).filter(result =>
+      ontologyTypeMatchesRanges(
+        props.schema,
+        result.type,
+        props.property.ranges
+      ) && props.schema.classes.some(type =>
+        type.id === result.type && type.isEntityType && !type.isAbstract
+      )),
+    [search.data, props.schema, props.property.ranges]
+  );
+  const error = search.error === null ? null : errorText(search.error);
   const canCreateTarget = entityTypesMatchingRanges(
     props.schema,
     props.property.ranges
   ).length > 0;
 
-  async function search(): Promise<void> {
-    const text = query.trim();
-    activeRequest.current?.abort();
-    if (text.length === 0) {
-      setResults([]);
-      setError(null);
-      return;
-    }
-
-    const controller = new AbortController();
-    activeRequest.current = controller;
-    setLoading(true);
-    setError(null);
-    try {
-      const found = await factographApi.search(text, props.token, controller.signal);
-      setResults(found.filter(result =>
-        ontologyTypeMatchesRanges(
-          props.schema,
-          result.type,
-          props.property.ranges
-        ) && props.schema.classes.some(type =>
-          type.id === result.type && type.isEntityType && !type.isAbstract
-        )));
-    } catch (reason) {
-      if (!controller.signal.aborted) {
-        setResults([]);
-        setError(errorText(reason));
-      }
-    } finally {
-      if (activeRequest.current === controller) {
-        activeRequest.current = null;
-        setLoading(false);
-      }
-    }
+  function submitSearch(): void {
+    setSubmittedQuery(query.trim());
   }
 
   if (props.readOnly) {
@@ -92,13 +73,18 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
           onKeyDown={event => {
             if (event.key === "Enter") {
               event.preventDefault();
-              void search();
+              submitSearch();
             }
           }}
           placeholder="Найдите сущность по имени"
         />
-        <button className="button subtle compact" type="button" onClick={() => void search()} disabled={loading}>
-          {loading ? "Поиск…" : "Найти"}
+        <button
+          className="button subtle compact"
+          type="button"
+          onClick={submitSearch}
+          disabled={search.isFetching}
+        >
+          {search.isFetching ? "Поиск…" : "Найти"}
         </button>
         {props.onCreateNew && canCreateTarget && (
           <button
@@ -111,7 +97,7 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
         )}
       </div>
       {error && <span className="notice error">{error}</span>}
-      {!loading && query.trim().length > 0 && results.length === 0 && !error && (
+      {!search.isFetching && submittedQuery.length > 0 && results.length === 0 && !error && (
         <span className="muted">Подходящие сущности не найдены.</span>
       )}
       {results.length > 0 && (
@@ -123,7 +109,7 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
               type="button"
               onClick={() => {
                 props.onChange(result.resourceId);
-                setResults([]);
+                setSubmittedQuery("");
                 setQuery(result.displayName);
               }}
             >
