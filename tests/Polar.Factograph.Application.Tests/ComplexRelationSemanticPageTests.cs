@@ -54,6 +54,9 @@ public sealed class ComplexRelationSemanticPageTests
             Assert.Equal("org-1", organization.ResourceId);
             Assert.Equal("Институт", organization.DisplayName);
             Assert.Equal("образование в · Аспирант", organization.RelationLabel);
+            Assert.Equal("aspirant-1", organization.RelationResourceId);
+            Assert.Equal("1987–1990", organization.DisplayDate);
+            Assert.Equal("1987-01-01", organization.SortDate);
             Assert.DoesNotContain(personPage.RelatedResources, link =>
                 link.ResourceId == "aspirant-1");
 
@@ -62,6 +65,9 @@ public sealed class ComplexRelationSemanticPageTests
             Assert.Equal("person-1", learner.ResourceId);
             Assert.Equal("Иван Иванов", learner.DisplayName);
             Assert.Equal("учащийся · Аспирант", learner.RelationLabel);
+            Assert.Equal("aspirant-1", learner.RelationResourceId);
+            Assert.Equal("1987–1990", learner.DisplayDate);
+            Assert.Equal("1987-01-01", learner.SortDate);
             Assert.DoesNotContain(organizationPage.RelatedResources, link =>
                 link.ResourceId == "aspirant-1");
         }
@@ -114,6 +120,8 @@ public sealed class ComplexRelationSemanticPageTests
         Literal("org-1", O + "name", "Институт", "ru"),
 
         Iri("aspirant-1", RdfType, O + "aspirant"),
+        Literal("aspirant-1", O + "from-date", "1987", language: null),
+        Literal("aspirant-1", O + "to-date", "1990", language: null),
         Iri("aspirant-1", O + "learner", "person-1"),
         Iri("aspirant-1", O + "learning-org", "org-1")
     ];
@@ -181,6 +189,16 @@ public sealed class ComplexRelationSemanticPageTests
             <label xml:lang="ru">имя</label>
             <domain rdf:resource="http://fogid.net/o/sys-obj" />
             <range rdf:resource="http://fogid.net/o/text" />
+          </DatatypeProperty>
+          <DatatypeProperty rdf:about="http://fogid.net/o/from-date">
+            <label xml:lang="ru">нач.дата</label>
+            <domain rdf:resource="http://fogid.net/o/entity" />
+            <range rdf:resource="http://fogid.net/o/date" />
+          </DatatypeProperty>
+          <DatatypeProperty rdf:about="http://fogid.net/o/to-date">
+            <label xml:lang="ru">кон.дата</label>
+            <domain rdf:resource="http://fogid.net/o/entity" />
+            <range rdf:resource="http://fogid.net/o/date" />
           </DatatypeProperty>
           <ObjectProperty rdf:about="http://fogid.net/o/learner">
             <label xml:lang="ru">ученик</label>
