@@ -47,7 +47,9 @@ export function documentBlobQueryOptions(
 ) {
   return queryOptions({
     queryKey: ["document-blob", token, uri, variant] as const,
-    queryFn: ({ signal }) => factographApi.getDocumentBlob(uri, variant, token, signal)
+    queryFn: ({ signal }) => factographApi.getDocumentBlob(uri, variant, token, signal),
+    staleTime: Infinity,
+    gcTime: 0
   });
 }
 
