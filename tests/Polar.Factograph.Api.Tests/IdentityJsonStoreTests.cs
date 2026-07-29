@@ -139,6 +139,34 @@ public sealed class IdentityJsonStoreTests : IDisposable
         Assert.Equal(assigned.FogPath, result.FogPath);
     }
 
+    [Fact]
+    public void Fog_resolver_rejects_registered_viewer_without_fog()
+    {
+        Directory.CreateDirectory(_root);
+        string cassettePath = Path.Combine(_root, "cassette");
+        IdentityUser viewer = CreateUser("u-1", "reader") with
+        {
+            Roles = ["viewer"],
+            Fog = null
+        };
+        TestOptionsMonitor<IdentityData> monitor = new(new IdentityData
+        {
+            Users = [viewer]
+        });
+        using IdentityJsonStore store = CreateStore(monitor);
+        IdentityFogSourceResolver resolver = new(store);
+        ProjectDefinition project = CreateProject(cassettePath);
+        FogSourceDescriptor legacyWritable = CreateSource(
+            cassettePath,
+            "meta/cassette_current.fog",
+            "admin");
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            resolver.Resolve(project, [legacyWritable], viewer.Id, "main"));
+
+        Assert.Contains("not an editor", exception.Message, StringComparison.Ordinal);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
