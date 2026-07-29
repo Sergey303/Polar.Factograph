@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 
+export type ResourceRouteMode = "view" | "edit" | "relations" | "document";
+
 export type AppRoute =
-  | { page: "search" }
+  | { page: "search"; query: string }
   | { page: "create-entity" }
-  | { page: "resource"; resourceId: string };
+  | { page: "resource"; resourceId: string; mode: ResourceRouteMode };
 
 const routeChangedEvent = "factograph:route-changed";
 const applicationBaseMeta = "meta[name='factograph-app-base']";
@@ -74,15 +76,43 @@ function navigate(hash: string, replace = false): void {
   window.dispatchEvent(new Event(routeChangedEvent));
 }
 
+function searchHash(query: string): string {
+  const normalized = query.trim();
+  if (normalized.length === 0) return "/search";
+  const parameters = new URLSearchParams({ q: normalized });
+  return `/search?${parameters.toString()}`;
+}
+
+function resourceHash(resourceId: string, mode: ResourceRouteMode): string {
+  const base = `/resource/${encodeURIComponent(resourceId)}`;
+  switch (mode) {
+    case "edit":
+      return `${base}/edit`;
+    case "relations":
+      return `${base}/relations`;
+    case "document":
+      return `${base}/documents/new`;
+    default:
+      return base;
+  }
+}
+
 export const searchHref = applicationHref("/search");
 export const createEntityHref = applicationHref("/entity/new");
 
-export function resourceHref(resourceId: string): string {
-  return applicationHref(`/resource/${encodeURIComponent(resourceId)}`);
+export function searchHrefFor(query: string): string {
+  return applicationHref(searchHash(query));
 }
 
-export function navigateToSearch(replace = false): void {
-  navigate("/search", replace);
+export function resourceHref(
+  resourceId: string,
+  mode: ResourceRouteMode = "view"
+): string {
+  return applicationHref(resourceHash(resourceId, mode));
+}
+
+export function navigateToSearch(query = "", replace = false): void {
+  navigate(searchHash(query), replace);
 }
 
 export function navigateToCreateEntity(replace = false): void {
@@ -90,30 +120,78 @@ export function navigateToCreateEntity(replace = false): void {
 }
 
 export function navigateToResource(resourceId: string, replace = false): void {
-  navigate(`/resource/${encodeURIComponent(resourceId)}`, replace);
+  navigate(resourceHash(resourceId, "view"), replace);
+}
+
+export function navigateToResourceMode(
+  resourceId: string,
+  mode: ResourceRouteMode,
+  replace = false
+): void {
+  navigate(resourceHash(resourceId, mode), replace);
+}
+
+function currentHash(): { path: string; parameters: URLSearchParams } {
+  const raw = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const separator = raw.indexOf("?");
+  if (separator < 0) {
+    return { path: raw || "/search", parameters: new URLSearchParams() };
+  }
+  return {
+    path: raw.slice(0, separator) || "/search",
+    parameters: new URLSearchParams(raw.slice(separator + 1))
+  };
+}
+
+function parseResourceMode(suffix: string): ResourceRouteMode | null {
+  switch (suffix) {
+    case "":
+      return "view";
+    case "/edit":
+      return "edit";
+    case "/relations":
+      return "relations";
+    case "/documents/new":
+      return "document";
+    default:
+      return null;
+  }
 }
 
 function currentRoute(): AppRoute {
   normalizeApplicationLocation();
+  const hash = currentHash();
 
-  if (window.location.hash === "#/entity/new") {
+  if (hash.path === "/search") {
+    return { page: "search", query: hash.parameters.get("q")?.trim() ?? "" };
+  }
+
+  if (hash.path === "/entity/new") {
     return { page: "create-entity" };
   }
 
-  const prefix = "#/resource/";
-  if (window.location.hash.startsWith(prefix)) {
-    const encoded = window.location.hash.slice(prefix.length);
-    try {
-      const resourceId = decodeURIComponent(encoded);
-      if (resourceId.trim().length > 0) {
-        return { page: "resource", resourceId };
+  const prefix = "/resource/";
+  if (hash.path.startsWith(prefix)) {
+    const remainder = hash.path.slice(prefix.length);
+    const slash = remainder.indexOf("/");
+    const encoded = slash < 0 ? remainder : remainder.slice(0, slash);
+    const suffix = slash < 0 ? "" : remainder.slice(slash);
+    const mode = parseResourceMode(suffix);
+    if (mode !== null) {
+      try {
+        const resourceId = decodeURIComponent(encoded);
+        if (resourceId.trim().length > 0) {
+          return { page: "resource", resourceId, mode };
+        }
+      } catch {
+        return { page: "search", query: "" };
       }
-    } catch {
-      return { page: "search" };
     }
   }
 
-  return { page: "search" };
+  return { page: "search", query: "" };
 }
 
 export function useAppRoute(): AppRoute {
