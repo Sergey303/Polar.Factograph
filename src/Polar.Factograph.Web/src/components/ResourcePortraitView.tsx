@@ -31,8 +31,8 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   if (!props.page) {
     return (
       <div className="empty-state portrait-empty">
-        <strong>Ресурс не выбран</strong>
-        <span>Вернитесь к поиску и откройте нужную сущность.</span>
+        <strong>Сущность не загружена</strong>
+        <span>Проверьте адрес страницы или выберите сущность через поиск в верхнем меню.</span>
       </div>
     );
   }
