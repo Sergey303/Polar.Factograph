@@ -4,7 +4,7 @@ import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { cassettesWithRight } from "../app/projectAccess";
 import { emptyResourceDraft } from "../app/resourceDraftFactory";
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
-import { navigateToResource, navigateToSearch, searchHref } from "../app/routes";
+import { navigateToResource, navigateToSearch } from "../app/routes";
 import { ResourceEditorPane } from "./ResourceEditorPane";
 
 interface EntityCreatePageProps {
@@ -29,9 +29,6 @@ export function EntityCreatePage(props: EntityCreatePageProps) {
 
   return (
     <main className="page-shell resource-page-shell">
-      <nav className="page-navigation" aria-label="Навигация по проекту">
-        <a className="button ghost" href={searchHref}>← К поиску</a>
-      </nav>
       <section className="panel resource-page-panel">
         <ResourceEditorPane
           mode="create"
