@@ -172,7 +172,9 @@ internal sealed class SemanticResourceGraph(
         string resourceId,
         string relationLabel,
         CancellationToken cancellationToken,
-        ProjectResourcePortrait? relation = null)
+        ProjectResourcePortrait? relation = null,
+        string? groupKey = null,
+        string? groupLabel = null)
     {
         ProjectResourcePortrait? portrait = await GetAsync(resourceId, cancellationToken);
         if (portrait is null || IsTechnical(portrait))
@@ -187,6 +189,13 @@ internal sealed class SemanticResourceGraph(
             date = DateValue(portrait);
         }
 
+        string effectiveGroupKey = groupKey
+            ?? relation?.Type
+            ?? relationLabel;
+        string effectiveGroupLabel = groupLabel
+            ?? (relation is null ? relationLabel : TypeLabel(relation))
+            ?? relationLabel;
+
         return new SemanticResourceLink(
             portrait.ResourceId,
             DisplayName(portrait),
@@ -196,7 +205,9 @@ internal sealed class SemanticResourceGraph(
             relation?.ResourceId,
             documentUri,
             date?.Display,
-            date?.SortKey);
+            date?.SortKey,
+            effectiveGroupKey,
+            effectiveGroupLabel);
     }
 
     private bool IsDateProperty(string predicate)
