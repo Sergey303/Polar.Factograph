@@ -47,15 +47,13 @@ public sealed class LocalAuthenticationService(
             string projectPath = projectPathResolver.GetRequiredPath();
             ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
             bool editor = options.IsEditor(normalizedLogin);
-            string role = options.EditorAllowListConfigured
-                ? editor ? EditorRole : ViewerRole
-                : options.DefaultRole;
+            string role = editor ? EditorRole : ViewerRole;
             RequireProjectRole(project, role);
 
             string userId = $"u_{Guid.NewGuid():N}";
             CassetteDefinition? cassette = null;
             IdentityFogReference? fog = null;
-            if (!options.EditorAllowListConfigured || editor)
+            if (editor)
             {
                 cassette = ResolveRegistrationCassette(project);
                 fog = await CreateFogAsync(
@@ -114,13 +112,6 @@ public sealed class LocalAuthenticationService(
     public async Task ProvisionConfiguredEditorsAsync(
         CancellationToken cancellationToken = default)
     {
-        if (!options.EditorAllowListConfigured)
-        {
-            logger.LogInformation(
-                "Authentication:Local:EditorLogins is not configured; legacy registration roles and Fog behavior remain active.");
-            return;
-        }
-
         await _registrationLock.WaitAsync(cancellationToken);
         try
         {
@@ -128,13 +119,13 @@ public sealed class LocalAuthenticationService(
             ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
             RequireProjectRole(project, ViewerRole);
             RequireProjectRole(project, EditorRole);
-            CassetteDefinition cassette = ResolveRegistrationCassette(project);
 
             Dictionary<string, IdentityUser> replacements = new(StringComparer.Ordinal);
             List<IdentityFogReference> createdFogs = [];
             HashSet<string> registeredLogins = store.Current.Users
                 .Select(user => user.NormalizedLogin)
                 .ToHashSet(StringComparer.Ordinal);
+            CassetteDefinition? cassette = null;
 
             foreach (IdentityUser user in store.Current.Users)
             {
@@ -142,14 +133,18 @@ public sealed class LocalAuthenticationService(
                 string[] desiredRoles = [editor ? EditorRole : ViewerRole];
                 IdentityFogReference? desiredFog = editor ? user.Fog : null;
 
-                if (editor && !FogIsUsable(cassette, desiredFog))
+                if (editor)
                 {
-                    desiredFog = await CreateFogAsync(
-                        cassette,
-                        user.Id,
-                        user.Login,
-                        cancellationToken);
-                    createdFogs.Add(desiredFog);
+                    cassette ??= ResolveRegistrationCassette(project);
+                    if (!FogIsUsable(cassette, desiredFog))
+                    {
+                        desiredFog = await CreateFogAsync(
+                            cassette,
+                            user.Id,
+                            user.Login,
+                            cancellationToken);
+                        createdFogs.Add(desiredFog);
+                    }
                 }
 
                 if (!user.Roles.SequenceEqual(desiredRoles, StringComparer.Ordinal) ||
@@ -180,9 +175,12 @@ public sealed class LocalAuthenticationService(
             }
             catch
             {
-                foreach (IdentityFogReference fog in createdFogs)
+                if (cassette is not null)
                 {
-                    DeleteFog(cassette, fog.RelativePath);
+                    foreach (IdentityFogReference fog in createdFogs)
+                    {
+                        DeleteFog(cassette, fog.RelativePath);
+                    }
                 }
                 throw;
             }
@@ -198,7 +196,7 @@ public sealed class LocalAuthenticationService(
             }
 
             logger.LogInformation(
-                "Reconciled local users with the editor allow list. Editors: {EditorCount}; updated users: {UpdatedCount}.",
+                "Reconciled local users with the editor login list. Editors: {EditorCount}; updated users: {UpdatedCount}.",
                 options.EditorLogins.Count,
                 replacements.Count);
         }
