@@ -1,11 +1,11 @@
-import { type MouseEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   LocalLoginRequest,
   LocalRegisterRequest,
   LocalUser
 } from "../api/authModels";
 import type { ProjectOverview } from "../api/models";
-import { navigateToSearch, searchHref } from "../app/routes";
+import { followAppLink, searchHref } from "../app/routes";
 import { LocalAuthenticationPopover } from "./LocalAuthenticationPopover";
 
 interface TopBarAuthentication {
@@ -29,21 +29,6 @@ interface TopBarProps {
   onAdmin: () => void;
 }
 
-function followSearchRoute(event: MouseEvent<HTMLAnchorElement>): void {
-  if (
-    event.button !== 0 ||
-    event.metaKey ||
-    event.ctrlKey ||
-    event.shiftKey ||
-    event.altKey
-  ) {
-    return;
-  }
-
-  event.preventDefault();
-  navigateToSearch();
-}
-
 export function TopBar(props: TopBarProps) {
   const [expanded, setExpanded] = useState(false);
   const auth = props.authentication;
@@ -54,7 +39,7 @@ export function TopBar(props: TopBarProps) {
 
   return (
     <header className="top-bar">
-      <a className="brand-block" href={searchHref} onClick={followSearchRoute}>
+      <a className="brand-block" href={searchHref} onClick={followAppLink}>
         <span className="brand-mark">PF</span>
         <div>
           <strong>Polar.Factograph</strong>
@@ -68,7 +53,7 @@ export function TopBar(props: TopBarProps) {
         <a
           className="button ghost"
           href={searchHref}
-          onClick={followSearchRoute}
+          onClick={followAppLink}
         >
           Поиск
         </a>
