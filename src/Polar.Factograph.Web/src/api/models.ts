@@ -80,6 +80,7 @@ export interface SemanticResourceLink {
   type: string | null;
   typeLabel: string | null;
   relationLabel: string;
+  relationResourceId?: string | null;
   documentUri?: string | null;
   displayDate?: string | null;
   sortDate?: string | null;
