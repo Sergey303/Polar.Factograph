@@ -96,7 +96,6 @@ function useBlockLayout(blockKey: string, kind: BlockKind, timeline: boolean) {
 }
 
 function BlockLayoutMenu(props: {
-  blockKey: string;
   title: string;
   kind: BlockKind;
   timeline: boolean;
@@ -181,18 +180,23 @@ function BlockItems(props: {
   items: SemanticContentItem[];
   layout: BlockLayout;
   showSection: boolean;
+  hideTableHeader?: boolean;
 }) {
+  if (props.items.length === 0) return null;
+
   if (props.layout === "table") {
     return (
       <div className="semantic-table-wrap">
         <table className="semantic-content-table">
-          <thead>
-            <tr>
-              <th className="semantic-media-column"><span className="visually-hidden">Изображение</span></th>
-              <th>Название</th>
-              <th>Дата</th>
-            </tr>
-          </thead>
+          {!props.hideTableHeader && (
+            <thead>
+              <tr>
+                <th className="semantic-media-column"><span className="visually-hidden">Изображение</span></th>
+                <th>Название</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+          )}
           <tbody>
             {props.items.map(item => (
               <tr key={item.key}>
@@ -270,17 +274,74 @@ function pageSize(layout: BlockLayout): number {
   }
 }
 
-function SemanticContentBlock(props: {
-  block: SemanticContentBlockDefinition;
-  timeline?: boolean;
+function TimelineBlockBody(props: {
+  items: SemanticContentItem[];
+  layout: BlockLayout;
 }) {
-  const timeline = props.timeline === true;
-  const layoutState = useBlockLayout(
-    props.block.key,
-    props.block.kind,
-    timeline);
+  const size = pageSize(props.layout);
+  const [visibleCount, setVisibleCount] = useState(size);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setVisibleCount(size);
+  }, [props.items, size]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (target === null || visibleCount >= props.items.length) return;
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        setVisibleCount(value => Math.min(props.items.length, value + size));
+      }
+    }, { rootMargin: "700px 0px" });
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [props.items.length, size, visibleCount]);
+
+  const visible = props.items.slice(0, visibleCount);
+  const firstUndated = visible.findIndex(item => item.sortDate === null);
+  const dated = firstUndated < 0 ? visible : visible.slice(0, firstUndated);
+  const undated = firstUndated < 0 ? [] : visible.slice(firstUndated);
+  const hasMore = visible.length < props.items.length;
+
+  return (
+    <>
+      <BlockItems items={dated} layout={props.layout} showSection />
+      {undated.length > 0 && (
+        <>
+          <div className="timeline-undated-label">Без указанной даты</div>
+          <BlockItems
+            items={undated}
+            layout={props.layout}
+            showSection
+            hideTableHeader={dated.length > 0}
+          />
+        </>
+      )}
+      {hasMore && (
+        <div className="timeline-load-more" ref={loadMoreRef}>
+          <span>Показано {visible.length} из {props.items.length}</span>
+          <button
+            className="button ghost compact"
+            type="button"
+            onClick={() => setVisibleCount(value => Math.min(props.items.length, value + size))}
+          >
+            Показать ещё
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function GroupedBlockBody(props: {
+  block: SemanticContentBlockDefinition;
+  layout: BlockLayout;
+}) {
   const [page, setPage] = useState(0);
-  const size = pageSize(layoutState.layout);
+  const size = pageSize(props.layout);
   const pageCount = Math.max(1, Math.ceil(props.block.items.length / size));
   const currentPage = Math.min(page, pageCount - 1);
   const from = currentPage * size;
@@ -288,35 +349,11 @@ function SemanticContentBlock(props: {
 
   useEffect(() => {
     setPage(0);
-  }, [layoutState.layout, props.block.key]);
+  }, [props.layout, props.block.key]);
 
   return (
-    <section className={`semantic-content-block ${timeline ? "timeline-block" : ""}`}>
-      <header className="semantic-content-block-header">
-        <div>
-          <h2>{props.block.title}</h2>
-          <span>{props.block.items.length}</span>
-        </div>
-        <BlockLayoutMenu
-          blockKey={props.block.key}
-          title={props.block.title}
-          kind={props.block.kind}
-          timeline={timeline}
-          layout={layoutState.layout}
-          onChange={layoutState.change}
-        />
-      </header>
-
-      {timeline && visible.some(item => item.sortDate === null) &&
-        !visible.some(item => item.sortDate !== null) && (
-          <div className="timeline-undated-label">Без указанной даты</div>
-        )}
-      <BlockItems
-        items={visible}
-        layout={layoutState.layout}
-        showSection={timeline}
-      />
-
+    <>
+      <BlockItems items={visible} layout={props.layout} showSection={false} />
       {pageCount > 1 && (
         <nav className="semantic-block-pagination" aria-label={`Страницы блока «${props.block.title}»`}>
           <button
@@ -337,6 +374,41 @@ function SemanticContentBlock(props: {
             Следующие
           </button>
         </nav>
+      )}
+    </>
+  );
+}
+
+function SemanticContentBlock(props: {
+  block: SemanticContentBlockDefinition;
+  timeline?: boolean;
+}) {
+  const timeline = props.timeline === true;
+  const layoutState = useBlockLayout(
+    props.block.key,
+    props.block.kind,
+    timeline);
+
+  return (
+    <section className={`semantic-content-block ${timeline ? "timeline-block" : ""}`}>
+      <header className="semantic-content-block-header">
+        <div>
+          <h2>{props.block.title}</h2>
+          <span>{props.block.items.length}</span>
+        </div>
+        <BlockLayoutMenu
+          title={props.block.title}
+          kind={props.block.kind}
+          timeline={timeline}
+          layout={layoutState.layout}
+          onChange={layoutState.change}
+        />
+      </header>
+
+      {timeline ? (
+        <TimelineBlockBody items={props.block.items} layout={layoutState.layout} />
+      ) : (
+        <GroupedBlockBody block={props.block} layout={layoutState.layout} />
       )}
     </section>
   );
@@ -505,7 +577,7 @@ export function linkBlock(
     title,
     kind: links.some(link => link.documentUri != null) ? "media" : "text",
     items: links.map(link => ({
-      key: `${key}:${link.resourceId}:${link.relationLabel}`,
+      key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}:${link.relationLabel}`,
       resourceId: link.resourceId,
       title: link.displayName,
       detail: [link.relationLabel, link.typeLabel].filter(Boolean).join(" · ") || null,
