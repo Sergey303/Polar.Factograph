@@ -64,13 +64,21 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
     if (schema === null) return;
 
     const controller = new AbortController();
-    const sourceIds = [...new Set(
-      props.portrait.inverseLinks.map(link => link.sourceResourceId)
-    )];
+    const currentResourceId = props.portrait.resourceId;
     setLoadingExisting(true);
     setExistingError(null);
 
     async function load(currentSchema: OntologyWriteSchema): Promise<void> {
+      // The semantic page can still contain the portrait cached before a relation
+      // was written. Read the current portrait before collecting inverse links so
+      // the first opening of the relation manager sees newly created relations.
+      const currentPortrait = await factographApi.getPortrait(
+        currentResourceId,
+        props.token,
+        controller.signal);
+      const sourceIds = [...new Set(
+        currentPortrait.inverseLinks.map(link => link.sourceResourceId)
+      )];
       const loaded = await Promise.allSettled(
         sourceIds.map(id => factographApi.getPortrait(id, props.token, controller.signal))
       );
@@ -86,7 +94,7 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
         if (relationType === undefined) continue;
 
         const anchorLink = relationPortrait.directLinks.find(link =>
-          link.targetResourceId === props.portrait.resourceId &&
+          link.targetResourceId === currentResourceId &&
           relationType.properties.some(property =>
             property.id === link.predicate && property.kind === "resource")
         );
@@ -124,7 +132,7 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
       });
 
     return () => controller.abort();
-  }, [schemaState.schema, props.portrait, props.token]);
+  }, [schemaState.schema, props.portrait.resourceId, props.token]);
 
   if (schemaState.schema === null) {
     return (
