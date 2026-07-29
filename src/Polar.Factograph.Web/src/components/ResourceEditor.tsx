@@ -25,6 +25,7 @@ export interface ResourceEditorProps {
   title?: string;
   typeLabel?: string;
   allowedTypeIds?: string[];
+  initialLiteralValues?: Readonly<Record<string, string>>;
   lockType?: boolean;
   lockCassette?: boolean;
   protectedRowIds?: string[];
@@ -33,7 +34,8 @@ export interface ResourceEditorProps {
   onUseExisting?: (resourceId: string) => void;
   onCreateReference?: (
     property: OntologyWriteProperty,
-    onCreated: (resourceId: string) => void
+    onCreated: (resourceId: string) => void,
+    initialValue?: string
   ) => void;
 }
 
@@ -45,19 +47,33 @@ export function ResourceEditor(props: ResourceEditorProps) {
 
     const initialType = findWriteClass(props.schema, props.initialDraft.typeId);
     if (initialType === null) return props.initialDraft;
-    const existingPredicates = new Set(
-      props.initialDraft.properties.map(property => property.predicate)
-    );
-    const missingRequired = initialType.properties
-      .filter(property => property.isEssential && !existingPredicates.has(property.id))
-      .map(newPropertyDraft);
-    return missingRequired.length === 0
+    const initialValues = props.initialLiteralValues ?? {};
+    const existing = props.initialDraft.properties.map(row => {
+      const value = initialValues[row.predicate]?.trim();
+      return row.value.length === 0 && value ? { ...row, value } : row;
+    });
+    const existingPredicates = new Set(existing.map(property => property.predicate));
+    const missingRequiredOrPrefilled = initialType.properties
+      .filter(property =>
+        !existingPredicates.has(property.id) &&
+        (property.isEssential || Boolean(initialValues[property.id]?.trim())))
+      .map(property => {
+        const draft = newPropertyDraft(property);
+        const value = initialValues[property.id]?.trim();
+        return value ? { ...draft, value } : draft;
+      });
+    return missingRequiredOrPrefilled.length === 0 && existing === props.initialDraft.properties
       ? props.initialDraft
       : {
           ...props.initialDraft,
-          properties: [...props.initialDraft.properties, ...missingRequired]
+          properties: [...existing, ...missingRequiredOrPrefilled]
         };
-  }, [props.initialDraft, props.mode, props.schema]);
+  }, [
+    props.initialDraft,
+    props.initialLiteralValues,
+    props.mode,
+    props.schema
+  ]);
   const editor = useResourceDraft(initialDraft);
   const writer = useResourceWrite(props.token, props.schema, props.onSaved);
   const duplicates = usePotentialDuplicateCheck(props.token, props.schema);
@@ -79,7 +95,8 @@ export function ResourceEditor(props: ResourceEditorProps) {
     const nextType = findWriteClass(props.schema, typeId);
     editor.setType(
       typeId,
-      nextType?.properties.filter(property => property.isEssential) ?? []
+      nextType?.properties ?? [],
+      props.initialLiteralValues
     );
   }
 
