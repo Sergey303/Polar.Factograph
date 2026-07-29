@@ -4,6 +4,10 @@ internal static class SemanticBridgeVocabulary
 {
     public const string Name = "http://fogid.net/o/name";
     public const string Uri = "http://fogid.net/o/uri";
+    public const string Date = "http://fogid.net/o/date";
+    public const string FromDate = "http://fogid.net/o/from-date";
+    public const string ToDate = "http://fogid.net/o/to-date";
+    public const string DateDataType = "http://fogid.net/o/date";
 
     public const string Entity = "http://fogid.net/o/entity";
     public const string SystemObject = "http://fogid.net/o/sys-obj";
