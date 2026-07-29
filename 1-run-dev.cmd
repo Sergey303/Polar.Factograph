@@ -29,12 +29,12 @@ set "ASPNETCORE_ENVIRONMENT=Development"
 set "Project__ConfigPath=%PROJECT_CONFIG%"
 set "Authentication__Local__IdentityPath=%ROOT%project-data\identity.json"
 set "Authentication__Local__DataProtectionKeysPath=%ROOT%project-data\data-protection-keys"
-set "Authentication__Local__DefaultRole=editor"
 set "Authentication__Local__DefaultCassetteId=syp-cassette-small"
 
 echo.
 echo Polar.Factograph development server
 echo http://localhost:5000
+echo Editors are read from scripts\run\appsettings.json
 echo Press Ctrl+C to stop.
 echo.
 
