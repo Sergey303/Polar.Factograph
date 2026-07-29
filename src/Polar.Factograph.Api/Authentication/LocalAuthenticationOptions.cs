@@ -4,12 +4,10 @@ public sealed record LocalAuthenticationOptions(
     string IdentityPath,
     string DataProtectionKeysPath,
     string CookieName,
-    string DefaultRole,
     string DefaultCassetteId,
     bool RegistrationEnabled,
     int SessionDays,
     long MaxFogBytes,
-    bool EditorAllowListConfigured,
     IReadOnlySet<string> EditorLogins)
 {
     private const string Section = "Authentication:Local";
@@ -27,13 +25,13 @@ public sealed record LocalAuthenticationOptions(
         string keyPath = ResolvePath(
             configuration[$"{Section}:DataProtectionKeysPath"] ?? "project-data/data-protection-keys",
             environment.ContentRootPath);
-        string defaultRole = configuration[$"{Section}:DefaultRole"]?.Trim() ?? "editor";
         string defaultCassetteId = configuration[$"{Section}:DefaultCassetteId"]?.Trim() ?? string.Empty;
         int sessionDays = configuration.GetValue($"{Section}:SessionDays", 30);
         long maxFogBytes = configuration.GetValue($"{Section}:MaxFogBytes", 1024L * 1024L);
-        IConfigurationSection editorsSection = configuration.GetSection($"{Section}:EditorLogins");
-        bool editorAllowListConfigured = editorsSection.Exists();
-        string[] editorValues = editorsSection.Get<string[]>() ?? Array.Empty<string>();
+        string[] editorValues = configuration
+            .GetSection($"{Section}:EditorLogins")
+            .Get<string[]>()
+            ?? Array.Empty<string>();
         HashSet<string> editorLogins = new(StringComparer.Ordinal);
         foreach (string value in editorValues)
         {
@@ -59,17 +57,14 @@ public sealed record LocalAuthenticationOptions(
             identityPath,
             keyPath,
             configuration[$"{Section}:CookieName"]?.Trim() ?? "Polar.Factograph.Session",
-            defaultRole,
             defaultCassetteId,
             configuration.GetValue($"{Section}:RegistrationEnabled", true),
             sessionDays,
             maxFogBytes,
-            editorAllowListConfigured,
             editorLogins);
     }
 
-    public bool IsEditor(string normalizedLogin) =>
-        EditorAllowListConfigured && EditorLogins.Contains(normalizedLogin);
+    public bool IsEditor(string normalizedLogin) => EditorLogins.Contains(normalizedLogin);
 
     private static string ResolvePath(string path, string contentRootPath) =>
         Path.IsPathRooted(path)
