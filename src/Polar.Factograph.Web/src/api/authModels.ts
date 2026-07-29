@@ -3,8 +3,8 @@ export interface LocalUser {
   login: string;
   displayName: string;
   roles: string[];
-  fogCassetteId: string;
-  fogDocumentUri: string;
+  fogCassetteId: string | null;
+  fogDocumentUri: string | null;
 }
 
 export interface LocalDevice {
@@ -30,8 +30,8 @@ export interface LocalAuthenticatedResponse {
   login: string;
   displayName: string;
   roles: string[];
-  fogCassetteId: string;
-  fogDocumentUri: string;
+  fogCassetteId: string | null;
+  fogDocumentUri: string | null;
   deviceId: string;
   expiresAtUtc: string;
 }
