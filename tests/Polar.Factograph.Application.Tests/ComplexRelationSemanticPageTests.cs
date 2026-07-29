@@ -57,6 +57,8 @@ public sealed class ComplexRelationSemanticPageTests
             Assert.Equal("aspirant-1", organization.RelationResourceId);
             Assert.Equal("1987–1990", organization.DisplayDate);
             Assert.Equal("1987-01-01", organization.SortDate);
+            Assert.Equal(O + "aspirant", organization.GroupKey);
+            Assert.Equal("Аспирант", organization.GroupLabel);
             Assert.DoesNotContain(personPage.RelatedResources, link =>
                 link.ResourceId == "aspirant-1");
 
@@ -68,6 +70,8 @@ public sealed class ComplexRelationSemanticPageTests
             Assert.Equal("aspirant-1", learner.RelationResourceId);
             Assert.Equal("1987–1990", learner.DisplayDate);
             Assert.Equal("1987-01-01", learner.SortDate);
+            Assert.Equal(O + "aspirant", learner.GroupKey);
+            Assert.Equal("Аспирант", learner.GroupLabel);
             Assert.DoesNotContain(organizationPage.RelatedResources, link =>
                 link.ResourceId == "aspirant-1");
         }
