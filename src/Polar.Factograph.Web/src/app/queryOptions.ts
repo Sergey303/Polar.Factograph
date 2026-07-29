@@ -1,4 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
+import { adminApi } from "../api/adminApi";
+import { collectionApi } from "../api/collectionApi";
 import { factographApi } from "../api/factographApi";
 import { ontologyApi } from "../api/ontologyApi";
 
@@ -35,5 +37,33 @@ export function ontologySchemaQueryOptions(token: string) {
     queryKey: ["ontology-write-schema", token] as const,
     queryFn: ({ signal }) => ontologyApi.getWriteSchema(token, signal),
     staleTime: 5 * 60 * 1000
+  });
+}
+
+export function collectionContentsQueryOptions(collectionId: string, token: string) {
+  return queryOptions({
+    queryKey: ["collection-contents", token, collectionId] as const,
+    queryFn: ({ signal }) => collectionApi.getItems(collectionId, token, signal)
+  });
+}
+
+export function adminIndexStatusQueryOptions(token: string) {
+  return queryOptions({
+    queryKey: ["admin-index-status", token] as const,
+    queryFn: ({ signal }) => adminApi.getIndexStatus(token, signal)
+  });
+}
+
+export function adminPreviewStatusQueryOptions(token: string) {
+  return queryOptions({
+    queryKey: ["admin-preview-status", token] as const,
+    queryFn: ({ signal }) => adminApi.getPreviewStatus(token, signal)
+  });
+}
+
+export function materializationSummaryQueryOptions(token: string) {
+  return queryOptions({
+    queryKey: ["materialization-summary", token] as const,
+    queryFn: ({ signal }) => adminApi.getMaterializationSummary(token, signal)
   });
 }
