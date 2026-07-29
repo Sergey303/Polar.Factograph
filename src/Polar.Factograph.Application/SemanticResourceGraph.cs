@@ -209,7 +209,7 @@ internal sealed class SemanticResourceGraph(
         }
 
         return ontology.TryGetTerm(predicate, out OntologyTerm? term) &&
-            term?.Kind == OntologyTermKind.DatatypeProperty &&
+            term is { Kind: OntologyTermKind.DatatypeProperty } &&
             term.Ranges.Contains(SemanticBridgeVocabulary.DateDataType, StringComparer.Ordinal);
     }
 }
