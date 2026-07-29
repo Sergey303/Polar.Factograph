@@ -14,21 +14,26 @@ internal sealed class ProjectNameSearchExecutor(
         CancellationToken cancellationToken)
     {
         ProjectSearchRules.Validate(query, allowedCassetteIds, limit, preferredLanguage);
-        string searchKey = LegacySearchIndexProjector.NormalizeNameQuery(query);
-        if (searchKey.Length == 0)
+        IReadOnlyList<ProjectNameQueryVariant> variants = ProjectNameQueryVariants.Create(query);
+        if (variants.Count == 0)
         {
             return Array.Empty<ProjectResourceSearchResult>();
         }
 
         HashSet<string> cassetteIds = ProjectSearchRules.EffectiveCassetteIds(allowedCassetteIds);
-        IReadOnlyList<NameSearchHit> hits = await searchStore.FindNamesByKeyAsync(
-            searchKey,
-            cassetteIds,
-            cancellationToken);
+        List<VariantNameHit> allHits = [];
+        foreach (ProjectNameQueryVariant variant in variants)
+        {
+            IReadOnlyList<NameSearchHit> hits = await searchStore.FindNamesByKeyAsync(
+                variant.Key,
+                cassetteIds,
+                cancellationToken);
+            allHits.AddRange(hits.Select(hit => new VariantNameHit(hit, variant)));
+        }
 
-        ProjectRankedCandidate[] candidates = hits
-            .GroupBy(hit => hit.ResourceId, StringComparer.Ordinal)
-            .Select(group => BuildCandidate(group.Key, group.ToArray(), searchKey, preferredLanguage))
+        ProjectRankedCandidate[] candidates = allHits
+            .GroupBy(item => item.Hit.ResourceId, StringComparer.Ordinal)
+            .Select(group => BuildCandidate(group.Key, group.ToArray(), preferredLanguage))
             .OrderByDescending(candidate => candidate.Score)
             .ThenBy(candidate => candidate.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(candidate => candidate.ResourceId, StringComparer.Ordinal)
@@ -44,19 +49,29 @@ internal sealed class ProjectNameSearchExecutor(
 
     private static ProjectRankedCandidate BuildCandidate(
         string resourceId,
-        IReadOnlyList<NameSearchHit> hits,
-        string searchKey,
+        IReadOnlyList<VariantNameHit> variantHits,
         string preferredLanguage)
     {
-        NameSearchHit[] distinctHits = hits.Distinct().ToArray();
+        NameSearchHit[] distinctHits = variantHits
+            .Select(item => item.Hit)
+            .Distinct()
+            .ToArray();
+        int score = variantHits.Max(item =>
+            item.Variant.Rank + ProjectSearchRules.NameScore(
+                item.Hit.Value,
+                item.Variant.Key));
         return new ProjectRankedCandidate(
             resourceId,
             ProjectSearchRules.SelectDisplayName(distinctHits, preferredLanguage, resourceId),
-            distinctHits.Max(hit => ProjectSearchRules.NameScore(hit.Value, searchKey)),
+            score,
             distinctHits
                 .Select(ProjectSearchRules.ToEvidence)
                 .OrderBy(evidence => evidence.Predicate, StringComparer.Ordinal)
                 .ThenBy(evidence => evidence.Value, StringComparer.Ordinal)
                 .ToArray());
     }
+
+    private sealed record VariantNameHit(
+        NameSearchHit Hit,
+        ProjectNameQueryVariant Variant);
 }
