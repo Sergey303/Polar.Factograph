@@ -80,6 +80,9 @@ export interface SemanticResourceLink {
   type: string | null;
   typeLabel: string | null;
   relationLabel: string;
+  documentUri?: string | null;
+  displayDate?: string | null;
+  sortDate?: string | null;
 }
 
 export interface SemanticPhotoCard {
@@ -88,6 +91,8 @@ export interface SemanticPhotoCard {
   documentUri: string | null;
   contextResourceId: string | null;
   contextLabel: string | null;
+  displayDate?: string | null;
+  sortDate?: string | null;
 }
 
 export interface SemanticResourcePage {
