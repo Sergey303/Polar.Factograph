@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type {
   OntologyWriteProperty,
   OntologyWriteSchema
@@ -8,8 +8,10 @@ import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { findWriteClass } from "../app/ontologySchemaLookup";
 import { newPropertyDraft } from "../app/resourceDraftFactory";
 import type { ResourceDraft } from "../app/resourceDraftModels";
+import { usePotentialDuplicateCheck } from "../app/usePotentialDuplicateCheck";
 import { useResourceDraft } from "../app/useResourceDraft";
 import { useResourceWrite } from "../app/useResourceWrite";
+import { PotentialDuplicateWarning } from "./PotentialDuplicateWarning";
 import { ResourceEditorHeader } from "./ResourceEditorHeader";
 import { ResourcePropertyAdd } from "./ResourcePropertyAdd";
 import { ResourcePropertyList } from "./ResourcePropertyList";
@@ -28,6 +30,7 @@ export interface ResourceEditorProps {
   protectedRowIds?: string[];
   onCancel: () => void;
   onSaved: (result: ResourceWriteResponse) => void;
+  onUseExisting?: (resourceId: string) => void;
   onCreateReference?: (
     property: OntologyWriteProperty,
     onCreated: (resourceId: string) => void
@@ -57,7 +60,20 @@ export function ResourceEditor(props: ResourceEditorProps) {
   }, [props.initialDraft, props.mode, props.schema]);
   const editor = useResourceDraft(initialDraft);
   const writer = useResourceWrite(props.token, props.schema, props.onSaved);
+  const duplicates = usePotentialDuplicateCheck(props.token, props.schema);
   const type = findWriteClass(props.schema, editor.draft.typeId);
+  const duplicateFingerprint = useMemo(
+    () => [
+      editor.draft.typeId,
+      ...editor.draft.properties.map(row =>
+        [row.predicate, row.kind, row.value, row.language, row.dataType].join("\u001f"))
+    ].join("\n"),
+    [editor.draft.properties, editor.draft.typeId]
+  );
+
+  useEffect(() => {
+    duplicates.reset();
+  }, [duplicateFingerprint, duplicates.reset]);
 
   function changeType(typeId: string): void {
     const nextType = findWriteClass(props.schema, typeId);
@@ -67,12 +83,27 @@ export function ResourceEditor(props: ResourceEditorProps) {
     );
   }
 
+  async function saveWithDuplicateCheck(): Promise<void> {
+    if (props.mode === "create") {
+      const clear = await duplicates.check(editor.draft);
+      if (!clear) return;
+    }
+    await writer.save(editor.draft);
+  }
+
+  function saveWithoutDuplicateCheck(): void {
+    duplicates.reset();
+    void writer.save(editor.draft);
+  }
+
+  const busy = writer.busy || duplicates.checking;
+
   return (
     <form
       className="resource-editor"
       onSubmit={event => {
         event.preventDefault();
-        void writer.save(editor.draft);
+        void saveWithDuplicateCheck();
       }}
     >
       <header className="resource-editor-title">
@@ -115,10 +146,20 @@ export function ResourceEditor(props: ResourceEditorProps) {
         />
       </section>
 
+      <PotentialDuplicateWarning
+        candidates={duplicates.candidates}
+        error={duplicates.error}
+        onUseExisting={props.onUseExisting}
+        onContinue={saveWithoutDuplicateCheck}
+      />
       {writer.error && <div className="notice error">{writer.error}</div>}
       <footer className="resource-editor-actions">
-        <button className="button primary" type="submit" disabled={writer.busy}>
-          {writer.busy ? "Сохранение…" : "Сохранить новую ревизию"}
+        <button className="button primary" type="submit" disabled={busy}>
+          {duplicates.checking
+            ? "Проверка совпадений…"
+            : writer.busy
+              ? "Сохранение…"
+              : "Сохранить новую ревизию"}
         </button>
       </footer>
     </form>
