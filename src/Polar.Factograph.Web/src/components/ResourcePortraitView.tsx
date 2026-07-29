@@ -1,10 +1,9 @@
 import type { ProjectOverview, SemanticResourcePage } from "../api/models";
 import { resourceDocumentUris } from "../app/resourceDocuments";
+import { CopyResourceLinkButton } from "./CopyResourceLinkButton";
 import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
 import { SemanticResourceSections } from "./SemanticResourceSections";
-
-const photoDocumentType = "http://fogid.net/o/photo-doc";
 
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
@@ -40,34 +39,25 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const page = props.page;
   const portrait = page.portrait;
   const documents = resourceDocumentUris(portrait);
-  const isPhotoDocument = portrait.type === photoDocumentType;
-  const modified = new Intl.DateTimeFormat("ru-RU", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(new Date(portrait.provenance.modifiedAt));
 
   return (
     <article className="portrait">
-      <header className="portrait-header">
+      <header className="portrait-header public-portrait-header">
         <div>
           <span className="eyebrow">{portrait.typeLabel ?? portrait.type ?? "Ресурс"}</span>
           <h1>{titleOf(page)}</h1>
-          <span className="muted mono">{portrait.resourceId}</span>
         </div>
-        <div className="provenance">
-          <span>{modified}</span>
-        </div>
+        <CopyResourceLinkButton resourceId={portrait.resourceId} />
       </header>
 
-      <LiteralFields fields={portrait.literals} />
       <DocumentSection
         uris={documents}
         token={props.token}
         project={props.project}
-        title={isPhotoDocument ? "Изображение" : "Документы"}
-        previewPolicy={isPhotoDocument ? "largest-preview" : "smallest"}
-        imageDocument={isPhotoDocument}
+        title={null}
+        previewPolicy="largest-preview"
       />
+      <LiteralFields fields={portrait.literals} />
       <SemanticResourceSections page={page} />
     </article>
   );
