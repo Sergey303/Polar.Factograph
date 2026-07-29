@@ -143,11 +143,11 @@ public sealed class ProjectPotentialDuplicateService(
             .Select(variant => variant.Key)
             .ToHashSet(StringComparer.Ordinal);
         IReadOnlyList<ProjectResourceSearchResult> matches = await reads.SearchByNameAsync(
-            value,
-            access,
+            query: value,
+            access: access,
             limit: 50,
-            preferredLanguage,
-            cancellationToken);
+            preferredLanguage: preferredLanguage,
+            cancellationToken: cancellationToken);
 
         foreach (ProjectResourceSearchResult match in matches)
         {
