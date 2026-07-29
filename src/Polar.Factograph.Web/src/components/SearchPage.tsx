@@ -4,9 +4,10 @@ import { SearchResultList } from "./SearchResultList";
 
 interface SearchPageProps {
   search: ReturnType<typeof useSearch>;
+  onSearch: (query: string) => void;
 }
 
-export function SearchPage({ search }: SearchPageProps) {
+export function SearchPage({ search, onSearch }: SearchPageProps) {
   return (
     <main className="page-shell search-page-shell">
       <section className="panel search-page-panel">
@@ -14,11 +15,13 @@ export function SearchPage({ search }: SearchPageProps) {
           query={search.query}
           loading={search.loading}
           error={search.error}
-          onQueryChange={search.setQuery}
-          onSearch={search.search}
-          onClear={search.clear}
+          onSearch={onSearch}
         />
-        <SearchResultList results={search.results} />
+        <SearchResultList
+          query={search.query}
+          loading={search.loading}
+          results={search.results}
+        />
       </section>
     </main>
   );
