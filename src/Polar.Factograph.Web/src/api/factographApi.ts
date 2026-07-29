@@ -2,6 +2,7 @@ import { requestBlob, requestJson } from "./http";
 import type {
   DocumentLocation,
   DocumentVariant,
+  PotentialDuplicateResource,
   ProjectOverview,
   ResourcePortrait,
   ResourceSearchResult,
@@ -45,6 +46,21 @@ export const factographApi = {
       )
     ]);
     return mergeSearchResults(names, words);
+  },
+
+  findPotentialDuplicates(
+    type: string,
+    predicate: string,
+    value: string,
+    token: string,
+    signal?: AbortSignal
+  ): Promise<PotentialDuplicateResource[]> {
+    const parameters = query({ type, predicate, value, limit: 10, lang: "ru" });
+    return requestJson<PotentialDuplicateResource[]>(
+      `api/search/duplicates?${parameters}`,
+      token,
+      signal
+    );
   },
 
   getPortrait(
