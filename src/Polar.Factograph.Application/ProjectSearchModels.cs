@@ -18,4 +18,7 @@ internal sealed record ProjectRankedCandidate(
     string ResourceId,
     string DisplayName,
     int Score,
-    IReadOnlyList<ProjectSearchEvidence> Matches);
+    IReadOnlyList<ProjectSearchEvidence> Matches)
+{
+    public int Rank { get; init; } = Score;
+}
