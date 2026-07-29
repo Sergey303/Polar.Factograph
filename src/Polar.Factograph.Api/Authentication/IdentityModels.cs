@@ -17,7 +17,7 @@ public sealed record IdentityUser
     public bool Enabled { get; init; } = true;
     public int SecurityVersion { get; init; } = 1;
     public string[] Roles { get; init; } = Array.Empty<string>();
-    public required IdentityFogReference Fog { get; init; }
+    public IdentityFogReference? Fog { get; init; }
     public DateTimeOffset CreatedAtUtc { get; init; }
     public DateTimeOffset UpdatedAtUtc { get; init; }
 }
