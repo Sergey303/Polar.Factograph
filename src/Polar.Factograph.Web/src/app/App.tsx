@@ -80,6 +80,15 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
     }
   }, [resourceId, resourceMode, canonicalResourceId]);
 
+  function submitSearch(query: string): void {
+    const normalized = query.trim();
+    if (route.page === "search" && normalized === route.query) {
+      search.reload();
+      return;
+    }
+    navigateToSearch(normalized);
+  }
+
   return (
     <div className="app-shell">
       <TopBar
@@ -108,7 +117,7 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
       {route.page === "search" && (
         <SearchPage
           search={search}
-          onSearch={query => navigateToSearch(query)}
+          onSearch={submitSearch}
         />
       )}
       {route.page === "create-entity" && (
