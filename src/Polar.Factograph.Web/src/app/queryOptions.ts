@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { adminApi } from "../api/adminApi";
 import { collectionApi } from "../api/collectionApi";
 import { factographApi } from "../api/factographApi";
+import type { DocumentVariant } from "../api/models";
 import { ontologyApi } from "../api/ontologyApi";
 
 export function projectQueryOptions(token: string) {
@@ -29,6 +30,24 @@ export function portraitQueryOptions(resourceId: string, token: string) {
   return queryOptions({
     queryKey: ["resource-portrait", token, resourceId] as const,
     queryFn: ({ signal }) => factographApi.getPortrait(resourceId, token, signal)
+  });
+}
+
+export function documentLocationQueryOptions(uri: string, token: string) {
+  return queryOptions({
+    queryKey: ["document-location", token, uri] as const,
+    queryFn: ({ signal }) => factographApi.getDocumentLocation(uri, token, signal)
+  });
+}
+
+export function documentBlobQueryOptions(
+  uri: string,
+  variant: DocumentVariant,
+  token: string
+) {
+  return queryOptions({
+    queryKey: ["document-blob", token, uri, variant] as const,
+    queryFn: ({ signal }) => factographApi.getDocumentBlob(uri, variant, token, signal)
   });
 }
 
