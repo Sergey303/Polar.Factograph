@@ -5,6 +5,17 @@ namespace Polar.Factograph.Api;
 
 public static class FactographEndpointMapping
 {
+    private static readonly string[] ApiMethods =
+    [
+        HttpMethods.Get,
+        HttpMethods.Post,
+        HttpMethods.Put,
+        HttpMethods.Patch,
+        HttpMethods.Delete,
+        HttpMethods.Options,
+        HttpMethods.Head
+    ];
+
     public static WebApplication MapFactographApi(this WebApplication app)
     {
         app.UseMiddleware<ApiExceptionMiddleware>();
@@ -28,6 +39,7 @@ public static class FactographEndpointMapping
         app.MapCollectionMutationEndpoints();
         app.MapDocumentEndpoints();
         app.MapDocumentWriteEndpoints();
+        app.MapMethods("/api/{**path}", ApiMethods, () => Results.NotFound());
         app.MapFallbackToFile("index.html");
         return app;
     }
