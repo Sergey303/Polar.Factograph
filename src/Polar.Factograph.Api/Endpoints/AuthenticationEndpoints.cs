@@ -54,8 +54,8 @@ public static class AuthenticationEndpoints
                     session.User.Login,
                     session.User.DisplayName,
                     session.User.Roles,
-                    session.User.Fog.CassetteId,
-                    session.User.Fog.DocumentUri),
+                    session.User.Fog?.CassetteId,
+                    session.User.Fog?.DocumentUri),
                 authentication.GetDevices(session.User.Id)
                     .Select(device => ToResponse(device, device.Id == session.Device.Id))
                     .ToArray()));
@@ -225,8 +225,8 @@ public static class AuthenticationEndpoints
         session.User.Login,
         session.User.DisplayName,
         session.User.Roles,
-        session.User.Fog.CassetteId,
-        session.User.Fog.DocumentUri,
+        session.User.Fog?.CassetteId,
+        session.User.Fog?.DocumentUri,
         session.Device.Id,
         session.Device.ExpiresAtUtc);
 
@@ -302,8 +302,8 @@ public sealed record LocalUserResponse(
     string Login,
     string DisplayName,
     string[] Roles,
-    string FogCassetteId,
-    string FogDocumentUri);
+    string? FogCassetteId,
+    string? FogDocumentUri);
 
 public sealed record LocalDeviceResponse(
     string Id,
@@ -319,7 +319,7 @@ public sealed record LocalAuthenticatedResponse(
     string Login,
     string DisplayName,
     string[] Roles,
-    string FogCassetteId,
-    string FogDocumentUri,
+    string? FogCassetteId,
+    string? FogDocumentUri,
     string DeviceId,
     DateTimeOffset ExpiresAtUtc);
