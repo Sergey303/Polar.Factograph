@@ -13,7 +13,8 @@ interface ResourceValueInputProps {
   onChange: (value: string) => void;
   onCreateReference?: (
     property: OntologyWriteProperty,
-    onCreated: (resourceId: string) => void
+    onCreated: (resourceId: string) => void,
+    initialValue?: string
   ) => void;
 }
 
