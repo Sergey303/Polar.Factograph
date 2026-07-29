@@ -182,12 +182,10 @@ public sealed class IdentityJsonStoreTests : IDisposable
             Path.Combine(_root, "identity.json"),
             Path.Combine(_root, "keys"),
             "test-session",
-            "editor",
             "main",
             RegistrationEnabled: true,
             SessionDays: 30,
             MaxFogBytes: 1024 * 1024,
-            EditorAllowListConfigured: false,
             EditorLogins: new HashSet<string>(StringComparer.Ordinal)),
         NullLogger<IdentityJsonStore>.Instance);
 
