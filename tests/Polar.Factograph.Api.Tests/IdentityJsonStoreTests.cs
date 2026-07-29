@@ -35,6 +35,28 @@ public sealed class IdentityJsonStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task Update_accepts_viewer_without_fog()
+    {
+        Directory.CreateDirectory(_root);
+        TestOptionsMonitor<IdentityData> monitor = new(new IdentityData());
+        using IdentityJsonStore store = CreateStore(monitor);
+        IdentityUser viewer = CreateUser("u-1", "reader") with
+        {
+            Roles = ["viewer"],
+            Fog = null
+        };
+
+        IdentityData result = await store.UpdateAsync(current => current with
+        {
+            Users = [viewer]
+        });
+
+        IdentityUser stored = Assert.Single(result.Users);
+        Assert.Equal(["viewer"], stored.Roles);
+        Assert.Null(stored.Fog);
+    }
+
+    [Fact]
     public void Reload_replaces_valid_snapshot_but_keeps_previous_on_invalid_data()
     {
         Directory.CreateDirectory(_root);
@@ -136,7 +158,9 @@ public sealed class IdentityJsonStoreTests : IDisposable
             "main",
             RegistrationEnabled: true,
             SessionDays: 30,
-            MaxFogBytes: 1024 * 1024),
+            MaxFogBytes: 1024 * 1024,
+            EditorAllowListConfigured: false,
+            EditorLogins: new HashSet<string>(StringComparer.Ordinal)),
         NullLogger<IdentityJsonStore>.Instance);
 
     private static IdentityUser CreateUser(string id, string login) => new()
