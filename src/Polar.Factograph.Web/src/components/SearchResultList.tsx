@@ -2,15 +2,25 @@ import type { ResourceSearchResult } from "../api/models";
 import { resourceHref } from "../app/routes";
 
 interface SearchResultListProps {
+  query: string;
+  loading: boolean;
   results: ResourceSearchResult[];
 }
 
-export function SearchResultList({ results }: SearchResultListProps) {
+export function SearchResultList({ query, loading, results }: SearchResultListProps) {
   if (results.length === 0) {
+    const title = loading
+      ? "Идёт поиск…"
+      : query.length > 0
+        ? "Подходящие сущности не найдены"
+        : "Введите поисковый запрос";
+    const description = query.length > 0
+      ? "Попробуйте другое имя, название или слова из описания."
+      : "Искомая строка сохранится в адресе страницы, поэтому результат можно открыть повторно или отправить ссылкой.";
     return (
       <div className="empty-state">
-        <strong>Результатов пока нет</strong>
-        <span>Введите имя, название или слова из описания.</span>
+        <strong>{title}</strong>
+        {!loading && <span>{description}</span>}
       </div>
     );
   }
