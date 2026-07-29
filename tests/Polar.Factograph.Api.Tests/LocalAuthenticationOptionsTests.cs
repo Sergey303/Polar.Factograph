@@ -6,7 +6,7 @@ namespace Polar.Factograph.Api.Tests;
 public sealed class LocalAuthenticationOptionsTests
 {
     [Fact]
-    public void Read_normalizes_editor_logins_and_marks_allow_list_configured()
+    public void Read_normalizes_editor_logins()
     {
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -20,7 +20,6 @@ public sealed class LocalAuthenticationOptionsTests
             configuration,
             new TestHostEnvironment());
 
-        Assert.True(options.EditorAllowListConfigured);
         Assert.Equal(2, options.EditorLogins.Count);
         Assert.True(options.IsEditor(LocalLoginName.Normalize("сергей")));
         Assert.True(options.IsEditor(LocalLoginName.Normalize("EDITOR.TWO")));
@@ -45,7 +44,7 @@ public sealed class LocalAuthenticationOptionsTests
     }
 
     [Fact]
-    public void Read_keeps_legacy_mode_when_editor_list_is_absent()
+    public void Read_treats_absent_editor_list_as_empty()
     {
         IConfiguration configuration = new ConfigurationBuilder().Build();
 
@@ -53,9 +52,8 @@ public sealed class LocalAuthenticationOptionsTests
             configuration,
             new TestHostEnvironment());
 
-        Assert.False(options.EditorAllowListConfigured);
         Assert.Empty(options.EditorLogins);
-        Assert.Equal("editor", options.DefaultRole);
+        Assert.False(options.IsEditor(LocalLoginName.Normalize("reader")));
     }
 
     private sealed class TestHostEnvironment : IHostEnvironment
