@@ -1,44 +1,19 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { errorText } from "../api/errorText";
-import { factographApi } from "../api/factographApi";
-import type { ResourcePortrait } from "../api/models";
+import { portraitQueryOptions } from "./queryOptions";
 
 export function usePortrait(resourceId: string | null, token: string) {
-  const [portrait, setPortrait] = useState<ResourcePortrait | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [revision, setRevision] = useState(0);
-
-  useEffect(() => {
-    if (resourceId === null) {
-      setPortrait(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-    factographApi.getPortrait(resourceId, token, controller.signal)
-      .then(setPortrait)
-      .catch(reason => {
-        if (!controller.signal.aborted) {
-          setPortrait(null);
-          setError(errorText(reason));
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [resourceId, token, revision]);
+  const query = useQuery({
+    ...portraitQueryOptions(resourceId ?? "", token),
+    enabled: resourceId !== null
+  });
 
   return {
-    portrait,
-    loading,
-    error,
-    reload: () => setRevision(value => value + 1)
+    portrait: query.data ?? null,
+    loading: resourceId !== null && query.isPending,
+    error: query.error === null ? null : errorText(query.error),
+    reload: () => {
+      void query.refetch();
+    }
   };
 }
