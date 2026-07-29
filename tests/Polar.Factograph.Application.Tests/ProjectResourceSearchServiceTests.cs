@@ -13,13 +13,16 @@ public sealed class ProjectResourceSearchServiceTests
     public async Task SearchByNameAsync_RanksExactPrefixAndTokenMatchesAndFiltersCassetteAccess()
     {
         FakeSearchStore searchStore = new(
-            namesByKey:
-            [
-                Name("exact", "Ann", "en", "cass-a"),
-                Name("prefix", "Anna", "ru", "cass-a"),
-                Name("token", "Maria Ann", "ru", "cass-a"),
-                Name("hidden", "Ann Hidden", "ru", "cass-b")
-            ]);
+            namesByKey: new Dictionary<string, IReadOnlyList<NameSearchHit>>(StringComparer.Ordinal)
+            {
+                ["ANN"] =
+                [
+                    Name("exact", "Ann", "en", "cass-a"),
+                    Name("prefix", "Anna", "ru", "cass-a"),
+                    Name("token", "Maria Ann", "ru", "cass-a"),
+                    Name("hidden", "Ann Hidden", "ru", "cass-b")
+                ]
+            });
         FakeRdfStore rdfStore = new(
             [
                 Head("exact", "cass-a"),
@@ -44,6 +47,57 @@ public sealed class ProjectResourceSearchServiceTests
         Assert.Equal("person", results[0].Type);
         Assert.DoesNotContain(results, result => result.ResourceId == "hidden");
         Assert.Contains("$system", searchStore.LastAllowedCassetteIds);
+    }
+
+    [Theory]
+    [InlineData("Marchuk")]
+    [InlineData("Vfhxer")]
+    public async Task SearchByNameAsync_FindsCyrillicNameThroughAlternativeWriting(
+        string query)
+    {
+        FakeSearchStore searchStore = new(
+            namesByKey: new Dictionary<string, IReadOnlyList<NameSearchHit>>(StringComparer.Ordinal)
+            {
+                ["МАРЧУК"] = [Name("person-1", "Марчук", "ru", "cass-a")]
+            });
+        FakeRdfStore rdfStore = new(
+            [Head("person-1", "cass-a")],
+            [TypeTriple("person-1", "person", "cass-a")]);
+        ProjectResourceSearchService service = new(searchStore, rdfStore);
+
+        IReadOnlyList<ProjectResourceSearchResult> results = await service.SearchByNameAsync(
+            query,
+            new HashSet<string>(StringComparer.Ordinal) { "cass-a" });
+
+        ProjectResourceSearchResult result = Assert.Single(results);
+        Assert.Equal("person-1", result.ResourceId);
+        Assert.Equal("Марчук", result.DisplayName);
+        Assert.Equal(3, result.Score);
+    }
+
+    [Fact]
+    public async Task SearchByNameAsync_PrefersOriginalWritingOverTransliteration()
+    {
+        FakeSearchStore searchStore = new(
+            namesByKey: new Dictionary<string, IReadOnlyList<NameSearchHit>>(StringComparer.Ordinal)
+            {
+                ["MARCHUK"] = [Name("latin", "Marchuk", "en", "cass-a")],
+                ["МАРЧУК"] = [Name("cyrillic", "Марчук", "ru", "cass-a")]
+            });
+        FakeRdfStore rdfStore = new(
+            [Head("latin", "cass-a"), Head("cyrillic", "cass-a")],
+            [
+                TypeTriple("latin", "person", "cass-a"),
+                TypeTriple("cyrillic", "person", "cass-a")
+            ]);
+        ProjectResourceSearchService service = new(searchStore, rdfStore);
+
+        IReadOnlyList<ProjectResourceSearchResult> results = await service.SearchByNameAsync(
+            "Marchuk",
+            new HashSet<string>(StringComparer.Ordinal) { "cass-a" });
+
+        Assert.Equal(new[] { "latin", "cyrillic" }, results.Select(result => result.ResourceId));
+        Assert.All(results, result => Assert.Equal(3, result.Score));
     }
 
     [Fact]
@@ -144,16 +198,17 @@ public sealed class ProjectResourceSearchServiceTests
 
     private sealed class FakeSearchStore : IProjectSearchStore
     {
-        private readonly IReadOnlyList<NameSearchHit> _namesByKey;
+        private readonly IReadOnlyDictionary<string, IReadOnlyList<NameSearchHit>> _namesByKey;
         private readonly IReadOnlyDictionary<string, IReadOnlyList<NameSearchHit>> _namesByResource;
         private readonly IReadOnlyDictionary<string, IReadOnlyList<WordSearchHit>> _wordsByWord;
 
         public FakeSearchStore(
-            IReadOnlyList<NameSearchHit>? namesByKey = null,
+            IReadOnlyDictionary<string, IReadOnlyList<NameSearchHit>>? namesByKey = null,
             IReadOnlyDictionary<string, IReadOnlyList<NameSearchHit>>? namesByResource = null,
             IReadOnlyDictionary<string, IReadOnlyList<WordSearchHit>>? wordsByWord = null)
         {
-            _namesByKey = namesByKey ?? Array.Empty<NameSearchHit>();
+            _namesByKey = namesByKey
+                ?? new Dictionary<string, IReadOnlyList<NameSearchHit>>(StringComparer.Ordinal);
             _namesByResource = namesByResource
                 ?? new Dictionary<string, IReadOnlyList<NameSearchHit>>(StringComparer.Ordinal);
             _wordsByWord = wordsByWord
@@ -170,8 +225,13 @@ public sealed class ProjectResourceSearchServiceTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             LastAllowedCassetteIds = new HashSet<string>(allowedCassetteIds, StringComparer.Ordinal);
+            IReadOnlyList<NameSearchHit> hits = _namesByKey.TryGetValue(
+                normalizedSearchKey,
+                out IReadOnlyList<NameSearchHit>? found)
+                ? found
+                : Array.Empty<NameSearchHit>();
             return Task.FromResult<IReadOnlyList<NameSearchHit>>(
-                _namesByKey.Where(hit => allowedCassetteIds.Contains(hit.SourceCassetteId)).ToArray());
+                hits.Where(hit => allowedCassetteIds.Contains(hit.SourceCassetteId)).ToArray());
         }
 
         public Task<IReadOnlyList<NameSearchHit>> FindNamesByResourceAsync(
