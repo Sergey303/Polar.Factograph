@@ -35,15 +35,15 @@ internal static class ProjectNameQueryVariants
         ("ay", "ай"), ("oy", "ой"), ("uy", "уй")
     ];
 
-    private static readonly IReadOnlyDictionary<char, char> LatinCharacters =
-        new Dictionary<char, char>
+    private static readonly IReadOnlyDictionary<char, string> LatinCharacters =
+        new Dictionary<char, string>
         {
-            ['a'] = 'а', ['b'] = 'б', ['c'] = 'к', ['d'] = 'д', ['e'] = 'е',
-            ['f'] = 'ф', ['g'] = 'г', ['h'] = 'х', ['i'] = 'и', ['j'] = 'й',
-            ['k'] = 'к', ['l'] = 'л', ['m'] = 'м', ['n'] = 'н', ['o'] = 'о',
-            ['p'] = 'п', ['q'] = 'к', ['r'] = 'р', ['s'] = 'с', ['t'] = 'т',
-            ['u'] = 'у', ['v'] = 'в', ['w'] = 'в', ['x'] = 'кс', ['y'] = 'ы',
-            ['z'] = 'з'
+            ['a'] = "а", ['b'] = "б", ['c'] = "к", ['d'] = "д", ['e'] = "е",
+            ['f'] = "ф", ['g'] = "г", ['h'] = "х", ['i'] = "и", ['j'] = "й",
+            ['k'] = "к", ['l'] = "л", ['m'] = "м", ['n'] = "н", ['o'] = "о",
+            ['p'] = "п", ['q'] = "к", ['r'] = "р", ['s'] = "с", ['t'] = "т",
+            ['u'] = "у", ['v'] = "в", ['w'] = "в", ['x'] = "кс", ['y'] = "ы",
+            ['z'] = "з"
         };
 
     public static IReadOnlyList<ProjectNameQueryVariant> Create(string query)
@@ -96,8 +96,8 @@ internal static class ProjectNameQueryVariants
         {
             bool upper = char.IsUpper(source);
             char lower = char.ToLowerInvariant(source);
-            int englishIndex = EnglishKeyboard.IndexOf(lower, StringComparison.Ordinal);
-            int russianIndex = RussianKeyboard.IndexOf(lower, StringComparison.Ordinal);
+            int englishIndex = EnglishKeyboard.IndexOf(lower);
+            int russianIndex = RussianKeyboard.IndexOf(lower);
             char mapped = englishIndex >= 0
                 ? RussianKeyboard[englishIndex]
                 : russianIndex >= 0
@@ -135,7 +135,7 @@ internal static class ProjectNameQueryVariants
             bool matched = false;
             foreach ((string latin, string cyrillic) in LatinSequences)
             {
-                if (normalized.AsSpan(index).StartsWith(latin, StringComparison.Ordinal))
+                if (normalized.AsSpan(index).StartsWith(latin.AsSpan(), StringComparison.Ordinal))
                 {
                     result.Append(cyrillic);
                     index += latin.Length;
@@ -150,7 +150,7 @@ internal static class ProjectNameQueryVariants
             }
 
             char source = normalized[index];
-            if (LatinCharacters.TryGetValue(source, out char mapped))
+            if (LatinCharacters.TryGetValue(source, out string? mapped))
             {
                 result.Append(mapped);
             }
