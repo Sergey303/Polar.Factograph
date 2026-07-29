@@ -188,9 +188,12 @@ public sealed class IdentityJsonStore : IDisposable
             ArgumentException.ThrowIfNullOrWhiteSpace(user.Login);
             ArgumentException.ThrowIfNullOrWhiteSpace(user.NormalizedLogin);
             ArgumentException.ThrowIfNullOrWhiteSpace(user.PasswordHash);
-            ArgumentNullException.ThrowIfNull(user.Fog);
-            ArgumentException.ThrowIfNullOrWhiteSpace(user.Fog.CassetteId);
-            ArgumentException.ThrowIfNullOrWhiteSpace(user.Fog.RelativePath);
+            if (user.Fog is not null)
+            {
+                ArgumentException.ThrowIfNullOrWhiteSpace(user.Fog.CassetteId);
+                ArgumentException.ThrowIfNullOrWhiteSpace(user.Fog.DocumentUri);
+                ArgumentException.ThrowIfNullOrWhiteSpace(user.Fog.RelativePath);
+            }
         }
 
         foreach (IdentityDevice device in devices)
