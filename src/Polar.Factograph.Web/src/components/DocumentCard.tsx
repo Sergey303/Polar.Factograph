@@ -73,9 +73,15 @@ export function DocumentCard({
           )}
       </div>
       <div className="document-info">
-        <strong>{asset.location?.documentNumber ?? (imageDocument ? "Изображение" : "Документ")}</strong>
-        <span className="muted mono">{uri}</span>
-        {asset.location && <span className="muted">Кассета: {asset.location.cassetteName}</span>}
+        <strong>{imageDocument ? "Изображение" : "Документ"}</strong>
+        {allowReplace && (
+          <>
+            <span className="muted mono">{uri}</span>
+            {asset.location && (
+              <span className="muted">Кассета: {asset.location.cassetteName}</span>
+            )}
+          </>
+        )}
         {asset.location?.originalAvailable && (
           <button className="button primary" type="button" onClick={openFile}>
             {imageDocument ? "Открыть изображение" : "Открыть файл"}
