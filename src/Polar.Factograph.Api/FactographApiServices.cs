@@ -83,6 +83,7 @@ public static class FactographApiServices
         services.AddSingleton<PreviewWorkerRuntimeState>();
         services.AddSingleton<ICassettePreviewRenderer, ExternalProcessPreviewRenderer>();
         services.AddSingleton<PreviewWorkerCycle>();
+        services.AddHostedService<LocalEditorProvisioningHostedService>();
         services.AddHostedService<ProjectIndexInitializationHostedService>();
         services.AddHostedService<PreviewQueueHostedService>();
         return services;
