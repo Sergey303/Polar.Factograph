@@ -35,6 +35,16 @@ export interface ResourceSearchResult {
   matches: SearchEvidence[];
 }
 
+export interface PotentialDuplicateResource {
+  resourceId: string;
+  displayName: string;
+  type: string | null;
+  typeLabel: string | null;
+  predicate: string;
+  matchedValue: string;
+  alternativeWriting: boolean;
+}
+
 export interface PresentedLiteral {
   predicate: string;
   label: string;
