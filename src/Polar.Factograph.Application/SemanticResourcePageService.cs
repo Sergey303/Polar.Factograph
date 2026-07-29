@@ -383,7 +383,7 @@ public sealed class SemanticResourcePageService(
     private static SemanticResourceLink[] Sort(IEnumerable<SemanticResourceLink> links) =>
         links
             .OrderBy(link => link.SortDate is null ? 1 : 0)
-            .ThenBy(link => link.SortDate, StringComparer.Ordinal)
+            .ThenBy(link => link.SortDate ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(link => link.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(link => link.RelationResourceId ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(link => link.ResourceId, StringComparer.Ordinal)
