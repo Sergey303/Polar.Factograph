@@ -5,37 +5,63 @@ import { factographApi } from "../api/factographApi";
 import type { DocumentVariant } from "../api/models";
 import { ontologyApi } from "../api/ontologyApi";
 
+export const queryKeys = {
+  project: (token: string) => ["project", token] as const,
+  search: (token: string, query?: string) =>
+    query === undefined
+      ? ["search", token] as const
+      : ["search", token, query] as const,
+  resourcePage: (token: string, resourceId: string) =>
+    ["semantic-resource-page", token, resourceId] as const,
+  portrait: (token: string, resourceId: string) =>
+    ["resource-portrait", token, resourceId] as const,
+  documentLocation: (token: string, uri: string) =>
+    ["document-location", token, uri] as const,
+  documentBlob: (token: string, uri: string, variant?: DocumentVariant) =>
+    variant === undefined
+      ? ["document-blob", token, uri] as const
+      : ["document-blob", token, uri, variant] as const,
+  ontologySchema: (token: string) => ["ontology-write-schema", token] as const,
+  collectionContents: (token: string, collectionId?: string) =>
+    collectionId === undefined
+      ? ["collection-contents", token] as const
+      : ["collection-contents", token, collectionId] as const,
+  adminIndexStatus: (token: string) => ["admin-index-status", token] as const,
+  adminPreviewStatus: (token: string) => ["admin-preview-status", token] as const,
+  materializationSummary: (token: string) => ["materialization-summary", token] as const
+};
+
 export function projectQueryOptions(token: string) {
   return queryOptions({
-    queryKey: ["project", token] as const,
+    queryKey: queryKeys.project(token),
     queryFn: ({ signal }) => factographApi.getProject(token, signal)
   });
 }
 
 export function searchQueryOptions(query: string, token: string) {
   return queryOptions({
-    queryKey: ["search", token, query] as const,
+    queryKey: queryKeys.search(token, query),
     queryFn: ({ signal }) => factographApi.search(query, token, signal)
   });
 }
 
 export function resourcePageQueryOptions(resourceId: string, token: string) {
   return queryOptions({
-    queryKey: ["semantic-resource-page", token, resourceId] as const,
+    queryKey: queryKeys.resourcePage(token, resourceId),
     queryFn: ({ signal }) => factographApi.getResourcePage(resourceId, token, signal)
   });
 }
 
 export function portraitQueryOptions(resourceId: string, token: string) {
   return queryOptions({
-    queryKey: ["resource-portrait", token, resourceId] as const,
+    queryKey: queryKeys.portrait(token, resourceId),
     queryFn: ({ signal }) => factographApi.getPortrait(resourceId, token, signal)
   });
 }
 
 export function documentLocationQueryOptions(uri: string, token: string) {
   return queryOptions({
-    queryKey: ["document-location", token, uri] as const,
+    queryKey: queryKeys.documentLocation(token, uri),
     queryFn: ({ signal }) => factographApi.getDocumentLocation(uri, token, signal)
   });
 }
@@ -46,7 +72,7 @@ export function documentBlobQueryOptions(
   token: string
 ) {
   return queryOptions({
-    queryKey: ["document-blob", token, uri, variant] as const,
+    queryKey: queryKeys.documentBlob(token, uri, variant),
     queryFn: ({ signal }) => factographApi.getDocumentBlob(uri, variant, token, signal),
     staleTime: Infinity,
     gcTime: 0
@@ -55,7 +81,7 @@ export function documentBlobQueryOptions(
 
 export function ontologySchemaQueryOptions(token: string) {
   return queryOptions({
-    queryKey: ["ontology-write-schema", token] as const,
+    queryKey: queryKeys.ontologySchema(token),
     queryFn: ({ signal }) => ontologyApi.getWriteSchema(token, signal),
     staleTime: 5 * 60 * 1000
   });
@@ -63,28 +89,28 @@ export function ontologySchemaQueryOptions(token: string) {
 
 export function collectionContentsQueryOptions(collectionId: string, token: string) {
   return queryOptions({
-    queryKey: ["collection-contents", token, collectionId] as const,
+    queryKey: queryKeys.collectionContents(token, collectionId),
     queryFn: ({ signal }) => collectionApi.getItems(collectionId, token, signal)
   });
 }
 
 export function adminIndexStatusQueryOptions(token: string) {
   return queryOptions({
-    queryKey: ["admin-index-status", token] as const,
+    queryKey: queryKeys.adminIndexStatus(token),
     queryFn: ({ signal }) => adminApi.getIndexStatus(token, signal)
   });
 }
 
 export function adminPreviewStatusQueryOptions(token: string) {
   return queryOptions({
-    queryKey: ["admin-preview-status", token] as const,
+    queryKey: queryKeys.adminPreviewStatus(token),
     queryFn: ({ signal }) => adminApi.getPreviewStatus(token, signal)
   });
 }
 
 export function materializationSummaryQueryOptions(token: string) {
   return queryOptions({
-    queryKey: ["materialization-summary", token] as const,
+    queryKey: queryKeys.materializationSummary(token),
     queryFn: ({ signal }) => adminApi.getMaterializationSummary(token, signal)
   });
 }
