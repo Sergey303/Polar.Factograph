@@ -1,5 +1,5 @@
 import type { ResourceSearchResult } from "../api/models";
-import { resourceHref } from "../app/routes";
+import { followAppLink, resourceHref } from "../app/routes";
 
 interface SearchResultListProps {
   query: string;
@@ -29,7 +29,7 @@ export function SearchResultList({ query, loading, results }: SearchResultListPr
     <ol className="result-list">
       {results.map(result => (
         <li key={result.resourceId}>
-          <a href={resourceHref(result.resourceId)}>
+          <a href={resourceHref(result.resourceId)} onClick={followAppLink}>
             <span className="result-title">{result.displayName}</span>
             <span className="result-meta">
               {result.typeLabel ?? result.type ?? "Тип не указан"}
