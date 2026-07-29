@@ -87,6 +87,36 @@ internal sealed class SemanticResourceGraph(
             .Select(field => field.Value.Trim())
             .FirstOrDefault(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase));
 
+    public SemanticDateValue? DateValue(ProjectResourcePortrait portrait)
+    {
+        SemanticDateValue? from = SemanticDateParser.Parse(
+            LiteralValue(portrait, SemanticBridgeVocabulary.FromDate));
+        SemanticDateValue? to = SemanticDateParser.Parse(
+            LiteralValue(portrait, SemanticBridgeVocabulary.ToDate));
+        if (from is not null)
+        {
+            return to is null
+                ? from
+                : new SemanticDateValue($"{from.Display}–{to.Display}", from.SortKey);
+        }
+
+        foreach (ResourceLiteralField field in portrait.Literals)
+        {
+            if (!IsDateProperty(field.Predicate))
+            {
+                continue;
+            }
+
+            SemanticDateValue? value = SemanticDateParser.Parse(field.Value);
+            if (value is not null)
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
     public IReadOnlyList<string> DirectTargets(
         ProjectResourcePortrait portrait,
         string predicate) =>
@@ -141,7 +171,8 @@ internal sealed class SemanticResourceGraph(
     public async ValueTask<SemanticResourceLink?> LinkAsync(
         string resourceId,
         string relationLabel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ProjectResourcePortrait? relation = null)
     {
         ProjectResourcePortrait? portrait = await GetAsync(resourceId, cancellationToken);
         if (portrait is null || IsTechnical(portrait))
@@ -149,11 +180,36 @@ internal sealed class SemanticResourceGraph(
             return null;
         }
 
+        string? documentUri = DocumentUri(portrait);
+        SemanticDateValue? date = relation is null ? null : DateValue(relation);
+        if (date is null && documentUri is not null)
+        {
+            date = DateValue(portrait);
+        }
+
         return new SemanticResourceLink(
             portrait.ResourceId,
             DisplayName(portrait),
             portrait.Type,
             TypeLabel(portrait),
-            relationLabel);
+            relationLabel,
+            relation?.ResourceId,
+            documentUri,
+            date?.Display,
+            date?.SortKey);
+    }
+
+    private bool IsDateProperty(string predicate)
+    {
+        if (string.Equals(predicate, SemanticBridgeVocabulary.FromDate, StringComparison.Ordinal) ||
+            string.Equals(predicate, SemanticBridgeVocabulary.ToDate, StringComparison.Ordinal) ||
+            string.Equals(predicate, SemanticBridgeVocabulary.Date, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return ontology.TryGetTerm(predicate, out OntologyTerm? term) &&
+            term?.Kind == OntologyTermKind.DatatypeProperty &&
+            term.Ranges.Contains(SemanticBridgeVocabulary.DateDataType, StringComparer.Ordinal);
     }
 }
