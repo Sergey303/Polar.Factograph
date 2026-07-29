@@ -6,18 +6,22 @@ internal sealed class SemanticPhotoCollector(SemanticResourceGraph graph)
         ProjectResourcePortrait root,
         CancellationToken cancellationToken)
     {
-        HashSet<string> documentIds = new(StringComparer.Ordinal);
-        await AddReflectedDocumentsAsync(root, documentIds, cancellationToken);
+        Dictionary<string, ProjectResourcePortrait?> documents = new(StringComparer.Ordinal);
+        await AddReflectedDocumentsAsync(root, documents, cancellationToken);
 
         if (graph.IsType(root, SemanticBridgeVocabulary.Collection))
         {
-            await AddCollectionDocumentsAsync(root, documentIds, cancellationToken);
+            await AddCollectionDocumentsAsync(root, documents, cancellationToken);
         }
 
         List<SemanticPhotoCard> result = new();
-        foreach (string documentId in documentIds)
+        foreach ((string documentId, ProjectResourcePortrait? relation) in documents)
         {
-            SemanticPhotoCard? card = await BuildCardAsync(root, documentId, cancellationToken);
+            SemanticPhotoCard? card = await BuildCardAsync(
+                root,
+                documentId,
+                relation,
+                cancellationToken);
             if (card is not null)
             {
                 result.Add(card);
@@ -25,14 +29,16 @@ internal sealed class SemanticPhotoCollector(SemanticResourceGraph graph)
         }
 
         return result
-            .OrderBy(card => card.ContextLabel ?? string.Empty, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(card => card.SortDate is null ? 1 : 0)
+            .ThenBy(card => card.SortDate, StringComparer.Ordinal)
+            .ThenBy(card => card.ContextLabel ?? string.Empty, StringComparer.CurrentCultureIgnoreCase)
             .ThenBy(card => card.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToArray();
     }
 
     private async Task AddReflectedDocumentsAsync(
         ProjectResourcePortrait root,
-        HashSet<string> documentIds,
+        IDictionary<string, ProjectResourcePortrait?> documents,
         CancellationToken cancellationToken)
     {
         foreach (string bridgeId in graph.InverseSources(
@@ -49,14 +55,14 @@ internal sealed class SemanticPhotoCollector(SemanticResourceGraph graph)
                          bridge,
                          SemanticBridgeVocabulary.InDocument))
             {
-                documentIds.Add(documentId);
+                AddDocument(documents, documentId, bridge);
             }
         }
     }
 
     private async Task AddCollectionDocumentsAsync(
         ProjectResourcePortrait collection,
-        HashSet<string> documentIds,
+        IDictionary<string, ProjectResourcePortrait?> documents,
         CancellationToken cancellationToken)
     {
         foreach (string bridgeId in graph.InverseSources(
@@ -76,15 +82,37 @@ internal sealed class SemanticPhotoCollector(SemanticResourceGraph graph)
                 ProjectResourcePortrait? item = await graph.GetAsync(itemId, cancellationToken);
                 if (item is not null && graph.IsType(item, SemanticBridgeVocabulary.PhotoDocument))
                 {
-                    documentIds.Add(itemId);
+                    AddDocument(documents, itemId, bridge);
                 }
             }
+        }
+    }
+
+    private void AddDocument(
+        IDictionary<string, ProjectResourcePortrait?> documents,
+        string documentId,
+        ProjectResourcePortrait relation)
+    {
+        if (!documents.TryGetValue(documentId, out ProjectResourcePortrait? existing))
+        {
+            documents.Add(documentId, relation);
+            return;
+        }
+
+        SemanticDateValue? candidateDate = graph.DateValue(relation);
+        SemanticDateValue? existingDate = existing is null ? null : graph.DateValue(existing);
+        if (candidateDate is not null &&
+            (existingDate is null ||
+             string.CompareOrdinal(candidateDate.SortKey, existingDate.SortKey) < 0))
+        {
+            documents[documentId] = relation;
         }
     }
 
     private async Task<SemanticPhotoCard?> BuildCardAsync(
         ProjectResourcePortrait root,
         string documentId,
+        ProjectResourcePortrait? relation,
         CancellationToken cancellationToken)
     {
         ProjectResourcePortrait? document = await graph.GetAsync(documentId, cancellationToken);
@@ -108,12 +136,17 @@ internal sealed class SemanticPhotoCollector(SemanticResourceGraph graph)
                 ?? await FindCollectionContextAsync(document, cancellationToken);
         }
 
+        SemanticDateValue? date = relation is null ? null : graph.DateValue(relation);
+        date ??= graph.DateValue(document);
+
         return new SemanticPhotoCard(
             document.ResourceId,
             graph.DisplayName(document),
             graph.DocumentUri(document),
             context?.ResourceId,
-            context is null ? null : graph.DisplayName(context));
+            context is null ? null : graph.DisplayName(context),
+            date?.Display,
+            date?.SortKey);
     }
 
     private async Task<ProjectResourcePortrait?> FindOrganizationContextAsync(
