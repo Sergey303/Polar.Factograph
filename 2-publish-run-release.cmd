@@ -46,7 +46,6 @@ set "ASPNETCORE_ENVIRONMENT=Production"
 set "Project__ConfigPath=%PROJECT_CONFIG%"
 set "Authentication__Local__IdentityPath=%ROOT%project-data\identity.json"
 set "Authentication__Local__DataProtectionKeysPath=%ROOT%project-data\data-protection-keys"
-set "Authentication__Local__DefaultRole=editor"
 set "Authentication__Local__DefaultCassetteId=syp-cassette-small"
 
 echo.
@@ -54,6 +53,7 @@ echo Published application:
 echo   %TARGET%
 echo HTTPS address:
 echo   https://localhost:5001
+echo Editors are read from scripts\run\appsettings.json
 echo Press Ctrl+C to stop.
 echo.
 
