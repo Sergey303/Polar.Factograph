@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ProjectOverview, SemanticResourcePage } from "../api/models";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { cassettesWithRight, cassettesWithRights } from "../app/projectAccess";
@@ -8,18 +8,14 @@ import {
 } from "../app/resourceDraftFactory";
 import { resourceDocumentUris } from "../app/resourceDocuments";
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
+import type { ResourceRouteMode } from "../app/routes";
 import { ComplexRelationCreatePane } from "./ComplexRelationCreatePane";
 import { DocumentSection } from "./DocumentSection";
 import { ResourcePortraitView } from "./ResourcePortraitView";
 import { ResourceWorkspaceActions } from "./ResourceWorkspaceActions";
-import {
-  ResourceWorkspaceModePane,
-  type ResourceWorkspaceMode
-} from "./ResourceWorkspaceModePane";
+import { ResourceWorkspaceModePane } from "./ResourceWorkspaceModePane";
 
 const photoDocumentType = "http://fogid.net/o/photo-doc";
-
-type LocalWorkspaceMode = Exclude<ResourceWorkspaceMode, "create"> | "relation";
 
 interface ResourceWorkspaceProps {
   project: ProjectOverview | null;
@@ -27,13 +23,14 @@ interface ResourceWorkspaceProps {
   loading: boolean;
   error: string | null;
   token: string;
+  mode: ResourceRouteMode;
   onCreate: () => void;
   onSelect: (resourceId: string) => void;
+  onModeChange: (mode: ResourceRouteMode, replace?: boolean) => void;
   onReload: () => void;
 }
 
 export function ResourceWorkspace(props: ResourceWorkspaceProps) {
-  const [mode, setMode] = useState<LocalWorkspaceMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const portrait = props.page?.portrait ?? null;
   const writable = useMemo(
@@ -46,34 +43,41 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
   );
   const cassetteId = preferredResourceCassette(
     props.project,
-    mode === "edit" || mode === "relation" ? portrait : null,
+    props.mode === "edit" || props.mode === "relations" ? portrait : null,
     writable
   );
   const initialDraft = useMemo(() =>
-    mode === "edit" && portrait !== null
+    props.mode === "edit" && portrait !== null
       ? resourceDraftFromPortrait(portrait, cassetteId)
       : emptyResourceDraft(cassetteId),
-  [mode, portrait, cassetteId]);
+  [props.mode, portrait, cassetteId]);
+
+  useEffect(() => {
+    setNotice(null);
+  }, [portrait?.resourceId]);
 
   function saved(result: ResourceWriteResponse): void {
     setNotice(result.indexReady
       ? `Ревизия ${result.resourceId} сохранена.`
       : "Ревизия сохранена, но индекс требует восстановления.");
-    setMode(null);
     const sameResource = portrait?.resourceId === result.resourceId;
-    props.onSelect(result.resourceId);
-    if (sameResource) props.onReload();
+    if (sameResource) {
+      props.onModeChange("view", true);
+      props.onReload();
+    } else {
+      props.onSelect(result.resourceId);
+    }
   }
 
   function relationSaved(result: ResourceWriteResponse): void {
     setNotice(result.indexReady
       ? "Связь сохранена."
       : "Связь сохранена, но индекс требует восстановления.");
-    setMode(null);
+    props.onModeChange("view", true);
     props.onReload();
   }
 
-  if (mode === "relation") {
+  if (props.mode === "relations") {
     return portrait === null ? (
       <ResourcePortraitView
         page={props.page}
@@ -88,23 +92,23 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
         cassettes={writable}
         cassetteId={cassetteId}
         token={props.token}
-        onCancel={() => setMode(null)}
+        onCancel={() => props.onModeChange("view", true)}
         onSaved={relationSaved}
       />
     );
   }
 
-  if (mode !== null) {
-    const editingPhoto = mode === "edit" && portrait?.type === photoDocumentType;
+  if (props.mode === "edit" || props.mode === "document") {
+    const editingPhoto = props.mode === "edit" && portrait?.type === photoDocumentType;
     return (
       <>
         <ResourceWorkspaceModePane
-          mode={mode}
+          mode={props.mode}
           initialDraft={initialDraft}
           writableCassettes={writable}
           documentCassettes={documentCassettes}
           token={props.token}
-          onCancel={() => setMode(null)}
+          onCancel={() => props.onModeChange("view", true)}
           onSaved={saved}
         />
         {editingPhoto && portrait !== null && (
@@ -132,9 +136,9 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
         canEdit={canWriteEntity}
         notice={notice}
         onCreate={() => { setNotice(null); props.onCreate(); }}
-        onAddDocument={() => { setNotice(null); setMode("document"); }}
-        onAddRelation={() => { setNotice(null); setMode("relation"); }}
-        onEdit={() => { setNotice(null); setMode("edit"); }}
+        onAddDocument={() => { setNotice(null); props.onModeChange("document"); }}
+        onAddRelation={() => { setNotice(null); props.onModeChange("relations"); }}
+        onEdit={() => { setNotice(null); props.onModeChange("edit"); }}
       />
       <ResourcePortraitView
         page={props.page}
