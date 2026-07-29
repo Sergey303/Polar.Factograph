@@ -15,4 +15,5 @@ public sealed record ProjectReadContext(
     AuthorizedProjectReadService Reads,
     AuthorizedPresentedPortraitService Portraits,
     SemanticResourcePageService SemanticPages,
+    ProjectPotentialDuplicateService PotentialDuplicates,
     AuthorizedProjectCollectionService Collections);
