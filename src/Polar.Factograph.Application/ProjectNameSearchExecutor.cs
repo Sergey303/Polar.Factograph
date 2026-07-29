@@ -34,7 +34,7 @@ internal sealed class ProjectNameSearchExecutor(
         ProjectRankedCandidate[] candidates = allHits
             .GroupBy(item => item.Hit.ResourceId, StringComparer.Ordinal)
             .Select(group => BuildCandidate(group.Key, group.ToArray(), preferredLanguage))
-            .OrderByDescending(candidate => candidate.Score)
+            .OrderByDescending(candidate => candidate.Rank)
             .ThenBy(candidate => candidate.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(candidate => candidate.ResourceId, StringComparer.Ordinal)
             .ToArray();
@@ -56,7 +56,10 @@ internal sealed class ProjectNameSearchExecutor(
             .Select(item => item.Hit)
             .Distinct()
             .ToArray();
-        int score = variantHits.Max(item =>
+        int score = variantHits.Max(item => ProjectSearchRules.NameScore(
+            item.Hit.Value,
+            item.Variant.Key));
+        int rank = variantHits.Max(item =>
             item.Variant.Rank + ProjectSearchRules.NameScore(
                 item.Hit.Value,
                 item.Variant.Key));
@@ -68,7 +71,10 @@ internal sealed class ProjectNameSearchExecutor(
                 .Select(ProjectSearchRules.ToEvidence)
                 .OrderBy(evidence => evidence.Predicate, StringComparer.Ordinal)
                 .ThenBy(evidence => evidence.Value, StringComparer.Ordinal)
-                .ToArray());
+                .ToArray())
+        {
+            Rank = rank
+        };
     }
 
     private sealed record VariantNameHit(
