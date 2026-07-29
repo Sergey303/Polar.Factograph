@@ -115,6 +115,19 @@ public sealed class LocalAuthenticationService(
         await _registrationLock.WaitAsync(cancellationToken);
         try
         {
+            IdentityUser[] users = store.Current.Users;
+            HashSet<string> registeredLogins = users
+                .Select(user => user.NormalizedLogin)
+                .ToHashSet(StringComparer.Ordinal);
+            LogUnregisteredEditors(registeredLogins);
+
+            if (users.Length == 0)
+            {
+                logger.LogInformation(
+                    "No registered local users require editor reconciliation.");
+                return;
+            }
+
             string projectPath = projectPathResolver.GetRequiredPath();
             ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
             RequireProjectRole(project, ViewerRole);
@@ -122,12 +135,9 @@ public sealed class LocalAuthenticationService(
 
             Dictionary<string, IdentityUser> replacements = new(StringComparer.Ordinal);
             List<IdentityFogReference> createdFogs = [];
-            HashSet<string> registeredLogins = store.Current.Users
-                .Select(user => user.NormalizedLogin)
-                .ToHashSet(StringComparer.Ordinal);
             CassetteDefinition? cassette = null;
 
-            foreach (IdentityUser user in store.Current.Users)
+            foreach (IdentityUser user in users)
             {
                 bool editor = options.IsEditor(user.NormalizedLogin);
                 string[] desiredRoles = [editor ? EditorRole : ViewerRole];
@@ -183,16 +193,6 @@ public sealed class LocalAuthenticationService(
                     }
                 }
                 throw;
-            }
-
-            foreach (string normalizedLogin in options.EditorLogins)
-            {
-                if (!registeredLogins.Contains(normalizedLogin))
-                {
-                    logger.LogWarning(
-                        "Configured editor login '{EditorLogin}' is not registered yet; its Fog will be created after registration or on the next application start.",
-                        normalizedLogin);
-                }
             }
 
             logger.LogInformation(
@@ -304,6 +304,19 @@ public sealed class LocalAuthenticationService(
         .Where(device => device.UserId == userId)
         .OrderByDescending(device => device.LastSeenAtUtc)
         .ToArray();
+
+    private void LogUnregisteredEditors(IReadOnlySet<string> registeredLogins)
+    {
+        foreach (string normalizedLogin in options.EditorLogins)
+        {
+            if (!registeredLogins.Contains(normalizedLogin))
+            {
+                logger.LogWarning(
+                    "Configured editor login '{EditorLogin}' is not registered yet; its Fog will be created during registration.",
+                    normalizedLogin);
+            }
+        }
+    }
 
     private IdentityDevice CreateDevice(
         string userId,
