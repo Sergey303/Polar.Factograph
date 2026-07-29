@@ -1,5 +1,5 @@
 import type { SemanticResourceLink } from "../api/models";
-import { resourceHref } from "../app/routes";
+import { followAppLink, resourceHref } from "../app/routes";
 
 interface SemanticLinkSectionProps {
   title: string;
@@ -15,7 +15,12 @@ export function SemanticLinkSection({ title, links }: SemanticLinkSectionProps) 
       <ul className="semantic-link-list">
         {links.map(link => (
           <li key={link.resourceId}>
-            <a href={resourceHref(link.resourceId)}>{link.displayName}</a>
+            <a
+              href={resourceHref(link.resourceId)}
+              onClick={followAppLink}
+            >
+              {link.displayName}
+            </a>
             <span className="muted">
               {link.relationLabel}
               {link.typeLabel ? ` · ${link.typeLabel}` : ""}
