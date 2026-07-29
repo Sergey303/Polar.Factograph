@@ -77,8 +77,8 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
     props.onReload();
   }
 
-  if (props.mode === "relations") {
-    return portrait === null ? (
+  if ((props.mode === "edit" || props.mode === "relations") && portrait === null) {
+    return (
       <ResourcePortraitView
         page={props.page}
         loading={props.loading}
@@ -86,7 +86,11 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
         token={props.token}
         project={props.project}
       />
-    ) : (
+    );
+  }
+
+  if (props.mode === "relations" && portrait !== null) {
+    return (
       <ComplexRelationCreatePane
         portrait={portrait}
         cassettes={writable}
