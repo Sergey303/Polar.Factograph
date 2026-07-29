@@ -1,58 +1,24 @@
-import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { errorText } from "../api/errorText";
-import { factographApi } from "../api/factographApi";
 import type { ResourceSearchResult } from "../api/models";
+import { searchQueryOptions } from "./queryOptions";
 
-export function useSearch(token: string) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ResourceSearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const activeRequest = useRef<AbortController | null>(null);
+const emptyResults: ResourceSearchResult[] = [];
 
-  async function search(): Promise<void> {
-    const text = query.trim();
-    activeRequest.current?.abort();
-    if (text.length === 0) {
-      setResults([]);
-      setError(null);
-      return;
-    }
-
-    const controller = new AbortController();
-    activeRequest.current = controller;
-    setLoading(true);
-    setError(null);
-    try {
-      setResults(await factographApi.search(text, token, controller.signal));
-    } catch (reason) {
-      if (!controller.signal.aborted) {
-        setResults([]);
-        setError(errorText(reason));
-      }
-    } finally {
-      if (activeRequest.current === controller) {
-        activeRequest.current = null;
-        setLoading(false);
-      }
-    }
-  }
-
-  function clear(): void {
-    activeRequest.current?.abort();
-    setQuery("");
-    setResults([]);
-    setError(null);
-    setLoading(false);
-  }
+export function useSearch(query: string | null, token: string) {
+  const normalizedQuery = query?.trim() ?? "";
+  const result = useQuery({
+    ...searchQueryOptions(normalizedQuery, token),
+    enabled: query !== null && normalizedQuery.length > 0
+  });
 
   return {
-    query,
-    setQuery,
-    results,
-    loading,
-    error,
-    search,
-    clear
+    query: normalizedQuery,
+    results: result.data ?? emptyResults,
+    loading: result.isFetching,
+    error: result.error === null ? null : errorText(result.error),
+    reload: () => {
+      void result.refetch();
+    }
   };
 }
