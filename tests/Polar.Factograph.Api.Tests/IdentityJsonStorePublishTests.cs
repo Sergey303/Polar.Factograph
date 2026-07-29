@@ -28,7 +28,9 @@ public sealed class IdentityJsonStorePublishTests : IDisposable
                 "main",
                 RegistrationEnabled: true,
                 SessionDays: 30,
-                MaxFogBytes: 1024 * 1024),
+                MaxFogBytes: 1024 * 1024,
+                EditorAllowListConfigured: false,
+                EditorLogins: new HashSet<string>(StringComparer.Ordinal)),
             NullLogger<IdentityJsonStore>.Instance);
 
         using FileStream locked = new(
