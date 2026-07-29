@@ -30,12 +30,11 @@ No bearer token or external identity provider is required for the first version.
 
 - a registered login in `EditorLogins` receives the project role `editor` and a writable Fog;
 - every other registered login receives the project role `viewer` and no Fog;
-- `viewer` and `editor` must exist in the loaded project;
+- an absent or empty `EditorLogins` list means that there are no local editors;
+- `viewer` and `editor` must exist in the loaded project once registered users need reconciliation;
 - `DefaultCassetteId` must identify an enabled writable cassette for editor Fogs. It may be omitted only when the project contains exactly one enabled writable cassette.
 
 At application startup the identity store is reconciled with the configured list. Missing editor Fogs are created. Users removed from the list are changed to `viewer`; their old Fog files are not deleted automatically and remain available for administrator inspection or recovery.
-
-When `EditorLogins` is absent, the application keeps the previous `DefaultRole` registration behavior for compatibility. New deployments should configure `EditorLogins` explicitly.
 
 Data Protection keys must be kept in durable storage outside a disposable publish directory. Production cookies are `Secure`, `HttpOnly`, and `SameSite=Lax`.
 
