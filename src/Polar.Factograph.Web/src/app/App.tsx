@@ -8,6 +8,8 @@ import { TopBar } from "../components/TopBar";
 import {
   navigateToCreateEntity,
   navigateToResource,
+  navigateToResourceMode,
+  navigateToSearch,
   useAppRoute
 } from "./routes";
 import { useAuthentication } from "./useAuthentication";
@@ -44,15 +46,14 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   const [adminOpen, setAdminOpen] = useState(false);
   const route = useAppRoute();
   const project = useProject(auth.token);
-  const search = useSearch(auth.token);
+  const searchQuery = route.page === "search" ? route.query : null;
+  const search = useSearch(searchQuery, auth.token);
   const resourceId = route.page === "resource" ? route.resourceId : null;
-  const routeAddress = route.page === "resource" ? window.location.href : null;
-  const resource = useResourcePage(resourceId, routeAddress, auth.token);
+  const resource = useResourcePage(resourceId, auth.token);
   const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
 
   useEffect(() => {
     setAdminOpen(false);
-    search.clear();
   }, [auth.token]);
 
   useEffect(() => {
@@ -61,10 +62,10 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
 
   useEffect(() => {
     const canonicalId = resource.page?.portrait.resourceId;
-    if (resourceId !== null && canonicalId && canonicalId !== resourceId) {
-      navigateToResource(canonicalId, true);
+    if (route.page === "resource" && canonicalId && canonicalId !== route.resourceId) {
+      navigateToResourceMode(canonicalId, route.mode, true);
     }
-  }, [resourceId, resource.page]);
+  }, [route, resource.page?.portrait.resourceId]);
 
   return (
     <div className="app-shell">
@@ -85,12 +86,18 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
         }}
         onReload={() => {
           project.reload();
+          if (route.page === "search") search.reload();
           if (route.page === "resource") resource.reload();
         }}
         onAdmin={() => setAdminOpen(true)}
       />
 
-      {route.page === "search" && <SearchPage search={search} />}
+      {route.page === "search" && (
+        <SearchPage
+          search={search}
+          onSearch={query => navigateToSearch(query)}
+        />
+      )}
       {route.page === "create-entity" && (
         <EntityCreatePage project={project.project} token={auth.token} />
       )}
@@ -98,9 +105,12 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
         <ResourcePage
           project={project.project}
           token={auth.token}
+          mode={route.mode}
           resource={resource}
           onCreate={navigateToCreateEntity}
-          onSelect={resourceId => navigateToResource(resourceId)}
+          onSelect={selectedId => navigateToResource(selectedId)}
+          onModeChange={(mode, replace = false) =>
+            navigateToResourceMode(route.resourceId, mode, replace)}
         />
       )}
 
