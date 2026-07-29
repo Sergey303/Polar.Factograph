@@ -22,9 +22,13 @@ export function ResourceEditorHost(props: ResourceEditorProps) {
     ? []
     : entityTypesMatchingRanges(props.schema, pending.property.ranges).map(type => type.id);
 
-  function targetSaved(result: ResourceWriteResponse): void {
-    pending?.onCreated(result.resourceId);
+  function useReference(resourceId: string): void {
+    pending?.onCreated(resourceId);
     setPending(null);
+  }
+
+  function targetSaved(result: ResourceWriteResponse): void {
+    useReference(result.resourceId);
   }
 
   return (
@@ -51,6 +55,7 @@ export function ResourceEditorHost(props: ResourceEditorProps) {
               allowedTypeIds={allowedTargetTypes}
               onCancel={() => setPending(null)}
               onSaved={targetSaved}
+              onUseExisting={useReference}
             />
           </section>
         </div>,
