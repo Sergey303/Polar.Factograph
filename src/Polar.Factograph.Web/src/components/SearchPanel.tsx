@@ -1,18 +1,27 @@
-import type { FormEvent } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 interface SearchPanelProps {
   query: string;
   loading: boolean;
   error: string | null;
-  onQueryChange: (query: string) => void;
-  onSearch: () => void;
-  onClear: () => void;
+  onSearch: (query: string) => void;
 }
 
 export function SearchPanel(props: SearchPanelProps) {
+  const [draft, setDraft] = useState(props.query);
+
+  useEffect(() => {
+    setDraft(props.query);
+  }, [props.query]);
+
   function submit(event: FormEvent): void {
     event.preventDefault();
-    props.onSearch();
+    props.onSearch(draft);
+  }
+
+  function clear(): void {
+    setDraft("");
+    props.onSearch("");
   }
 
   return (
@@ -23,16 +32,16 @@ export function SearchPanel(props: SearchPanelProps) {
       </div>
       <form className="search-form" onSubmit={submit}>
         <input
-          value={props.query}
-          onChange={event => props.onQueryChange(event.target.value)}
+          value={draft}
+          onChange={event => setDraft(event.target.value)}
           placeholder="Имя, название или слова из описания"
           aria-label="Поиск по ресурсам проекта"
         />
         <button className="button primary" disabled={props.loading}>
           {props.loading ? "Ищем…" : "Найти"}
         </button>
-        {props.query && (
-          <button className="button ghost" type="button" onClick={props.onClear}>
+        {draft.length > 0 && (
+          <button className="button ghost" type="button" onClick={clear}>
             Сбросить
           </button>
         )}
