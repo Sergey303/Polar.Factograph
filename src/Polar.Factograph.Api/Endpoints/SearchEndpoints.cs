@@ -10,6 +10,7 @@ public static class SearchEndpoints
         RouteGroupBuilder group = endpoints.MapGroup("/api/search");
         group.MapGet("/names", SearchNamesAsync);
         group.MapGet("/words", SearchWordsAsync);
+        group.MapGet("/duplicates", SearchDuplicatesAsync);
         return endpoints;
     }
 
@@ -50,6 +51,31 @@ public static class SearchEndpoints
                 q,
                 context.Access,
                 NormalizeLimit(limit),
+                NormalizeLanguage(lang),
+                cancellationToken);
+        return Results.Ok(results);
+    }
+
+    private static async Task<IResult> SearchDuplicatesAsync(
+        string type,
+        string predicate,
+        string value,
+        int? limit,
+        string? lang,
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        CancellationToken cancellationToken)
+    {
+        ProjectReadContext context = await contextFactory.CreateReadAsync(
+            httpContext,
+            cancellationToken);
+        IReadOnlyList<PotentialDuplicateResource> results =
+            await context.PotentialDuplicates.FindAsync(
+                type,
+                predicate,
+                value,
+                context.Access,
+                Math.Min(NormalizeLimit(limit), 50),
                 NormalizeLanguage(lang),
                 cancellationToken);
         return Results.Ok(results);
