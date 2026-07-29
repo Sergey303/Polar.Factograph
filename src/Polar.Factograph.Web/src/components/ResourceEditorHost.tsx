@@ -6,21 +6,30 @@ import { emptyResourceDraft } from "../app/resourceDraftFactory";
 import { entityTypesMatchingRanges } from "../app/ontologyRelations";
 import { ResourceEditor, type ResourceEditorProps } from "./ResourceEditor";
 
+const NamePredicate = "http://fogid.net/o/name";
+
 interface PendingReference {
   property: OntologyWriteProperty;
   onCreated: (resourceId: string) => void;
+  initialValue?: string;
 }
 
 export function ResourceEditorHost(props: ResourceEditorProps) {
   const [pending, setPending] = useState<PendingReference | null>(null);
   const cassetteId = props.initialDraft.cassetteId || props.cassettes[0]?.id || "";
-  const targetDraft = useMemo(
-    () => emptyResourceDraft(cassetteId),
-    [cassetteId, pending?.property.id]
-  );
   const allowedTargetTypes = pending === null
     ? []
     : entityTypesMatchingRanges(props.schema, pending.property.ranges).map(type => type.id);
+  const targetDraft = useMemo(() => {
+    const draft = emptyResourceDraft(cassetteId);
+    return allowedTargetTypes.length === 1
+      ? { ...draft, typeId: allowedTargetTypes[0] ?? "" }
+      : draft;
+  }, [allowedTargetTypes.join("\n"), cassetteId, pending?.property.id]);
+  const initialLiteralValues = useMemo<Readonly<Record<string, string>> | undefined>(() => {
+    const value = pending?.initialValue?.trim();
+    return value ? { [NamePredicate]: value } : undefined;
+  }, [pending?.initialValue]);
 
   function useReference(resourceId: string): void {
     pending?.onCreated(resourceId);
@@ -35,7 +44,8 @@ export function ResourceEditorHost(props: ResourceEditorProps) {
     <>
       <ResourceEditor
         {...props}
-        onCreateReference={(property, onCreated) => setPending({ property, onCreated })}
+        onCreateReference={(property, onCreated, initialValue) =>
+          setPending({ property, onCreated, initialValue })}
       />
       {pending !== null && createPortal(
         <div className="admin-overlay" role="presentation">
@@ -53,6 +63,7 @@ export function ResourceEditorHost(props: ResourceEditorProps) {
               token={props.token}
               title={`Новая сущность: ${pending.property.label}`}
               allowedTypeIds={allowedTargetTypes}
+              initialLiteralValues={initialLiteralValues}
               onCancel={() => setPending(null)}
               onSaved={targetSaved}
               onUseExisting={useReference}
