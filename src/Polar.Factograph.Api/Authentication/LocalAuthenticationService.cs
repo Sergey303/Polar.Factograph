@@ -14,8 +14,11 @@ public sealed class LocalAuthenticationService(
     LocalAuthenticationOptions options,
     ProjectPathResolver projectPathResolver,
     ProjectConfigurationLoader projectLoader,
-    ICassetteNamedFogWriter fogWriter)
+    ICassetteNamedFogWriter fogWriter,
+    ILogger<LocalAuthenticationService> logger)
 {
+    private const string ViewerRole = "viewer";
+    private const string EditorRole = "editor";
     private readonly SemaphoreSlim _registrationLock = new(1, 1);
 
     public async Task<LocalAuthenticationSession> RegisterAsync(
@@ -43,19 +46,25 @@ public sealed class LocalAuthenticationService(
 
             string projectPath = projectPathResolver.GetRequiredPath();
             ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
-            CassetteDefinition cassette = ResolveRegistrationCassette(project);
-            if (!project.Roles.ContainsKey(options.DefaultRole))
-            {
-                throw new InvalidOperationException(
-                    $"Роль регистрации '{options.DefaultRole}' отсутствует в проекте.");
-            }
+            bool editor = options.IsEditor(normalizedLogin);
+            string role = options.EditorAllowListConfigured
+                ? editor ? EditorRole : ViewerRole
+                : options.DefaultRole;
+            RequireProjectRole(project, role);
 
             string userId = $"u_{Guid.NewGuid():N}";
-            IdentityFogReference fog = await CreateFogAsync(
-                cassette,
-                userId,
-                canonicalLogin,
-                cancellationToken);
+            CassetteDefinition? cassette = null;
+            IdentityFogReference? fog = null;
+            if (!options.EditorAllowListConfigured || editor)
+            {
+                cassette = ResolveRegistrationCassette(project);
+                fog = await CreateFogAsync(
+                    cassette,
+                    userId,
+                    canonicalLogin,
+                    cancellationToken);
+            }
+
             DateTimeOffset now = DateTimeOffset.UtcNow;
             IdentityUser user = new()
             {
@@ -66,7 +75,7 @@ public sealed class LocalAuthenticationService(
                     ? canonicalLogin
                     : displayName.Trim(),
                 PasswordHash = string.Empty,
-                Roles = [options.DefaultRole],
+                Roles = [role],
                 Fog = fog,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now
@@ -87,11 +96,111 @@ public sealed class LocalAuthenticationService(
             }
             catch
             {
-                DeleteFog(cassette, fog.RelativePath);
+                if (cassette is not null && fog is not null)
+                {
+                    DeleteFog(cassette, fog.RelativePath);
+                }
                 throw;
             }
 
             return new LocalAuthenticationSession(user, device);
+        }
+        finally
+        {
+            _registrationLock.Release();
+        }
+    }
+
+    public async Task ProvisionConfiguredEditorsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (!options.EditorAllowListConfigured)
+        {
+            logger.LogInformation(
+                "Authentication:Local:EditorLogins is not configured; legacy registration roles and Fog behavior remain active.");
+            return;
+        }
+
+        await _registrationLock.WaitAsync(cancellationToken);
+        try
+        {
+            string projectPath = projectPathResolver.GetRequiredPath();
+            ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
+            RequireProjectRole(project, ViewerRole);
+            RequireProjectRole(project, EditorRole);
+            CassetteDefinition cassette = ResolveRegistrationCassette(project);
+
+            Dictionary<string, IdentityUser> replacements = new(StringComparer.Ordinal);
+            List<IdentityFogReference> createdFogs = [];
+            HashSet<string> registeredLogins = store.Current.Users
+                .Select(user => user.NormalizedLogin)
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach (IdentityUser user in store.Current.Users)
+            {
+                bool editor = options.IsEditor(user.NormalizedLogin);
+                string[] desiredRoles = [editor ? EditorRole : ViewerRole];
+                IdentityFogReference? desiredFog = editor ? user.Fog : null;
+
+                if (editor && !FogIsUsable(cassette, desiredFog))
+                {
+                    desiredFog = await CreateFogAsync(
+                        cassette,
+                        user.Id,
+                        user.Login,
+                        cancellationToken);
+                    createdFogs.Add(desiredFog);
+                }
+
+                if (!user.Roles.SequenceEqual(desiredRoles, StringComparer.Ordinal) ||
+                    !Equals(user.Fog, desiredFog))
+                {
+                    replacements[user.Id] = user with
+                    {
+                        Roles = desiredRoles,
+                        Fog = desiredFog,
+                        UpdatedAtUtc = DateTimeOffset.UtcNow
+                    };
+                }
+            }
+
+            try
+            {
+                if (replacements.Count > 0)
+                {
+                    await store.UpdateAsync(current => current with
+                    {
+                        Users = current.Users
+                            .Select(user => replacements.TryGetValue(user.Id, out IdentityUser? replacement)
+                                ? replacement
+                                : user)
+                            .ToArray()
+                    }, cancellationToken);
+                }
+            }
+            catch
+            {
+                foreach (IdentityFogReference fog in createdFogs)
+                {
+                    DeleteFog(cassette, fog.RelativePath);
+                }
+                throw;
+            }
+
+            foreach (string normalizedLogin in options.EditorLogins)
+            {
+                if (!registeredLogins.Contains(normalizedLogin))
+                {
+                    logger.LogWarning(
+                        "Configured editor login '{EditorLogin}' is not registered yet; its Fog will be created after registration or on the next application start.",
+                        normalizedLogin);
+                }
+            }
+
+            logger.LogInformation(
+                "Reconciled local users with the editor allow list. Editors: {EditorCount}; updated users: {UpdatedCount}.",
+                options.EditorLogins.Count,
+                replacements.Count);
         }
         finally
         {
@@ -211,6 +320,15 @@ public sealed class LocalAuthenticationService(
         ExpiresAtUtc = now.AddDays(options.SessionDays)
     };
 
+    private static void RequireProjectRole(ProjectDefinition project, string role)
+    {
+        if (!project.Roles.ContainsKey(role))
+        {
+            throw new InvalidOperationException(
+                $"Роль локальной аутентификации '{role}' отсутствует в проекте.");
+        }
+    }
+
     private CassetteDefinition ResolveRegistrationCassette(ProjectDefinition project)
     {
         CassetteDefinition[] writable = project.Cassettes
@@ -227,6 +345,27 @@ public sealed class LocalAuthenticationService(
             ? writable[0]
             : throw new InvalidOperationException(
                 "Укажите Authentication:Local:DefaultCassetteId, когда для записи доступно несколько кассет.");
+    }
+
+    private static bool FogIsUsable(
+        CassetteDefinition cassette,
+        IdentityFogReference? fog)
+    {
+        if (fog is null ||
+            !string.Equals(fog.CassetteId, cassette.Id, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        try
+        {
+            string path = Path.GetFullPath(fog.RelativePath, cassette.Path);
+            return File.Exists(path);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException)
+        {
+            return false;
+        }
     }
 
     private async Task<IdentityFogReference> CreateFogAsync(
