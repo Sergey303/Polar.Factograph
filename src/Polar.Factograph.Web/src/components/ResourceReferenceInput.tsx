@@ -20,7 +20,8 @@ interface ResourceReferenceInputProps {
   onChange: (value: string) => void;
   onCreateNew?: (
     property: OntologyWriteProperty,
-    onCreated: (resourceId: string) => void
+    onCreated: (resourceId: string) => void,
+    initialValue?: string
   ) => void;
 }
 
@@ -60,6 +61,7 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
       return;
     }
 
+    const createValue = pendingCreateQuery;
     if (search.error !== null) {
       setPendingCreateQuery(null);
       return;
@@ -71,7 +73,7 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
       return;
     }
 
-    props.onCreateNew?.(props.property, props.onChange);
+    props.onCreateNew?.(props.property, props.onChange, createValue);
   }, [
     pendingCreateQuery,
     props.onChange,
@@ -103,7 +105,7 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
       if (search.error === null && results.length > 0) {
         setShowDuplicateWarning(true);
       } else if (search.error === null) {
-        props.onCreateNew?.(props.property, props.onChange);
+        props.onCreateNew?.(props.property, props.onChange, normalized);
       } else {
         setPendingCreateQuery(normalized);
         void search.refetch();
@@ -117,7 +119,7 @@ export function ResourceReferenceInput(props: ResourceReferenceInputProps) {
 
   function createDespiteWarning(): void {
     setShowDuplicateWarning(false);
-    props.onCreateNew?.(props.property, props.onChange);
+    props.onCreateNew?.(props.property, props.onChange, query.trim() || undefined);
   }
 
   if (props.readOnly) {
