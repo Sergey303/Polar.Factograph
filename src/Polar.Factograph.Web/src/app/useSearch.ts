@@ -7,9 +7,10 @@ const emptyResults: ResourceSearchResult[] = [];
 
 export function useSearch(query: string | null, token: string) {
   const normalizedQuery = query?.trim() ?? "";
+  const enabled = query !== null && normalizedQuery.length > 0;
   const result = useQuery({
     ...searchQueryOptions(normalizedQuery, token),
-    enabled: query !== null && normalizedQuery.length > 0
+    enabled
   });
 
   return {
@@ -18,7 +19,7 @@ export function useSearch(query: string | null, token: string) {
     loading: result.isFetching,
     error: result.error === null ? null : errorText(result.error),
     reload: () => {
-      void result.refetch();
+      if (enabled) void result.refetch();
     }
   };
 }
