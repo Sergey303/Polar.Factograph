@@ -89,7 +89,13 @@ public sealed class SemanticResourcePageService(
                              bridge,
                              SemanticBridgeVocabulary.Participant))
                 {
-                    await AddLinkAsync(result, graph, participantId, relation, cancellationToken);
+                    await AddLinkAsync(
+                        result,
+                        graph,
+                        participantId,
+                        relation,
+                        cancellationToken,
+                        bridge);
                 }
             }
         }
@@ -121,7 +127,8 @@ public sealed class SemanticResourcePageService(
                         graph,
                         itemId,
                         "элемент коллекции",
-                        cancellationToken);
+                        cancellationToken,
+                        bridge);
                 }
             }
         }
@@ -156,7 +163,8 @@ public sealed class SemanticResourcePageService(
                     graph,
                     organizationId,
                     relation,
-                    cancellationToken);
+                    cancellationToken,
+                    bridge);
             }
         }
 
@@ -229,7 +237,8 @@ public sealed class SemanticResourcePageService(
                     graph,
                     collectionId,
                     "в коллекции",
-                    cancellationToken);
+                    cancellationToken,
+                    bridge);
             }
         }
     }
@@ -334,7 +343,8 @@ public sealed class SemanticResourcePageService(
                 graph,
                 target.ResourceId,
                 relationLabel,
-                cancellationToken);
+                cancellationToken,
+                relation);
         }
     }
 
@@ -348,9 +358,13 @@ public sealed class SemanticResourcePageService(
         SemanticResourceGraph graph,
         string resourceId,
         string relationLabel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ProjectResourcePortrait? relation = null)
     {
-        if (result.ContainsKey(resourceId))
+        string key = relation is null
+            ? $"{relationLabel}\n{resourceId}"
+            : $"{relation.ResourceId}\n{resourceId}";
+        if (result.ContainsKey(key))
         {
             return;
         }
@@ -358,16 +372,20 @@ public sealed class SemanticResourcePageService(
         SemanticResourceLink? link = await graph.LinkAsync(
             resourceId,
             relationLabel,
-            cancellationToken);
+            cancellationToken,
+            relation);
         if (link is not null)
         {
-            result.Add(resourceId, link);
+            result.Add(key, link);
         }
     }
 
     private static SemanticResourceLink[] Sort(IEnumerable<SemanticResourceLink> links) =>
         links
-            .OrderBy(link => link.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(link => link.SortDate is null ? 1 : 0)
+            .ThenBy(link => link.SortDate, StringComparer.Ordinal)
+            .ThenBy(link => link.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(link => link.RelationResourceId ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(link => link.ResourceId, StringComparer.Ordinal)
             .ToArray();
 }
