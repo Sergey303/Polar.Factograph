@@ -84,6 +84,8 @@ export interface SemanticResourceLink {
   documentUri?: string | null;
   displayDate?: string | null;
   sortDate?: string | null;
+  groupKey?: string | null;
+  groupLabel?: string | null;
 }
 
 export interface SemanticPhotoCard {
