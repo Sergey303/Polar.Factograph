@@ -56,6 +56,11 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
   const resource = useResourcePage(resourceId, auth.token);
   const canonicalResourceId = resource.page?.portrait.resourceId ?? null;
   const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
+  const pageLoading = route.page === "search"
+    ? search.loading
+    : route.page === "resource"
+      ? resource.refreshing
+      : false;
 
   useEffect(() => {
     setAdminOpen(false);
@@ -79,7 +84,7 @@ function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
     <div className="app-shell">
       <TopBar
         project={project.project}
-        loading={project.loading}
+        loading={project.loading || pageLoading}
         canAdmin={canAdmin}
         authentication={{
           authenticated: auth.authenticated,
