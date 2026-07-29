@@ -15,7 +15,7 @@ export function SemanticResourceSections({ page }: SemanticResourceSectionsProps
     linkBlock("participants", "Участники", page.participants),
     linkBlock("organizations", "Организации", page.organizations),
     linkBlock("collections", "Коллекции", page.collections),
-    linkBlock("related", "Другие связи", page.relatedResources)
+    linkBlock("related", "Другое", page.relatedResources)
   ];
 
   return <SemanticContentBlocks blocks={blocks} />;
