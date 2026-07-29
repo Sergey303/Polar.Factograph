@@ -22,7 +22,10 @@ public sealed class IdentityFogSourceResolver(IdentityJsonStore store)
             return FogWritableSourceSelector.Select(sources, cassetteId);
         }
 
-        if (!string.Equals(user.Fog.CassetteId, cassetteId, StringComparison.Ordinal))
+        IdentityFogReference fog = user.Fog
+            ?? throw new InvalidOperationException(
+                $"User '{userId}' is not an editor and has no writable Fog.");
+        if (!string.Equals(fog.CassetteId, cassetteId, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 $"User '{userId}' has no writable Fog in cassette '{cassetteId}'.");
@@ -32,7 +35,7 @@ public sealed class IdentityFogSourceResolver(IdentityJsonStore store)
                 string.Equals(value.Id, cassetteId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 $"Cassette '{cassetteId}' is absent from the project.");
-        string expectedPath = Path.GetFullPath(user.Fog.RelativePath, cassette.Path);
+        string expectedPath = Path.GetFullPath(fog.RelativePath, cassette.Path);
         FogSourceDescriptor? source = sources.FirstOrDefault(value =>
             value.Writable &&
             string.Equals(value.CassetteId, cassetteId, StringComparison.Ordinal) &&
