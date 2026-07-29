@@ -1,9 +1,10 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type {
   ProjectCassetteOverview,
   ResourcePortrait
 } from "../api/models";
+import type { OntologyWriteSchema } from "../api/ontologyModels";
 import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { errorText } from "../api/errorText";
 import {
@@ -46,6 +47,50 @@ type RelationEditorState =
       protectedRowIds: string[];
     };
 
+function existingRelations(
+  schema: OntologyWriteSchema | null,
+  portraits: readonly (ResourcePortrait | undefined)[],
+  currentResourceId: string
+): ExistingRelation[] {
+  if (schema === null) return [];
+
+  const relations: ExistingRelation[] = [];
+  for (const relationPortrait of portraits) {
+    if (relationPortrait === undefined) continue;
+    const relationType = schema.classes.find(type =>
+      type.id === relationPortrait.type && !type.isEntityType && !type.isAbstract
+    );
+    if (relationType === undefined) continue;
+
+    const anchorLink = relationPortrait.directLinks.find(link =>
+      link.targetResourceId === currentResourceId &&
+      relationType.properties.some(property =>
+        property.id === link.predicate && property.kind === "resource")
+    );
+    if (anchorLink === undefined) continue;
+
+    const anchorProperty = relationType.properties.find(
+      property => property.id === anchorLink.predicate
+    );
+    if (anchorProperty === undefined) continue;
+
+    relations.push({
+      portrait: relationPortrait,
+      role: {
+        key: `${relationType.id}\n${anchorProperty.id}`,
+        relationType,
+        anchorProperty,
+        label: `${relationType.label}: ${anchorProperty.inverseLabel ?? anchorProperty.label}`
+      }
+    });
+  }
+
+  return relations.sort((left, right) =>
+    left.role.label.localeCompare(right.role.label, "ru") ||
+    left.portrait.resourceId.localeCompare(right.portrait.resourceId, "ru")
+  );
+}
+
 export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps) {
   const schemaState = useOntologySchema(props.token, true);
   const [state, setState] = useState<RelationEditorState>({ mode: "list" });
@@ -54,65 +99,21 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
     portraitQueryOptions(currentResourceId, props.token)
   );
   const currentPortrait = currentPortraitQuery.data ?? props.portrait;
-  const sourceIds = useMemo(
-    () => [...new Set(
-      currentPortrait.inverseLinks.map(link => link.sourceResourceId)
-    )],
-    [currentPortrait.inverseLinks]
-  );
+  const sourceIds = [...new Set(
+    currentPortrait.inverseLinks.map(link => link.sourceResourceId)
+  )];
   const relationQueries = useQueries({
     queries: sourceIds.map(resourceId =>
       portraitQueryOptions(resourceId, props.token))
   });
-  const roles = useMemo(
-    () => schemaState.schema === null || currentPortrait.type === null
-      ? []
-      : relationRolesForType(schemaState.schema, currentPortrait.type),
-    [schemaState.schema, currentPortrait.type]
+  const roles = schemaState.schema === null || currentPortrait.type === null
+    ? []
+    : relationRolesForType(schemaState.schema, currentPortrait.type);
+  const existing = existingRelations(
+    schemaState.schema,
+    relationQueries.map(query => query.data),
+    currentResourceId
   );
-
-  const existing = useMemo(() => {
-    const schema = schemaState.schema;
-    if (schema === null) return [];
-
-    const relations: ExistingRelation[] = [];
-    for (const query of relationQueries) {
-      const relationPortrait = query.data;
-      if (relationPortrait === undefined) continue;
-      const relationType = schema.classes.find(type =>
-        type.id === relationPortrait.type && !type.isEntityType && !type.isAbstract
-      );
-      if (relationType === undefined) continue;
-
-      const anchorLink = relationPortrait.directLinks.find(link =>
-        link.targetResourceId === currentResourceId &&
-        relationType.properties.some(property =>
-          property.id === link.predicate && property.kind === "resource")
-      );
-      if (anchorLink === undefined) continue;
-
-      const anchorProperty = relationType.properties.find(
-        property => property.id === anchorLink.predicate
-      );
-      if (anchorProperty === undefined) continue;
-
-      relations.push({
-        portrait: relationPortrait,
-        role: {
-          key: `${relationType.id}\n${anchorProperty.id}`,
-          relationType,
-          anchorProperty,
-          label: `${relationType.label}: ${anchorProperty.inverseLabel ?? anchorProperty.label}`
-        }
-      });
-    }
-
-    return relations.sort((left, right) =>
-      left.role.label.localeCompare(right.role.label, "ru") ||
-      left.portrait.resourceId.localeCompare(right.portrait.resourceId, "ru")
-    );
-  }, [schemaState.schema, relationQueries, currentResourceId]);
-
   const loadingExisting = currentPortraitQuery.isFetching ||
     relationQueries.some(query => query.isFetching);
   const existingErrors = [
