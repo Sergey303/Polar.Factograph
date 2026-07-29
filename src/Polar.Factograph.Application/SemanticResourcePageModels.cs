@@ -9,7 +9,9 @@ public sealed record SemanticResourceLink(
     string? RelationResourceId = null,
     string? DocumentUri = null,
     string? DisplayDate = null,
-    string? SortDate = null);
+    string? SortDate = null,
+    string? GroupKey = null,
+    string? GroupLabel = null);
 
 public sealed record SemanticPhotoCard(
     string ResourceId,
