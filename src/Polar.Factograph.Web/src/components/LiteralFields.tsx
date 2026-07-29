@@ -9,19 +9,16 @@ export function LiteralFields({ fields }: LiteralFieldsProps) {
   if (visible.length === 0) return null;
 
   return (
-    <section className="portrait-section">
-      <h3>Сведения</h3>
-      <dl className="field-list">
-        {visible.map((field, index) => (
-          <div key={`${field.predicate}-${index}`}>
-            <dt>{field.label}</dt>
-            <dd>
-              {field.displayValue}
-              {field.language && <span className="language">{field.language}</span>}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </section>
+    <dl className="field-list" aria-label="Основные данные">
+      {visible.map((field, index) => (
+        <div key={`${field.predicate}-${index}`}>
+          <dt>{field.label}</dt>
+          <dd>
+            {field.displayValue}
+            {field.language && <span className="language">{field.language}</span>}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
