@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 
 export type ResourceRouteMode = "view" | "edit" | "relations" | "document";
 
@@ -46,28 +46,12 @@ function applicationBase(): URL {
   }
 }
 
-function applicationHref(hash: string): string {
-  const target = applicationBase();
-  target.hash = hash;
-  return target.href;
+function applicationHref(route: string): string {
+  return new URL(route.replace(/^\/+/, ""), applicationBase()).href;
 }
 
-function normalizeApplicationLocation(): void {
-  const target = applicationBase();
-  const currentPath = window.location.pathname.endsWith("/")
-    ? window.location.pathname
-    : `${window.location.pathname}/`;
-
-  if (currentPath === target.pathname && window.location.search.length === 0) {
-    return;
-  }
-
-  target.hash = window.location.hash || "/search";
-  window.history.replaceState(null, "", target.href);
-}
-
-function navigate(hash: string, replace = false): void {
-  const target = applicationHref(hash);
+function navigate(route: string, replace = false): void {
+  const target = applicationHref(route);
   if (replace) {
     window.history.replaceState(null, "", target);
   } else {
@@ -76,14 +60,14 @@ function navigate(hash: string, replace = false): void {
   window.dispatchEvent(new Event(routeChangedEvent));
 }
 
-function searchHash(query: string): string {
+function searchRoute(query: string): string {
   const normalized = query.trim();
   if (normalized.length === 0) return "/search";
   const parameters = new URLSearchParams({ q: normalized });
   return `/search?${parameters.toString()}`;
 }
 
-function resourceHash(resourceId: string, mode: ResourceRouteMode): string {
+function resourceRoute(resourceId: string, mode: ResourceRouteMode): string {
   const base = `/resource/${encodeURIComponent(resourceId)}`;
   switch (mode) {
     case "edit":
@@ -101,18 +85,49 @@ export const searchHref = applicationHref("/search");
 export const createEntityHref = applicationHref("/entity/new");
 
 export function searchHrefFor(query: string): string {
-  return applicationHref(searchHash(query));
+  return applicationHref(searchRoute(query));
 }
 
 export function resourceHref(
   resourceId: string,
   mode: ResourceRouteMode = "view"
 ): string {
-  return applicationHref(resourceHash(resourceId, mode));
+  return applicationHref(resourceRoute(resourceId, mode));
+}
+
+export function canonicalResourceHref(resourceId: string): string {
+  return resourceHref(resourceId, "view");
+}
+
+export function followAppLink(event: MouseEvent<HTMLAnchorElement>): void {
+  if (
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    event.currentTarget.target === "_blank"
+  ) {
+    return;
+  }
+
+  const target = new URL(event.currentTarget.href, window.location.href);
+  const base = applicationBase();
+  if (
+    target.origin !== base.origin ||
+    !target.pathname.startsWith(base.pathname) ||
+    isApiPath(target.pathname)
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  window.history.pushState(null, "", target.href);
+  window.dispatchEvent(new Event(routeChangedEvent));
 }
 
 export function navigateToSearch(query = "", replace = false): void {
-  navigate(searchHash(query), replace);
+  navigate(searchRoute(query), replace);
 }
 
 export function navigateToCreateEntity(replace = false): void {
@@ -120,7 +135,7 @@ export function navigateToCreateEntity(replace = false): void {
 }
 
 export function navigateToResource(resourceId: string, replace = false): void {
-  navigate(resourceHash(resourceId, "view"), replace);
+  navigate(resourceRoute(resourceId, "view"), replace);
 }
 
 export function navigateToResourceMode(
@@ -128,21 +143,25 @@ export function navigateToResourceMode(
   mode: ResourceRouteMode,
   replace = false
 ): void {
-  navigate(resourceHash(resourceId, mode), replace);
+  navigate(resourceRoute(resourceId, mode), replace);
 }
 
-function currentHash(): { path: string; parameters: URLSearchParams } {
+function migrateLegacyHashRoute(): void {
   const raw = window.location.hash.startsWith("#")
     ? window.location.hash.slice(1)
     : window.location.hash;
-  const separator = raw.indexOf("?");
-  if (separator < 0) {
-    return { path: raw || "/search", parameters: new URLSearchParams() };
-  }
-  return {
-    path: raw.slice(0, separator) || "/search",
-    parameters: new URLSearchParams(raw.slice(separator + 1))
-  };
+  if (!raw.startsWith("/")) return;
+
+  window.history.replaceState(null, "", applicationHref(raw));
+}
+
+function applicationPath(): string | null {
+  const basePath = applicationBase().pathname;
+  const currentPath = window.location.pathname;
+  if (!currentPath.startsWith(basePath)) return null;
+
+  const relative = currentPath.slice(basePath.length).replace(/^\/+/, "");
+  return relative.length === 0 ? "/" : `/${relative}`;
 }
 
 function parseResourceMode(suffix: string): ResourceRouteMode | null {
@@ -161,20 +180,27 @@ function parseResourceMode(suffix: string): ResourceRouteMode | null {
 }
 
 function currentRoute(): AppRoute {
-  normalizeApplicationLocation();
-  const hash = currentHash();
-
-  if (hash.path === "/search") {
-    return { page: "search", query: hash.parameters.get("q")?.trim() ?? "" };
+  migrateLegacyHashRoute();
+  const path = applicationPath();
+  if (path === null || path === "/") {
+    window.history.replaceState(null, "", applicationHref("/search"));
+    return { page: "search", query: "" };
   }
 
-  if (hash.path === "/entity/new") {
+  if (path === "/search") {
+    return {
+      page: "search",
+      query: new URLSearchParams(window.location.search).get("q")?.trim() ?? ""
+    };
+  }
+
+  if (path === "/entity/new") {
     return { page: "create-entity" };
   }
 
   const prefix = "/resource/";
-  if (hash.path.startsWith(prefix)) {
-    const remainder = hash.path.slice(prefix.length);
+  if (path.startsWith(prefix)) {
+    const remainder = path.slice(prefix.length);
     const slash = remainder.indexOf("/");
     const encoded = slash < 0 ? remainder : remainder.slice(0, slash);
     const suffix = slash < 0 ? "" : remainder.slice(slash);
@@ -186,11 +212,12 @@ function currentRoute(): AppRoute {
           return { page: "resource", resourceId, mode };
         }
       } catch {
-        return { page: "search", query: "" };
+        // Invalid route values fall back to the search page below.
       }
     }
   }
 
+  window.history.replaceState(null, "", applicationHref("/search"));
   return { page: "search", query: "" };
 }
 
@@ -199,11 +226,9 @@ export function useAppRoute(): AppRoute {
 
   useEffect(() => {
     const changed = () => setRoute(currentRoute());
-    window.addEventListener("hashchange", changed);
     window.addEventListener("popstate", changed);
     window.addEventListener(routeChangedEvent, changed);
     return () => {
-      window.removeEventListener("hashchange", changed);
       window.removeEventListener("popstate", changed);
       window.removeEventListener(routeChangedEvent, changed);
     };
