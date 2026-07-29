@@ -41,6 +41,7 @@ public sealed class ProjectRequestContextFactory(
         OntologyResourcePortraitPresenter presenter = new(ontology);
         AuthorizedPresentedPortraitService portraits = new(reads, presenter);
         SemanticResourcePageService semanticPages = new(reads, presenter, ontology);
+        ProjectPotentialDuplicateService potentialDuplicates = new(store, reads, ontology);
         AuthorizedProjectCollectionService collections = new(
             new ProjectCollectionService(store, store, ontology));
 
@@ -51,6 +52,7 @@ public sealed class ProjectRequestContextFactory(
             reads,
             portraits,
             semanticPages,
+            potentialDuplicates,
             collections);
     }
 }
