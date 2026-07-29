@@ -1,37 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { errorText } from "../api/errorText";
-import { factographApi } from "../api/factographApi";
-import type { ProjectOverview } from "../api/models";
+import { projectQueryOptions } from "./queryOptions";
 
 export function useProject(token: string) {
-  const [project, setProject] = useState<ProjectOverview | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [revision, setRevision] = useState(0);
+  const query = useQuery(projectQueryOptions(token));
 
-  const reload = useCallback(() => setRevision(value => value + 1), []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-
-    factographApi.getProject(token, controller.signal)
-      .then(setProject)
-      .catch(reason => {
-        if (!controller.signal.aborted) {
-          setProject(null);
-          setError(errorText(reason));
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      });
-
-    return () => controller.abort();
-  }, [token, revision]);
-
-  return { project, loading, error, reload };
+  return {
+    project: query.data ?? null,
+    loading: query.isFetching,
+    error: query.error === null ? null : errorText(query.error),
+    reload: () => {
+      void query.refetch();
+    }
+  };
 }
