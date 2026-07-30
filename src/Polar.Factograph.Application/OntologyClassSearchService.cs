@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using Polar.Factograph.Storage;
 
@@ -26,6 +27,8 @@ public sealed class OntologyClassSearchService(
         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
     private readonly ProjectResourceSummaryReader _summaries =
         new(rdfStore, searchStore, ontology);
+    private readonly ConcurrentDictionary<SummaryCacheKey, Lazy<Task<ProjectResourceSummary[]>>>
+        _summaryCache = new();
 
     public IReadOnlyList<OntologyClassSearchSuggestion> Suggest(
         string query,
@@ -82,29 +85,34 @@ public sealed class OntologyClassSearchService(
 
         IReadOnlySet<string> readable = ProjectAuthorization.RequireSearch(access);
         HashSet<string> cassetteIds = ProjectSearchRules.EffectiveCassetteIds(readable);
-        HashSet<string> resourceIds = await FindResourceIdsAsync(
+        SummaryCacheKey cacheKey = new(
             classId,
-            cassetteIds,
-            cancellationToken);
-        List<ProjectResourceSummary> summaries = [];
-        foreach (string resourceId in resourceIds)
+            preferredLanguage,
+            string.Join('\n', cassetteIds.Order(StringComparer.Ordinal)));
+        Lazy<Task<ProjectResourceSummary[]>> lazy = _summaryCache.GetOrAdd(
+            cacheKey,
+            _ => new Lazy<Task<ProjectResourceSummary[]>>(
+                () => BuildOrderedSummariesAsync(
+                    classId,
+                    cassetteIds,
+                    preferredLanguage,
+                    CancellationToken.None),
+                LazyThreadSafetyMode.ExecutionAndPublication));
+        Task<ProjectResourceSummary[]> cacheTask = lazy.Value;
+        ProjectResourceSummary[] ordered;
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            ProjectResourceSummary? summary = await _summaries.ReadAsync(
-                resourceId,
-                cassetteIds,
-                preferredLanguage,
-                cancellationToken);
-            if (summary is not null)
+            ordered = await cacheTask.WaitAsync(cancellationToken);
+        }
+        catch
+        {
+            if (cacheTask.IsFaulted || cacheTask.IsCanceled)
             {
-                summaries.Add(summary);
+                _summaryCache.TryRemove(cacheKey, out _);
             }
+            throw;
         }
 
-        ProjectResourceSummary[] ordered = summaries
-            .OrderBy(summary => summary.DisplayName, StringComparer.CurrentCultureIgnoreCase)
-            .ThenBy(summary => summary.ResourceId, StringComparer.Ordinal)
-            .ToArray();
         ProjectResourceSearchResult[] page = ordered
             .Skip(offset)
             .Take(limit)
@@ -125,6 +133,37 @@ public sealed class OntologyClassSearchService(
             offset,
             limit,
             page);
+    }
+
+    private async Task<ProjectResourceSummary[]> BuildOrderedSummariesAsync(
+        string classId,
+        IReadOnlySet<string> cassetteIds,
+        string preferredLanguage,
+        CancellationToken cancellationToken)
+    {
+        HashSet<string> resourceIds = await FindResourceIdsAsync(
+            classId,
+            cassetteIds,
+            cancellationToken);
+        List<ProjectResourceSummary> summaries = [];
+        foreach (string resourceId in resourceIds)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ProjectResourceSummary? summary = await _summaries.ReadAsync(
+                resourceId,
+                cassetteIds,
+                preferredLanguage,
+                cancellationToken);
+            if (summary is not null)
+            {
+                summaries.Add(summary);
+            }
+        }
+
+        return summaries
+            .OrderBy(summary => summary.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(summary => summary.ResourceId, StringComparer.Ordinal)
+            .ToArray();
     }
 
     private async Task<HashSet<string>> FindResourceIdsAsync(
@@ -237,4 +276,9 @@ public sealed class OntologyClassSearchService(
     {
         public bool ExactMatch => Suggestion.ExactMatch;
     }
+
+    private sealed record SummaryCacheKey(
+        string ClassId,
+        string PreferredLanguage,
+        string CassetteFingerprint);
 }
