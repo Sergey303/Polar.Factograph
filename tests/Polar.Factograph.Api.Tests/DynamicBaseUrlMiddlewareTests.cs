@@ -52,23 +52,23 @@ public sealed class DynamicBaseUrlMiddlewareTests
         const string source =
             "<!doctype html><html><head><title>Polar.Factograph</title></head><body></body></html>";
         ResourceHtmlMetadata metadata = new(
-            "Альфа <Бета>",
-            "Описание & проверка",
-            "Каталог \"СО РАН\"",
+            "Alpha <Beta>",
+            "Description & check",
+            "Archive \"RAS\"",
             "https://example.org/factograph/resource/iiss%3A%2F%2F1");
 
         string html = DynamicBaseUrlMiddleware.InsertResourceMetadata(source, metadata);
 
         Assert.Contains(
-            "<title>Альфа &lt;Бета&gt; — Каталог &quot;СО РАН&quot;</title>",
+            "<title>Alpha &lt;Beta&gt; — Archive &quot;RAS&quot;</title>",
             html,
             StringComparison.Ordinal);
         Assert.Contains(
-            "<meta name=\"description\" content=\"Описание &amp; проверка\">",
+            "<meta name=\"description\" content=\"Description &amp; check\">",
             html,
             StringComparison.Ordinal);
         Assert.Contains(
-            "<meta property=\"og:title\" content=\"Альфа &lt;Бета&gt;\">",
+            "<meta property=\"og:title\" content=\"Alpha &lt;Beta&gt;\">",
             html,
             StringComparison.Ordinal);
         Assert.Contains(
