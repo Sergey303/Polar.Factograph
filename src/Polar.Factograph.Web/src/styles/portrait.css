@@ -79,6 +79,60 @@
   text-transform: uppercase;
 }
 
+.technical-resource-details {
+  min-width: 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.technical-resource-details > summary {
+  width: fit-content;
+  padding: 0.25rem 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.technical-resource-details > dl {
+  display: grid;
+  gap: 0;
+  margin: 0.45rem 0 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.65rem;
+  background: var(--surface-soft);
+}
+
+.technical-resource-details dl > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.65fr) minmax(0, 1.35fr);
+  gap: 0.8rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.technical-resource-details dl > div:last-child {
+  border-bottom: 0;
+}
+
+.technical-resource-details dt {
+  font-size: 0.74rem;
+}
+
+.technical-resource-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.technical-resource-details code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .relations {
   display: grid;
   gap: 0.45rem;
@@ -186,7 +240,8 @@
   }
 
   .field-list > div,
-  .relation-row {
+  .relation-row,
+  .technical-resource-details dl > div {
     grid-template-columns: 1fr;
     gap: 0.3rem;
   }
