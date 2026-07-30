@@ -38,9 +38,9 @@ public sealed class SearchResponsePresentationTests
         ProjectResourceTypeSearchPage source = new(
             "person",
             "Персона",
-            Total: 1,
-            Offset: 0,
-            Limit: 50,
+            1,
+            0,
+            50,
             [
                 new ProjectResourceSearchResult(
                     "resource-1",
