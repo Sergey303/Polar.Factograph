@@ -168,29 +168,13 @@ public sealed class ResourceHtmlMetadataProvider(
                 continue;
             }
 
-            if (!access.ReadableCassetteIds.Contains(location.CassetteId))
+            if (!access.ReadableCassetteIds.Contains(location.CassetteId) ||
+                DocumentImageSelector.Select(location, contentTypes) is null)
             {
                 continue;
             }
 
-            (string Variant, string? Path)[] candidates =
-            [
-                ("normal", location.NormalPreviewPath),
-                ("medium", location.MediumPreviewPath),
-                ("small", location.SmallPreviewPath),
-                ("icon", location.IconPreviewPath),
-                ("original", location.OriginalPath)
-            ];
-            foreach ((string variant, string? path) in candidates)
-            {
-                if (path is null ||
-                    !contentTypes.Resolve(path).StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                return DocumentContentUrl(request, documentUri, variant);
-            }
+            return DocumentImageUrl(request, documentUri);
         }
 
         return null;
@@ -203,16 +187,13 @@ public sealed class ResourceHtmlMetadataProvider(
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal);
 
-    private static string DocumentContentUrl(
-        HttpRequest request,
-        string documentUri,
-        string variant)
+    private static string DocumentImageUrl(HttpRequest request, string documentUri)
     {
         string pathBase = request.PathBase.HasValue
             ? request.PathBase.Value!.TrimEnd('/')
             : string.Empty;
-        return $"{request.Scheme}://{request.Host}{pathBase}/api/documents/content" +
-            $"?uri={Uri.EscapeDataString(documentUri)}&variant={Uri.EscapeDataString(variant)}";
+        return $"{request.Scheme}://{request.Host}{pathBase}/api/documents/image" +
+            $"?uri={Uri.EscapeDataString(documentUri)}";
     }
 
     private static bool IsTerminalPredicate(string predicate, string name) =>
