@@ -264,18 +264,15 @@ public sealed class SemanticResourcePageService(
                 cancellationToken);
             if (target is not null && graph.IsComplexRelation(target))
             {
-                if (!graph.IsTechnical(target))
-                {
-                    await AddComplexRelationTargetsAsync(
-                        result,
-                        graph,
-                        root,
-                        target,
-                        BuildComplexRelationLabel(
-                            graph.PropertyLabel(link.Predicate),
-                            graph.TypeLabel(target)),
-                        cancellationToken);
-                }
+                await AddComplexRelationTargetsAsync(
+                    result,
+                    graph,
+                    root,
+                    target,
+                    BuildComplexRelationLabel(
+                        graph.PropertyLabel(link.Predicate),
+                        graph.TypeLabel(target)),
+                    cancellationToken);
                 continue;
             }
 
@@ -294,18 +291,15 @@ public sealed class SemanticResourcePageService(
                 cancellationToken);
             if (source is not null && graph.IsComplexRelation(source))
             {
-                if (!graph.IsTechnical(source))
-                {
-                    await AddComplexRelationTargetsAsync(
-                        result,
-                        graph,
-                        root,
-                        source,
-                        BuildComplexRelationLabel(
-                            graph.InversePropertyLabel(link.Predicate),
-                            graph.TypeLabel(source)),
-                        cancellationToken);
-                }
+                await AddComplexRelationTargetsAsync(
+                    result,
+                    graph,
+                    root,
+                    source,
+                    BuildComplexRelationLabel(
+                        graph.InversePropertyLabel(link.Predicate),
+                        graph.TypeLabel(source)),
+                    cancellationToken);
                 continue;
             }
 
