@@ -23,33 +23,44 @@ public sealed record OntologyValidationReport(
 
 public sealed class OntologyValidationService
 {
+    private const string EntityTypeRoot = "http://fogid.net/o/sys-obj";
+
     public OntologyValidationReport Validate(OntologyCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        List<OntologyValidationIssue> issues = [];
-        Dictionary<string, OntologyTerm> terms = catalog.Terms
-            .ToDictionary(term => term.Id, StringComparer.Ordinal);
+        return Validate(catalog.Terms);
+    }
 
-        foreach (OntologyTerm term in catalog.Terms.OrderBy(term => term.Id, StringComparer.Ordinal))
+    public OntologyValidationReport Validate(IEnumerable<OntologyTerm> sourceTerms)
+    {
+        ArgumentNullException.ThrowIfNull(sourceTerms);
+        Dictionary<string, OntologyTerm> terms = sourceTerms
+            .ToDictionary(term => term.Id, StringComparer.Ordinal);
+        List<OntologyValidationIssue> issues = [];
+
+        ValidateEntityRoot(terms, issues);
+        foreach (OntologyTerm term in terms.Values.OrderBy(term => term.Id, StringComparer.Ordinal))
         {
             ValidateLabel(term, issues);
             switch (term.Kind)
             {
                 case OntologyTermKind.Class:
-                    ValidateClass(term, terms, issues);
+                    ValidateClassReference(term, terms, issues);
                     break;
                 case OntologyTermKind.DatatypeProperty:
-                    ValidateProperty(term, terms, catalog, resourceProperty: false, issues);
+                    ValidateProperty(term, terms, resourceProperty: false, issues);
                     break;
                 case OntologyTermKind.ObjectProperty:
-                    ValidateProperty(term, terms, catalog, resourceProperty: true, issues);
+                    ValidateProperty(term, terms, resourceProperty: true, issues);
                     break;
-                case OntologyTermKind.EnumerationValue:
+                case OntologyTermKind.EnumerationType:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(term.Kind), term.Kind, null);
             }
         }
+
+        ValidateClassCycles(terms, issues);
 
         OntologyValidationIssue[] ordered = issues
             .OrderBy(issue => issue.Severity == OntologyValidationSeverities.Error ? 0 : 1)
@@ -57,10 +68,27 @@ public sealed class OntologyValidationService
             .ThenBy(issue => issue.Code, StringComparer.Ordinal)
             .ToArray();
         return new OntologyValidationReport(
-            catalog.Terms.Count,
+            terms.Count,
             ordered.Count(issue => issue.Severity == OntologyValidationSeverities.Error),
             ordered.Count(issue => issue.Severity == OntologyValidationSeverities.Warning),
             ordered);
+    }
+
+    private static void ValidateEntityRoot(
+        IReadOnlyDictionary<string, OntologyTerm> terms,
+        ICollection<OntologyValidationIssue> issues)
+    {
+        if (terms.TryGetValue(EntityTypeRoot, out OntologyTerm? root) &&
+            root.Kind == OntologyTermKind.Class)
+        {
+            return;
+        }
+
+        AddError(
+            issues,
+            "missing_entity_root",
+            EntityTypeRoot,
+            "Корневой класс системных сущностей отсутствует или не является классом; универсальный интерфейс не сможет определить доступные типы сущностей.");
     }
 
     private static void ValidateLabel(
@@ -79,7 +107,7 @@ public sealed class OntologyValidationService
             "Термин не имеет подписи; публичный интерфейс будет показывать его URI.");
     }
 
-    private static void ValidateClass(
+    private static void ValidateClassReference(
         OntologyTerm term,
         IReadOnlyDictionary<string, OntologyTerm> terms,
         ICollection<OntologyValidationIssue> issues)
@@ -109,10 +137,58 @@ public sealed class OntologyValidationService
         }
     }
 
+    private static void ValidateClassCycles(
+        IReadOnlyDictionary<string, OntologyTerm> terms,
+        ICollection<OntologyValidationIssue> issues)
+    {
+        Dictionary<string, int> states = new(StringComparer.Ordinal);
+        Dictionary<string, int> positions = new(StringComparer.Ordinal);
+        List<string> stack = [];
+
+        foreach (OntologyTerm term in terms.Values.Where(term => term.Kind == OntologyTermKind.Class))
+        {
+            if (!states.ContainsKey(term.Id))
+            {
+                Visit(term.Id);
+            }
+        }
+
+        void Visit(string classId)
+        {
+            states[classId] = 1;
+            positions[classId] = stack.Count;
+            stack.Add(classId);
+
+            OntologyTerm current = terms[classId];
+            string? parentId = current.ParentClassId;
+            if (parentId is not null &&
+                terms.TryGetValue(parentId, out OntologyTerm? parent) &&
+                parent.Kind == OntologyTermKind.Class)
+            {
+                if (!states.TryGetValue(parentId, out int state))
+                {
+                    Visit(parentId);
+                }
+                else if (state == 1 && positions.TryGetValue(parentId, out int start))
+                {
+                    string[] cycle = stack.Skip(start).Append(parentId).ToArray();
+                    AddError(
+                        issues,
+                        "cyclic_class_hierarchy",
+                        classId,
+                        $"Обнаружен цикл наследования классов: {string.Join(" -> ", cycle)}.");
+                }
+            }
+
+            stack.RemoveAt(stack.Count - 1);
+            positions.Remove(classId);
+            states[classId] = 2;
+        }
+    }
+
     private static void ValidateProperty(
         OntologyTerm term,
         IReadOnlyDictionary<string, OntologyTerm> terms,
-        OntologyCatalog catalog,
         bool resourceProperty,
         ICollection<OntologyValidationIssue> issues)
     {
@@ -187,7 +263,7 @@ public sealed class OntologyValidationService
             }
         }
 
-        if (hasValidRange && !HasConcreteEntityTarget(term, catalog))
+        if (hasValidRange && !HasConcreteEntityTarget(term, terms))
         {
             AddError(
                 issues,
@@ -206,31 +282,56 @@ public sealed class OntologyValidationService
         }
     }
 
-    private static bool HasConcreteEntityTarget(OntologyTerm property, OntologyCatalog catalog) =>
-        catalog.Terms.Any(candidate =>
+    private static bool HasConcreteEntityTarget(
+        OntologyTerm property,
+        IReadOnlyDictionary<string, OntologyTerm> terms) => terms.Values.Any(candidate =>
             candidate.Kind == OntologyTermKind.Class &&
-            candidate.IsEntityType &&
             !candidate.IsAbstract &&
-            property.Ranges.Any(range => catalog.AncestorsAndSelf(candidate.Id)
-                .Contains(range, StringComparer.Ordinal)));
+            IsDescendantOrSelf(candidate.Id, EntityTypeRoot, terms) &&
+            property.Ranges.Any(range => IsDescendantOrSelf(candidate.Id, range, terms)));
+
+    private static bool IsDescendantOrSelf(
+        string classId,
+        string ancestorId,
+        IReadOnlyDictionary<string, OntologyTerm> terms)
+    {
+        HashSet<string> visited = new(StringComparer.Ordinal);
+        string? currentId = classId;
+        while (currentId is not null && visited.Add(currentId))
+        {
+            if (string.Equals(currentId, ancestorId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (!terms.TryGetValue(currentId, out OntologyTerm? current) ||
+                current.Kind != OntologyTermKind.Class)
+            {
+                return false;
+            }
+            currentId = current.ParentClassId;
+        }
+
+        return false;
+    }
 
     private static void AddError(
         ICollection<OntologyValidationIssue> issues,
         string code,
         string termId,
         string message) => issues.Add(new OntologyValidationIssue(
-            OntologyValidationSeverities.Error,
-            code,
-            termId,
-            message));
+        OntologyValidationSeverities.Error,
+        code,
+        termId,
+        message));
 
     private static void AddWarning(
         ICollection<OntologyValidationIssue> issues,
         string code,
         string termId,
         string message) => issues.Add(new OntologyValidationIssue(
-            OntologyValidationSeverities.Warning,
-            code,
-            termId,
-            message));
+        OntologyValidationSeverities.Warning,
+        code,
+        termId,
+        message));
 }
