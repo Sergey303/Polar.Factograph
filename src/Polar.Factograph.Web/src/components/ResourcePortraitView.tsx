@@ -1,6 +1,9 @@
 import { documentImageUrl } from "../api/factographApi";
 import type { ProjectOverview, SemanticResourcePage } from "../api/models";
-import { resourceDocumentUris } from "../app/resourceDocuments";
+import {
+  resourceDocumentUris,
+  singleResourceDocumentUri
+} from "../app/resourceDocuments";
 import { CopyResourceLinkButton } from "./CopyResourceLinkButton";
 import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
@@ -52,9 +55,12 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const page = props.page;
   const portrait = page.portrait;
   const documents = resourceDocumentUris(portrait);
+  const primaryDocument = singleResourceDocumentUri(portrait);
   const title = titleOf(page);
   const siteName = props.project?.name ?? "Polar.Factograph";
-  const metadataImageUrl = documents[0] ? documentImageUrl(documents[0]) : null;
+  const metadataImageUrl = primaryDocument === null
+    ? null
+    : documentImageUrl(primaryDocument);
 
   return (
     <>
@@ -74,6 +80,11 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
           <CopyResourceLinkButton resourceId={portrait.resourceId} />
         </header>
 
+        {documents.length > 1 && (
+          <div className="notice warning" role="status">
+            У сущности указано несколько медиавложений. Они показаны ниже, но основное медиа не выбрано автоматически.
+          </div>
+        )}
         <DocumentSection
           uris={documents}
           token={props.token}
