@@ -195,7 +195,8 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
             portrait.Type,
             graph.TypeLabel(portrait),
             RoleLabel: null,
-            documentUri);
+            documentUri,
+            graph.HasDocument(portrait));
         result.Add(key, new SemanticRelationEntry(
             key,
             relationLabel,
@@ -235,7 +236,8 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
                 portrait.Type,
                 graph.TypeLabel(portrait),
                 roleLabel,
-                graph.DocumentUri(portrait))));
+                graph.DocumentUri(portrait),
+                graph.HasDocument(portrait))));
     }
 
     private sealed record MemberCandidate(
