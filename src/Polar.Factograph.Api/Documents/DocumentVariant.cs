@@ -5,10 +5,10 @@ namespace Polar.Factograph.Api.Documents;
 public enum DocumentVariant
 {
     Original = 1,
-    Icon = 2,
-    Small = 3,
-    Medium = 4,
-    Normal = 5
+    Small = 2,
+    Medium = 3,
+    Normal = 4,
+    Icon = 5
 }
 
 public static class DocumentVariantSelector
