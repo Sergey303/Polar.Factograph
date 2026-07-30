@@ -2,6 +2,11 @@ namespace Polar.Factograph.Application;
 
 internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph)
 {
+    public Task<IReadOnlyList<SemanticRelationEntry>> CollectAsync(
+        ProjectResourcePortrait root,
+        CancellationToken cancellationToken) =>
+        CollectAsync(root, Array.Empty<string>(), cancellationToken);
+
     public async Task<IReadOnlyList<SemanticRelationEntry>> CollectAsync(
         ProjectResourcePortrait root,
         IEnumerable<string> additionalRelationIds,
