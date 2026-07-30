@@ -32,11 +32,17 @@
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .admin-state.ok {
   color: #23633a;
   background: #e5f6ea;
+}
+
+.admin-state.warning {
+  color: #725000;
+  background: #fff4ce;
 }
 
 .admin-state.danger {
@@ -80,4 +86,139 @@
 
 .admin-table tbody tr:last-child td {
   border-bottom: 0;
+}
+
+.ontology-validation-heading > div:first-child {
+  min-width: 0;
+}
+
+.ontology-validation-heading h2 {
+  margin: 0;
+}
+
+.ontology-validation-heading p {
+  max-width: 48rem;
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.ontology-validation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+}
+
+.ontology-validation-summary > div {
+  min-width: 0;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+  background: var(--surface-soft);
+}
+
+.ontology-validation-summary > div.warning {
+  border-color: #ead38b;
+  background: #fffaf0;
+}
+
+.ontology-validation-summary > div.danger {
+  border-color: #efc7c7;
+  background: #fff6f6;
+}
+
+.ontology-validation-summary dt {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.ontology-validation-summary dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ontology-validation-empty {
+  margin: 0.85rem 0 0;
+}
+
+.ontology-validation-details {
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.ontology-validation-details > summary {
+  width: fit-content;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.ontology-validation-details > ol {
+  display: grid;
+  max-height: min(30rem, 55vh);
+  gap: 0.55rem;
+  margin: 0.45rem 0 0;
+  padding: 0 0.2rem 0 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.ontology-validation-details li {
+  min-width: 0;
+  padding: 0.7rem 0.75rem;
+  border-left: 3px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface-soft);
+}
+
+.ontology-validation-details li.error {
+  border-left-color: var(--danger);
+}
+
+.ontology-validation-details li.warning {
+  border-left-color: #b78300;
+}
+
+.ontology-validation-issue-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ontology-validation-issue-heading strong {
+  font-size: 0.8rem;
+}
+
+.ontology-validation-issue-heading code {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.ontology-validation-details li > p {
+  margin: 0.35rem 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.ontology-term-id {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 620px) {
+  .ontology-validation-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-state {
+    white-space: normal;
+  }
 }
