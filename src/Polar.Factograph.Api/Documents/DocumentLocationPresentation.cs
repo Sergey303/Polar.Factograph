@@ -23,7 +23,7 @@ public static class DocumentLocationPresentation
         ArgumentNullException.ThrowIfNull(access);
 
         bool exposeCassette = access.HasProjectRight(ProjectRights.RebuildIndex) ||
-            access.HasCassetteRight(location.CassetteId, CassetteRights.ReplaceDocuments);
+            CanReplace(location.CassetteId, access);
         return new DocumentLocationResponse(
             exposeCassette ? location.CassetteId : null,
             exposeCassette ? location.CassetteName : null,
@@ -33,4 +33,12 @@ public static class DocumentLocationPresentation
             location.MediumPreviewPath is not null,
             location.NormalPreviewPath is not null);
     }
+
+    private static bool CanReplace(
+        string cassetteId,
+        ProjectAccessSnapshot access) =>
+        access.Cassettes.TryGetValue(cassetteId, out CassetteAccessSnapshot? snapshot) &&
+        snapshot.Enabled &&
+        snapshot.AllowWrite &&
+        snapshot.Has(CassetteRights.ReplaceDocuments);
 }
