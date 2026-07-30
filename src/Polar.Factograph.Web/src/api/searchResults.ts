@@ -1,19 +1,14 @@
 import type { ResourceSearchResult, SearchEvidence } from "./models";
 
-function evidenceKey(value: SearchEvidence): string {
-  return `${value.predicate}\u0000${value.language ?? ""}\u0000${value.value}`;
-}
-
 function mergeEvidence(
   first: SearchEvidence[],
   second: SearchEvidence[]
 ): SearchEvidence[] {
   const result = [...first];
-  const known = new Set(first.map(evidenceKey));
+  const known = new Set(first.map(evidence => evidence.value));
   for (const evidence of second) {
-    const key = evidenceKey(evidence);
-    if (known.has(key)) continue;
-    known.add(key);
+    if (known.has(evidence.value)) continue;
+    known.add(evidence.value);
     result.push(evidence);
   }
   return result;
