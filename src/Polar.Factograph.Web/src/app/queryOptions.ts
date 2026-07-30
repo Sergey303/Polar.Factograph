@@ -32,7 +32,8 @@ export const queryKeys = {
       : ["collection-contents", token, collectionId] as const,
   adminIndexStatus: (token: string) => ["admin-index-status", token] as const,
   adminPreviewStatus: (token: string) => ["admin-preview-status", token] as const,
-  materializationSummary: (token: string) => ["materialization-summary", token] as const
+  materializationSummary: (token: string) => ["materialization-summary", token] as const,
+  ontologyValidation: (token: string) => ["ontology-validation", token] as const
 };
 
 export function projectQueryOptions(token: string) {
@@ -135,5 +136,13 @@ export function materializationSummaryQueryOptions(token: string) {
   return queryOptions({
     queryKey: queryKeys.materializationSummary(token),
     queryFn: ({ signal }) => adminApi.getMaterializationSummary(token, signal)
+  });
+}
+
+export function ontologyValidationQueryOptions(token: string) {
+  return queryOptions({
+    queryKey: queryKeys.ontologyValidation(token),
+    queryFn: ({ signal }) => adminApi.getOntologyValidation(token, signal),
+    staleTime: 5 * 60 * 1000
   });
 }
