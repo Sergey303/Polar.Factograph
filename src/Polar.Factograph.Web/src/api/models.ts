@@ -84,10 +84,10 @@ export interface PresentedInverseLink {
 }
 
 export interface ResourceProvenance {
-  sourceRecordId: string;
   sourceCassetteId: string;
-  sourceFogPath: string;
-  modifiedAt: string;
+  sourceRecordId: string | null;
+  sourceFogPath: string | null;
+  modifiedAt: string | null;
 }
 
 export interface ResourcePortrait {
@@ -97,7 +97,7 @@ export interface ResourcePortrait {
   literals: PresentedLiteral[];
   directLinks: PresentedDirectLink[];
   inverseLinks: PresentedInverseLink[];
-  provenance: ResourceProvenance;
+  provenance: ResourceProvenance | null;
 }
 
 export interface SemanticResourceLink {
