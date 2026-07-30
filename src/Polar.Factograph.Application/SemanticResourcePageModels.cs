@@ -11,7 +11,8 @@ public sealed record SemanticResourceLink(
     string? DisplayDate = null,
     string? SortDate = null,
     string? GroupKey = null,
-    string? GroupLabel = null);
+    string? GroupLabel = null,
+    bool HasDocument = false);
 
 public sealed record SemanticRelationMember(
     string ResourceId,
@@ -19,7 +20,8 @@ public sealed record SemanticRelationMember(
     string? Type,
     string? TypeLabel,
     string? RoleLabel,
-    string? DocumentUri = null);
+    string? DocumentUri = null,
+    bool HasDocument = false);
 
 public sealed record SemanticRelationEntry(
     string Key,
@@ -41,7 +43,8 @@ public sealed record SemanticPhotoCard(
     string? ContextResourceId,
     string? ContextLabel,
     string? DisplayDate = null,
-    string? SortDate = null);
+    string? SortDate = null,
+    bool HasDocument = false);
 
 public sealed record PresentedSemanticResourcePage(
     string RequestedResourceId,
