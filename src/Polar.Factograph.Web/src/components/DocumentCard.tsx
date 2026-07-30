@@ -26,9 +26,10 @@ export function DocumentCard({
   allowReplace = false
 }: DocumentCardProps) {
   const asset = useDocumentAsset(uri, token, previewPolicy);
-  const canReplace = allowReplace && asset.location !== null && hasCassetteRight(
+  const sourceCassetteId = asset.location?.cassetteId ?? null;
+  const canReplace = allowReplace && sourceCassetteId !== null && hasCassetteRight(
     project,
-    asset.location.cassetteId,
+    sourceCassetteId,
     "replaceDocuments"
   );
 
@@ -77,7 +78,7 @@ export function DocumentCard({
         {allowReplace && (
           <>
             <span className="muted mono">{uri}</span>
-            {asset.location && (
+            {asset.location?.cassetteName && (
               <span className="muted">Кассета: {asset.location.cassetteName}</span>
             )}
           </>
