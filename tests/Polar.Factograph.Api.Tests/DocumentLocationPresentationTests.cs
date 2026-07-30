@@ -42,6 +42,22 @@ public sealed class DocumentLocationPresentationTests
     }
 
     [Fact]
+    public void Present_HidesCassetteWhenEffectiveAccessDisallowsWrite()
+    {
+        DocumentLocationResponse response = DocumentLocationPresentation.Present(
+            Location(),
+            Access(
+                projectRights: Rights(ProjectRights.Read),
+                sourceRights: Rights(
+                    CassetteRights.Read,
+                    CassetteRights.ReplaceDocuments),
+                sourceAllowWrite: false));
+
+        Assert.Null(response.CassetteId);
+        Assert.Null(response.CassetteName);
+    }
+
+    [Fact]
     public void Present_DoesNotUseReplaceRightFromAnotherCassette()
     {
         DocumentLocationResponse response = DocumentLocationPresentation.Present(
@@ -89,7 +105,9 @@ public sealed class DocumentLocationPresentationTests
     private static ProjectAccessSnapshot Access(
         IReadOnlySet<string> projectRights,
         IReadOnlySet<string> sourceRights,
-        IReadOnlySet<string>? otherRights = null) => new(
+        IReadOnlySet<string>? otherRights = null,
+        bool? sourceAllowWrite = null,
+        bool? otherAllowWrite = null) => new(
         "user",
         IsMember: true,
         projectRights,
@@ -98,12 +116,14 @@ public sealed class DocumentLocationPresentationTests
             ["cassette-a"] = new CassetteAccessSnapshot(
                 "cassette-a",
                 Enabled: true,
-                AllowWrite: sourceRights.Contains(CassetteRights.ReplaceDocuments),
+                AllowWrite: sourceAllowWrite ??
+                    sourceRights.Contains(CassetteRights.ReplaceDocuments),
                 sourceRights),
             ["cassette-b"] = new CassetteAccessSnapshot(
                 "cassette-b",
                 Enabled: true,
-                AllowWrite: otherRights?.Contains(CassetteRights.ReplaceDocuments) ?? false,
+                AllowWrite: otherAllowWrite ??
+                    otherRights?.Contains(CassetteRights.ReplaceDocuments) ?? false,
                 otherRights ?? Rights(CassetteRights.Read))
         },
         DefaultWriteCassetteId: null);
