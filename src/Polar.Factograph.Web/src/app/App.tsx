@@ -67,7 +67,7 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
     : "view";
   const resource = useResourcePage(resourceId, auth.token);
   const canonicalResourceId = resource.page?.portrait.resourceId ?? null;
-  const canAdmin = project.project?.projectRights.includes("rebuildIndex") ?? false;
+  const canAdmin = project.project?.canAdmin ?? false;
   const pageLoading = route.page === "search"
     ? searchClassId === null
       ? search.loading
