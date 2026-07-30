@@ -5,7 +5,7 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
     public Task<IReadOnlyList<SemanticRelationEntry>> CollectAsync(
         ProjectResourcePortrait root,
         CancellationToken cancellationToken) =>
-        CollectAsync(root, Array.Empty<string>(), cancellationToken);
+        CollectAsync(root, graph.ObservedRelationIds, cancellationToken);
 
     public async Task<IReadOnlyList<SemanticRelationEntry>> CollectAsync(
         ProjectResourcePortrait root,
