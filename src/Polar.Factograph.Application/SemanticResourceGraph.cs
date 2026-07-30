@@ -81,13 +81,12 @@ internal sealed class SemanticResourceGraph(
     public string InversePropertyLabel(string predicate) =>
         ontology.InverseLabelOf(predicate, preferredLanguage) ?? PropertyLabel(predicate);
 
+    public bool HasDocument(ProjectResourcePortrait portrait) =>
+        DocumentUris(portrait).Any();
+
     public string? DocumentUri(ProjectResourcePortrait portrait)
     {
-        string[] values = portrait.Literals
-            .Select(field => field.Value.Trim())
-            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
+        string[] values = DocumentUris(portrait).ToArray();
         return values.Length == 1 ? values[0] : null;
     }
 
@@ -209,8 +208,15 @@ internal sealed class SemanticResourceGraph(
             date?.Display,
             date?.SortKey,
             effectiveGroupKey,
-            effectiveGroupLabel);
+            effectiveGroupLabel,
+            HasDocument(portrait));
     }
+
+    private static IEnumerable<string> DocumentUris(ProjectResourcePortrait portrait) =>
+        portrait.Literals
+            .Select(field => field.Value.Trim())
+            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.Ordinal);
 
     private bool IsDateProperty(string predicate)
     {
