@@ -1,0 +1,75 @@
+.semantic-content-table-flat {
+  min-width: 48rem;
+  table-layout: auto;
+}
+
+.semantic-content-table-flat th,
+.semantic-content-table-flat td {
+  overflow-wrap: anywhere;
+}
+
+.semantic-content-table-flat .semantic-relation-column,
+.semantic-content-table-flat .semantic-relation-cell {
+  width: 11rem;
+}
+
+.semantic-content-table-flat .semantic-type-column,
+.semantic-content-table-flat .semantic-type-cell {
+  width: 10rem;
+}
+
+.semantic-content-table-flat .semantic-role-column,
+.semantic-content-table-flat .semantic-role-cell {
+  width: 11rem;
+}
+
+.semantic-content-table-flat .semantic-section-column,
+.semantic-content-table-flat .semantic-section-cell {
+  width: 11rem;
+}
+
+.semantic-content-table-flat .semantic-relation-cell,
+.semantic-content-table-flat .semantic-type-cell,
+.semantic-content-table-flat .semantic-role-cell,
+.semantic-content-table-flat .semantic-section-cell {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.semantic-content-table-flat .semantic-object-cell a {
+  color: inherit;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.semantic-content-table-flat .semantic-object-cell a:hover,
+.semantic-content-table-flat .semantic-object-cell a:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.semantic-relation-member small {
+  order: -1;
+}
+
+@media (max-width: 720px) {
+  .semantic-content-table-flat {
+    min-width: 0;
+  }
+
+  .semantic-content-table-flat tr {
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+  }
+
+  .semantic-content-table-flat td:not(.semantic-media-column) {
+    grid-column: 2;
+  }
+
+  .semantic-content-table-flat tr:not(:has(.semantic-media-column)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .semantic-content-table-flat tr:not(:has(.semantic-media-column)) td {
+    grid-column: 1;
+  }
+}
