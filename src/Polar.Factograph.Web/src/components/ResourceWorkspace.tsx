@@ -15,8 +15,6 @@ import { ResourcePortraitView } from "./ResourcePortraitView";
 import { ResourceWorkspaceActions } from "./ResourceWorkspaceActions";
 import { ResourceWorkspaceModePane } from "./ResourceWorkspaceModePane";
 
-const photoDocumentType = "http://fogid.net/o/photo-doc";
-
 interface ResourceWorkspaceProps {
   project: ProjectOverview | null;
   page: SemanticResourcePage | null;
@@ -33,6 +31,10 @@ interface ResourceWorkspaceProps {
 export function ResourceWorkspace(props: ResourceWorkspaceProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const portrait = props.page?.portrait ?? null;
+  const documentUris = useMemo(
+    () => portrait === null ? [] : resourceDocumentUris(portrait),
+    [portrait]
+  );
   const writable = useMemo(
     () => cassettesWithRight(props.project, "writeMetadata"),
     [props.project]
@@ -125,7 +127,7 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
   }
 
   if (props.mode === "edit" || props.mode === "document") {
-    const editingPhoto = props.mode === "edit" && portrait?.type === photoDocumentType;
+    const editingAttachedMedia = props.mode === "edit" && documentUris.length > 0;
     return (
       <>
         <ResourceWorkspaceModePane
@@ -137,14 +139,13 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
           onCancel={() => props.onModeChange("view", true)}
           onSaved={saved}
         />
-        {editingPhoto && portrait !== null && (
+        {editingAttachedMedia && (
           <DocumentSection
-            uris={resourceDocumentUris(portrait)}
+            uris={documentUris}
             token={props.token}
             project={props.project}
-            title="Изображение"
+            title="Медиа"
             previewPolicy="largest-preview"
-            imageDocument
             allowReplace
           />
         )}
