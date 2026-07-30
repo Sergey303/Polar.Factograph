@@ -8,15 +8,16 @@ interface OntologyClassSuggestionsProps {
 }
 
 export function OntologyClassSuggestions(props: OntologyClassSuggestionsProps) {
-  if (props.loading && props.suggestions.length === 0) {
-    return <div className="ontology-class-suggestions loading">Ищем подходящие категории…</div>;
-  }
   if (props.error !== null || props.suggestions.length === 0) {
     return null;
   }
 
   return (
-    <section className="ontology-class-suggestions" aria-label="Категории из онтологии">
+    <section
+      className="ontology-class-suggestions"
+      aria-label="Категории из онтологии"
+      aria-busy={props.loading}
+    >
       <span className="ontology-class-caption">Категории</span>
       <div>
         {props.suggestions.map(suggestion => (
