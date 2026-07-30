@@ -1,9 +1,11 @@
 import type {
+  SemanticRelationEntry,
   SemanticResourceLink,
   SemanticResourcePage
 } from "../api/models";
 import {
   linkBlock,
+  relationEntryBlock,
   SemanticContentBlocks,
   type SemanticContentBlockDefinition
 } from "./SemanticContentBlocks";
@@ -16,6 +18,12 @@ interface RelationGroup {
   key: string;
   title: string;
   links: SemanticResourceLink[];
+}
+
+interface RelationEntryGroup {
+  key: string;
+  title: string;
+  entries: SemanticRelationEntry[];
 }
 
 function linkIdentity(link: SemanticResourceLink): string {
@@ -61,6 +69,38 @@ function relationBlocks(page: SemanticResourcePage): SemanticContentBlockDefinit
     .map(group => linkBlock(`relation:${group.key}`, group.title, group.links));
 }
 
+function relationEntryBlocks(
+  entries: SemanticRelationEntry[]
+): SemanticContentBlockDefinition[] {
+  const groups = new Map<string, RelationEntryGroup>();
+  const seen = new Set<string>();
+
+  for (const entry of entries) {
+    if (seen.has(entry.key)) continue;
+    seen.add(entry.key);
+
+    const key = entry.groupKey.trim() || entry.key;
+    const title = entry.groupLabel.trim() || entry.title;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.entries.push(entry);
+    } else {
+      groups.set(key, { key, title, entries: [entry] });
+    }
+  }
+
+  return [...groups.values()]
+    .sort((left, right) => left.title.localeCompare(right.title, "ru"))
+    .map(group => relationEntryBlock(
+      `relation:${group.key}`,
+      group.title,
+      group.entries));
+}
+
 export function SemanticResourceSections({ page }: SemanticResourceSectionsProps) {
-  return <SemanticContentBlocks blocks={relationBlocks(page)} />;
+  const entries = page.entries ?? [];
+  const blocks = entries.length > 0
+    ? relationEntryBlocks(entries)
+    : relationBlocks(page);
+  return <SemanticContentBlocks blocks={blocks} />;
 }
