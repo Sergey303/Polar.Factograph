@@ -212,13 +212,7 @@ internal sealed class SemanticResourceGraph(
             HasDocument(portrait));
     }
 
-    private static IEnumerable<string> DocumentUris(ProjectResourcePortrait portrait) =>
-        portrait.Literals
-            .Select(field => field.Value.Trim())
-            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
-            .Distinct(StringComparer.Ordinal);
-
-    private bool IsDateProperty(string predicate)
+    public bool IsDateProperty(string predicate)
     {
         if (string.Equals(predicate, SemanticBridgeVocabulary.FromDate, StringComparison.Ordinal) ||
             string.Equals(predicate, SemanticBridgeVocabulary.ToDate, StringComparison.Ordinal) ||
@@ -231,4 +225,10 @@ internal sealed class SemanticResourceGraph(
             term is { Kind: OntologyTermKind.DatatypeProperty } &&
             term.Ranges.Contains(SemanticBridgeVocabulary.DateDataType, StringComparer.Ordinal);
     }
+
+    private static IEnumerable<string> DocumentUris(ProjectResourcePortrait portrait) =>
+        portrait.Literals
+            .Select(field => field.Value.Trim())
+            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.Ordinal);
 }
