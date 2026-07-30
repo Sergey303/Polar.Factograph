@@ -27,6 +27,6 @@ public sealed class ProjectOverviewHomeResourcesTests
 
         ProjectOverview overview = ProjectOverviewPresentation.Present(project, access);
 
-        Assert.Equal(["collection-1", "photo-1"], overview.HomeResourceIds);
+        Assert.Equal(new[] { "collection-1", "photo-1" }, overview.HomeResourceIds);
     }
 }
