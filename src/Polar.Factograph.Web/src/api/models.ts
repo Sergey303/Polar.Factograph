@@ -13,8 +13,7 @@ export interface ProjectCassetteOverview {
 export interface ProjectOverview {
   projectId: string;
   name: string;
-  userId: string;
-  projectRights: string[];
+  canAdmin: boolean;
   cassettes: ProjectCassetteOverview[];
   defaultWriteCassetteId: string | null;
 }
