@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AdminDialog } from "../components/AdminDialog";
 import { AuthenticationPage } from "../components/AuthenticationPage";
 import { EntityCreatePage } from "../components/EntityCreatePage";
+import { HomePage } from "../components/HomePage";
 import { ResourcePage } from "../components/ResourcePage";
 import { SearchPage } from "../components/SearchPage";
 import { TopBar } from "../components/TopBar";
@@ -68,10 +69,17 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
   const resource = useResourcePage(resourceId, auth.token);
   const canonicalResourceId = resource.page?.portrait.resourceId ?? null;
   const canAdmin = project.project?.canAdmin ?? false;
+  const homeActive = route.page === "search" &&
+    route.query.length === 0 &&
+    route.typeId === null &&
+    route.classId === null &&
+    (project.project?.homeResourceIds?.length ?? 0) > 0;
   const pageLoading = route.page === "search"
-    ? searchClassId === null
-      ? search.loading
-      : classSearch.pageLoading
+    ? homeActive
+      ? false
+      : searchClassId === null
+        ? search.loading
+        : classSearch.pageLoading
     : route.page === "resource"
       ? resource.refreshing
       : false;
@@ -161,7 +169,14 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
         onAdmin={() => setAdminOpen(true)}
       />
 
-      {route.page === "search" && (
+      {homeActive && project.project && (
+        <HomePage
+          project={project.project}
+          token={auth.token}
+          onSearch={submitSearch}
+        />
+      )}
+      {route.page === "search" && !homeActive && (
         <SearchPage
           search={search}
           classSearch={classSearch}
