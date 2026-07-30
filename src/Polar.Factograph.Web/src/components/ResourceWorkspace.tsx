@@ -51,10 +51,20 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
       ? resourceDraftFromPortrait(portrait, cassetteId)
       : emptyResourceDraft(cassetteId),
   [props.mode, portrait, cassetteId]);
+  const modeDenied = props.project !== null && (
+    (props.mode === "edit" || props.mode === "relations") && writable.length === 0 ||
+    props.mode === "document" && documentCassettes.length === 0
+  );
 
   useEffect(() => {
     setNotice(null);
   }, [portrait?.resourceId]);
+
+  useEffect(() => {
+    if (modeDenied) {
+      props.onModeChange("view", true);
+    }
+  }, [modeDenied, props.onModeChange]);
 
   function saved(result: ResourceWriteResponse): void {
     setNotice(result.indexReady
@@ -75,6 +85,18 @@ export function ResourceWorkspace(props: ResourceWorkspaceProps) {
       : "Связь сохранена, но индекс требует восстановления.");
     props.onModeChange("view", true);
     props.onReload();
+  }
+
+  if (modeDenied) {
+    return (
+      <ResourcePortraitView
+        page={props.page}
+        loading={props.loading}
+        error={props.error}
+        token={props.token}
+        project={props.project}
+      />
+    );
   }
 
   if ((props.mode === "edit" || props.mode === "relations") && portrait === null) {
