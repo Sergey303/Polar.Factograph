@@ -3,10 +3,6 @@ import { documentContentUrl } from "../../api/factographApi";
 import type { DocumentVariant } from "../../api/models";
 import { followAppLink, resourceHref } from "../../app/routes";
 import "../../styles/semantic-content-flat.css";
-import {
-  PageVirtualizedChunks,
-  type PageVirtualizedChunkDefinition
-} from "../PageVirtualizedChunks";
 import type {
   BlockKind,
   BlockLayout,
@@ -23,9 +19,9 @@ interface SemanticContentBlocksProps {
 const layoutLabels: Record<BlockLayout, string> = {
   list: "Список",
   table: "Таблица",
-  small: "Маленькие значки",
-  medium: "Средние значки",
-  large: "Большие значки"
+  small: "Маленькие фотографии",
+  medium: "Средние фотографии",
+  large: "Большие фотографии"
 };
 
 const layoutIcons: Record<BlockLayout, string> = {
@@ -42,9 +38,8 @@ function layoutsFor(kind: BlockKind): BlockLayout[] {
     : ["list", "table", "small", "medium", "large"];
 }
 
-function defaultLayout(kind: BlockKind, timeline: boolean): BlockLayout {
-  if (timeline || kind === "text") return "list";
-  return "small";
+function defaultLayout(kind: BlockKind): BlockLayout {
+  return kind === "media" ? "small" : "list";
 }
 
 function layoutStorageKey(blockKey: string, timeline: boolean): string {
@@ -56,7 +51,7 @@ function storedLayout(
   kind: BlockKind,
   timeline: boolean
 ): BlockLayout {
-  const fallback = defaultLayout(kind, timeline);
+  const fallback = defaultLayout(kind);
   try {
     const value = window.localStorage.getItem(layoutStorageKey(blockKey, timeline));
     return layoutsFor(kind).includes(value as BlockLayout)
@@ -73,16 +68,16 @@ function useBlockLayout(blockKey: string, kind: BlockKind, timeline: boolean) {
 
   useEffect(() => {
     if (!layoutsFor(kind).includes(layout)) {
-      setLayout(defaultLayout(kind, timeline));
+      setLayout(defaultLayout(kind));
     }
-  }, [kind, layout, timeline]);
+  }, [kind, layout]);
 
   function change(next: BlockLayout): void {
     setLayout(next);
     try {
       window.localStorage.setItem(layoutStorageKey(blockKey, timeline), next);
     } catch {
-      // A private browser session may reject local storage; the view still changes.
+      // The selected view still works when local storage is unavailable.
     }
   }
 
@@ -95,7 +90,6 @@ function BlockLayoutMenu(props: {
   layout: BlockLayout;
   onChange: (layout: BlockLayout) => void;
 }) {
-  const available = layoutsFor(props.kind);
   return (
     <details className="block-layout-menu">
       <summary title={`Вид: ${layoutLabels[props.layout]}`}>
@@ -103,7 +97,7 @@ function BlockLayoutMenu(props: {
         <span className="block-layout-current">{layoutLabels[props.layout]}</span>
       </summary>
       <div className="block-layout-options" role="menu" aria-label={`Вид блока «${props.title}»`}>
-        {available.map(layout => (
+        {layoutsFor(props.kind).map(layout => (
           <button
             key={layout}
             className={layout === props.layout ? "selected" : ""}
@@ -151,7 +145,7 @@ function SemanticThumbnail(props: {
   }, [source]);
 
   if (source === null || failed) {
-    return <span className="semantic-item-placeholder" aria-hidden="true">◇</span>;
+    return <span className="semantic-document-glyph" aria-hidden="true">▧</span>;
   }
 
   return (
@@ -164,76 +158,68 @@ function SemanticThumbnail(props: {
   );
 }
 
-function ResourceLink(props: {
-  resourceId: string;
-  displayName: string;
-  documentUri: string | null;
-  hideDisplayName: boolean;
-}) {
-  const hidden = props.hideDisplayName || props.documentUri !== null;
+function EntityLink(props: { resourceId: string; displayName: string }) {
   return (
-    <a
-      href={resourceHref(props.resourceId)}
-      onClick={followAppLink}
-      aria-label={hidden ? "Открыть связанный документ" : undefined}
-    >
-      {hidden ? "Открыть" : props.displayName}
+    <a href={resourceHref(props.resourceId)} onClick={followAppLink}>
+      {props.displayName}
     </a>
   );
 }
 
-function RelationMembers({ members }: { members: SemanticContentMember[] }) {
+function MediaLink(props: {
+  item: SemanticContentItem;
+  layout: BlockLayout;
+  className: string;
+}) {
   return (
-    <div className="semantic-relation-members">
-      {members.map((member, index) => (
-        <span
-          className="semantic-relation-member"
-          key={`${member.resourceId}:${member.roleLabel ?? ""}:${index}`}
-        >
-          {member.roleLabel && <small>{member.roleLabel}</small>}
-          <ResourceLink
-            resourceId={member.resourceId}
-            displayName={member.displayName}
-            documentUri={member.documentUri}
-            hideDisplayName={member.hideDisplayName}
-          />
-        </span>
-      ))}
-    </div>
+    <a
+      className={props.className}
+      href={resourceHref(props.item.resourceId)}
+      onClick={followAppLink}
+      aria-label="Открыть фотографию"
+    >
+      <SemanticThumbnail documentUri={props.item.documentUri} layout={props.layout} />
+    </a>
   );
 }
 
-function ItemName(props: {
-  item: SemanticContentItem;
-  showSection: boolean;
-}) {
-  const relation = props.item.members !== null;
+function publicMembers(item: SemanticContentItem): SemanticContentMember[] {
+  if (item.members === null) return [];
+  return item.members.filter(member => !member.hasDocument);
+}
+
+function primaryMember(item: SemanticContentItem): SemanticContentMember | null {
+  if (item.hasDocument) return null;
+  return publicMembers(item)[0] ?? null;
+}
+
+function secondaryMembers(item: SemanticContentItem): SemanticContentMember[] {
+  const members = publicMembers(item);
+  return item.hasDocument ? members : members.slice(1);
+}
+
+function ItemFacts({ item }: { item: SemanticContentItem }) {
+  const primary = primaryMember(item);
+  const related = secondaryMembers(item);
   return (
-    <div className="semantic-item-name">
-      {relation ? (
-        props.showSection && (
-          <>
-            <strong className="semantic-relation-title">{props.item.title}</strong>
-            {props.item.detail && <span>{props.item.detail}</span>}
-          </>
-        )
-      ) : (
-        <>
-          <ResourceLink
-            resourceId={props.item.resourceId}
-            displayName={props.item.title}
-            documentUri={props.item.documentUri}
-            hideDisplayName={props.item.hideDisplayName}
-          />
-          {props.showSection && props.item.relationLabel && (
-            <span>{props.item.relationLabel}</span>
-          )}
-          {props.item.typeLabel && <span>{props.item.typeLabel}</span>}
-          {props.item.detail && <span>{props.item.detail}</span>}
-        </>
+    <div className="semantic-public-facts">
+      {!item.hasDocument && item.members === null && (
+        <strong><EntityLink resourceId={item.resourceId} displayName={item.title} /></strong>
       )}
-      {props.item.members && <RelationMembers members={props.item.members} />}
-      {props.showSection && <small>{props.item.sectionTitle}</small>}
+      {primary && (
+        <strong><EntityLink resourceId={primary.resourceId} displayName={primary.displayName} /></strong>
+      )}
+      {related.map(member => (
+        <EntityLink
+          key={member.resourceId}
+          resourceId={member.resourceId}
+          displayName={member.displayName}
+        />
+      ))}
+      {item.values.map((value, index) => (
+        <span key={`${value}:${index}`}>{value}</span>
+      ))}
+      {item.displayDate && <time>{item.displayDate}</time>}
     </div>
   );
 }
@@ -241,154 +227,134 @@ function ItemName(props: {
 interface FlatTableRow {
   key: string;
   item: SemanticContentItem;
-  member: SemanticContentMember | null;
-}
-
-interface TableColumnVisibility {
-  media: boolean;
-  relation: boolean;
-  type: boolean;
-  role: boolean;
-  section: boolean;
+  related: SemanticContentMember | null;
+  value: string | null;
+  first: boolean;
 }
 
 function flattenTableRows(items: SemanticContentItem[]): FlatTableRow[] {
-  return items.flatMap(item => {
-    if (item.members === null || item.members.length === 0) {
-      return [{ key: item.key, item, member: null }];
+  const rows: FlatTableRow[] = [];
+  for (const item of items) {
+    const related = secondaryMembers(item);
+    const count = Math.max(1, related.length, item.values.length);
+    for (let index = 0; index < count; index += 1) {
+      rows.push({
+        key: `${item.key}:${index}`,
+        item,
+        related: related[index] ?? null,
+        value: item.values[index] ?? null,
+        first: index === 0
+      });
     }
-
-    return item.members.map((member, index) => ({
-      key: `${item.key}:${member.resourceId}:${member.roleLabel ?? ""}:${index}`,
-      item,
-      member
-    }));
-  });
+  }
+  return rows;
 }
 
-function rowDocumentUri(row: FlatTableRow): string | null {
-  return row.member === null ? row.item.documentUri : row.member.documentUri;
+interface TableColumns {
+  related: boolean;
+  values: boolean;
+  date: boolean;
 }
 
-function rowResourceId(row: FlatTableRow): string {
-  return row.member?.resourceId ?? row.item.resourceId;
-}
-
-function rowDisplayName(row: FlatTableRow): string {
-  return row.member?.displayName ?? row.item.title;
-}
-
-function rowHideDisplayName(row: FlatTableRow): boolean {
-  return row.member?.hideDisplayName ?? row.item.hideDisplayName;
-}
-
-function rowRelation(row: FlatTableRow, showSection: boolean): string | null {
-  if (!showSection) return null;
-  return row.item.members === null
-    ? row.item.relationLabel
-    : row.item.title;
-}
-
-function rowType(row: FlatTableRow, showSection: boolean): string | null {
-  if (row.item.members !== null && !showSection) return null;
-  return row.item.typeLabel;
-}
-
-function tableColumns(
-  items: SemanticContentItem[],
-  showSection: boolean
-): TableColumnVisibility {
-  const rows = flattenTableRows(items);
+function tableColumns(items: SemanticContentItem[]): TableColumns {
   return {
-    media: rows.some(row => rowDocumentUri(row) !== null),
-    relation: showSection && rows.some(row => rowRelation(row, true) !== null),
-    type: rows.some(row => rowType(row, showSection) !== null),
-    role: rows.some(row => row.member?.roleLabel != null),
-    section: showSection
+    related: items.some(item => secondaryMembers(item).length > 0),
+    values: items.some(item => item.values.length > 0),
+    date: items.some(item => item.displayDate !== null)
   };
+}
+
+function TableMaterial({ row }: { row: FlatTableRow }) {
+  if (!row.first) return null;
+  if (row.item.hasDocument) {
+    return <MediaLink item={row.item} layout="table" className="semantic-table-material" />;
+  }
+  const primary = primaryMember(row.item);
+  if (primary) {
+    return <EntityLink resourceId={primary.resourceId} displayName={primary.displayName} />;
+  }
+  return <EntityLink resourceId={row.item.resourceId} displayName={row.item.title} />;
 }
 
 function TableItems(props: {
   items: SemanticContentItem[];
-  showSection: boolean;
-  hideTableHeader?: boolean;
-  columns?: TableColumnVisibility;
+  hideHeader?: boolean;
+  columns?: TableColumns;
 }) {
   const rows = flattenTableRows(props.items);
-  const columns = props.columns ?? tableColumns(props.items, props.showSection);
-
+  const columns = props.columns ?? tableColumns(props.items);
   return (
     <div className="semantic-table-wrap">
-      <table className="semantic-content-table semantic-content-table-flat">
-        {!props.hideTableHeader && (
+      <table className="semantic-content-table semantic-public-table">
+        {!props.hideHeader && (
           <thead>
             <tr>
-              {columns.media && (
-                <th className="semantic-media-column">
-                  <span className="visually-hidden">Изображение</span>
-                </th>
-              )}
-              {columns.relation && <th className="semantic-relation-column">Связь</th>}
-              {columns.type && <th className="semantic-type-column">Тип</th>}
-              {columns.role && <th className="semantic-role-column">Роль</th>}
-              <th>Объект</th>
-              {columns.section && <th className="semantic-section-column">Раздел</th>}
-              <th className="semantic-date-cell">Дата</th>
+              <th>Материал</th>
+              {columns.related && <th>Связано с</th>}
+              {columns.values && <th>Сведения</th>}
+              {columns.date && <th>Дата</th>}
             </tr>
           </thead>
         )}
         <tbody>
-          {rows.map(row => {
-            const documentUri = rowDocumentUri(row);
-            const hideDisplayName = rowHideDisplayName(row);
-            return (
-              <tr key={row.key}>
-                {columns.media && (
-                  <td className="semantic-media-column">
-                    {documentUri === null ? (
-                      <span><SemanticThumbnail documentUri={null} layout="table" /></span>
-                    ) : (
-                      <a
-                        href={resourceHref(rowResourceId(row))}
-                        onClick={followAppLink}
-                        tabIndex={-1}
-                        aria-label="Открыть связанный документ"
-                      >
-                        <SemanticThumbnail documentUri={documentUri} layout="table" />
-                      </a>
-                    )}
-                  </td>
-                )}
-                {columns.relation && (
-                  <td className="semantic-relation-cell">
-                    {rowRelation(row, props.showSection) ?? "—"}
-                  </td>
-                )}
-                {columns.type && (
-                  <td className="semantic-type-cell">
-                    {rowType(row, props.showSection) ?? "—"}
-                  </td>
-                )}
-                {columns.role && (
-                  <td className="semantic-role-cell">{row.member?.roleLabel ?? "—"}</td>
-                )}
-                <td className="semantic-object-cell">
-                  <ResourceLink
-                    resourceId={rowResourceId(row)}
-                    displayName={rowDisplayName(row)}
-                    documentUri={documentUri}
-                    hideDisplayName={hideDisplayName}
-                  />
+          {rows.map(row => (
+            <tr key={row.key}>
+              <td className="semantic-material-cell"><TableMaterial row={row} /></td>
+              {columns.related && (
+                <td>
+                  {row.related && (
+                    <EntityLink
+                      resourceId={row.related.resourceId}
+                      displayName={row.related.displayName}
+                    />
+                  )}
                 </td>
-                {columns.section && (
-                  <td className="semantic-section-cell">{row.item.sectionTitle}</td>
-                )}
-                <td className="semantic-date-cell">{row.item.displayDate ?? "—"}</td>
-              </tr>
-            );
-          })}
+              )}
+              {columns.values && <td>{row.value}</td>}
+              {columns.date && <td className="semantic-date-cell">{row.first ? row.item.displayDate : null}</td>}
+            </tr>
+          ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ListItems({ items }: { items: SemanticContentItem[] }) {
+  return (
+    <div className="semantic-content-list semantic-public-list">
+      {items.map(item => (
+        <article
+          className={`semantic-content-list-item ${item.hasDocument ? "has-media" : "text-only"}`}
+          key={item.key}
+        >
+          {item.hasDocument && (
+            <MediaLink item={item} layout="small" className="semantic-list-preview" />
+          )}
+          <ItemFacts item={item} />
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function IconItems(props: {
+  items: SemanticContentItem[];
+  layout: "small" | "medium" | "large";
+}) {
+  return (
+    <div className={`semantic-icon-grid semantic-icon-grid-${props.layout} semantic-public-grid`}>
+      {props.items.map(item => (
+        <article
+          className={`semantic-icon-card ${item.hasDocument ? "has-media" : "text-only"}`}
+          key={item.key}
+        >
+          {item.hasDocument && (
+            <MediaLink item={item} layout={props.layout} className="semantic-icon-preview" />
+          )}
+          <ItemFacts item={item} />
+        </article>
+      ))}
     </div>
   );
 }
@@ -396,194 +362,71 @@ function TableItems(props: {
 function BlockItems(props: {
   items: SemanticContentItem[];
   layout: BlockLayout;
-  showSection: boolean;
   hideTableHeader?: boolean;
-  tableColumns?: TableColumnVisibility;
+  columns?: TableColumns;
 }) {
   if (props.items.length === 0) return null;
-
   if (props.layout === "table") {
     return (
       <TableItems
         items={props.items}
-        showSection={props.showSection}
-        hideTableHeader={props.hideTableHeader}
-        columns={props.tableColumns}
+        hideHeader={props.hideTableHeader}
+        columns={props.columns}
       />
     );
   }
-
   if (props.layout === "small" || props.layout === "medium" || props.layout === "large") {
-    return (
-      <div className={`semantic-icon-grid semantic-icon-grid-${props.layout}`}>
-        {props.items.map(item => (
-          <article className="semantic-icon-card" key={item.key}>
-            <a
-              className="semantic-icon-preview"
-              href={resourceHref(item.resourceId)}
-              onClick={followAppLink}
-              aria-label={item.hideDisplayName || item.documentUri !== null
-                ? "Открыть связанный документ"
-                : `Открыть ${item.title}`}
-            >
-              <SemanticThumbnail documentUri={item.documentUri} layout={props.layout} />
-            </a>
-            <ItemName item={item} showSection={props.showSection} />
-            {item.displayDate && <time>{item.displayDate}</time>}
-          </article>
-        ))}
-      </div>
-    );
+    return <IconItems items={props.items} layout={props.layout} />;
   }
-
-  return (
-    <div className="semantic-content-list">
-      {props.items.map(item => (
-        <article className="semantic-content-list-item" key={item.key}>
-          {item.documentUri !== null && (
-            <a
-              className="semantic-list-preview"
-              href={resourceHref(item.resourceId)}
-              onClick={followAppLink}
-              tabIndex={-1}
-              aria-label="Открыть связанный документ"
-            >
-              <SemanticThumbnail documentUri={item.documentUri} layout="small" />
-            </a>
-          )}
-          <div>
-            {item.displayDate && <time>{item.displayDate}</time>}
-            <ItemName item={item} showSection={props.showSection} />
-          </div>
-        </article>
-      ))}
-    </div>
-  );
+  return <ListItems items={props.items} />;
 }
 
 function pageSize(layout: BlockLayout): number {
   switch (layout) {
-    case "table":
-      return 20;
-    case "small":
-      return 24;
-    case "medium":
-      return 12;
-    case "large":
-      return 6;
-    default:
-      return 12;
+    case "table": return 30;
+    case "small": return 30;
+    case "medium": return 18;
+    case "large": return 10;
+    default: return 18;
   }
 }
 
-function timelineChunkSize(layout: BlockLayout): number {
-  switch (layout) {
-    case "table":
-      return 40;
-    case "medium":
-      return 12;
-    case "large":
-      return 6;
-    default:
-      return 24;
-  }
-}
-
-function estimatedTimelineItemHeight(layout: BlockLayout): number {
-  switch (layout) {
-    case "table":
-      return 52;
-    case "small":
-      return 180;
-    case "medium":
-      return 260;
-    case "large":
-      return 380;
-    default:
-      return 78;
-  }
-}
-
-function TimelineItemSequence(props: {
-  items: SemanticContentItem[];
-  layout: BlockLayout;
-  columns: TableColumnVisibility;
-  hideFirstTableHeader?: boolean;
-  eagerFirst?: boolean;
+function Pagination(props: {
+  page: number;
+  pageCount: number;
+  from: number;
+  to: number;
+  total: number;
+  onChange: (page: number) => void;
 }) {
-  const chunks = useMemo<PageVirtualizedChunkDefinition[]>(() => {
-    const size = timelineChunkSize(props.layout);
-    const estimate = estimatedTimelineItemHeight(props.layout);
-    const result: PageVirtualizedChunkDefinition[] = [];
-    for (let from = 0; from < props.items.length; from += size) {
-      const items = props.items.slice(from, from + size);
-      const hideTableHeader = props.layout === "table" &&
-        (props.hideFirstTableHeader === true || from > 0);
-      const contentKey = items.map(item => item.key).join("\n");
-      result.push({
-        key: `${props.layout}:${contentKey}`,
-        estimatedHeight: items.length * estimate +
-          (props.layout === "table" && !hideTableHeader ? 34 : 0),
-        eager: props.eagerFirst === true && from === 0,
-        content: (
-          <BlockItems
-            items={items}
-            layout={props.layout}
-            showSection
-            hideTableHeader={hideTableHeader}
-            tableColumns={props.columns}
-          />
-        )
-      });
-    }
-    return result;
-  }, [
-    props.columns,
-    props.eagerFirst,
-    props.hideFirstTableHeader,
-    props.items,
-    props.layout
-  ]);
-
-  return <PageVirtualizedChunks chunks={chunks} />;
-}
-
-function TimelineBlockBody(props: {
-  items: SemanticContentItem[];
-  layout: BlockLayout;
-}) {
-  const firstUndated = props.items.findIndex(item => item.sortDate === null);
-  const dated = firstUndated < 0 ? props.items : props.items.slice(0, firstUndated);
-  const undated = firstUndated < 0 ? [] : props.items.slice(firstUndated);
-  const columns = useMemo(() => tableColumns(props.items, true), [props.items]);
-
+  if (props.pageCount <= 1) return null;
   return (
-    <>
-      <TimelineItemSequence
-        items={dated}
-        layout={props.layout}
-        columns={columns}
-        eagerFirst
-      />
-      {undated.length > 0 && (
-        <>
-          <div className="timeline-undated-label">Без указанной даты</div>
-          <TimelineItemSequence
-            items={undated}
-            layout={props.layout}
-            columns={columns}
-            hideFirstTableHeader={dated.length > 0}
-            eagerFirst={dated.length === 0}
-          />
-        </>
-      )}
-    </>
+    <nav className="semantic-block-pagination" aria-label="Страницы материалов">
+      <button
+        className="button ghost compact"
+        type="button"
+        disabled={props.page === 0}
+        onClick={() => props.onChange(Math.max(0, props.page - 1))}
+      >
+        Предыдущие
+      </button>
+      <span>{props.from + 1}–{props.to} из {props.total}</span>
+      <button
+        className="button ghost compact"
+        type="button"
+        disabled={props.page >= props.pageCount - 1}
+        onClick={() => props.onChange(Math.min(props.pageCount - 1, props.page + 1))}
+      >
+        Следующие
+      </button>
+    </nav>
   );
 }
 
-function GroupedBlockBody(props: {
+function PagedBlockBody(props: {
   block: SemanticContentBlockDefinition;
   layout: BlockLayout;
+  timeline: boolean;
 }) {
   const [page, setPage] = useState(0);
   const size = pageSize(props.layout);
@@ -591,6 +434,12 @@ function GroupedBlockBody(props: {
   const currentPage = Math.min(page, pageCount - 1);
   const from = currentPage * size;
   const visible = props.block.items.slice(from, from + size);
+  const firstUndated = props.timeline
+    ? visible.findIndex(item => item.sortDate === null)
+    : -1;
+  const dated = firstUndated < 0 ? visible : visible.slice(0, firstUndated);
+  const undated = firstUndated < 0 ? [] : visible.slice(firstUndated);
+  const columns = useMemo(() => tableColumns(visible), [visible]);
 
   useEffect(() => {
     setPage(0);
@@ -598,28 +447,26 @@ function GroupedBlockBody(props: {
 
   return (
     <>
-      <BlockItems items={visible} layout={props.layout} showSection={false} />
-      {pageCount > 1 && (
-        <nav className="semantic-block-pagination" aria-label={`Страницы блока «${props.block.title}»`}>
-          <button
-            className="button ghost compact"
-            type="button"
-            disabled={currentPage === 0}
-            onClick={() => setPage(value => Math.max(0, value - 1))}
-          >
-            Предыдущие
-          </button>
-          <span>{from + 1}–{Math.min(from + size, props.block.items.length)} из {props.block.items.length}</span>
-          <button
-            className="button ghost compact"
-            type="button"
-            disabled={currentPage >= pageCount - 1}
-            onClick={() => setPage(value => Math.min(pageCount - 1, value + 1))}
-          >
-            Следующие
-          </button>
-        </nav>
+      <BlockItems items={dated} layout={props.layout} columns={columns} />
+      {undated.length > 0 && (
+        <>
+          <div className="timeline-undated-label">Без указанной даты</div>
+          <BlockItems
+            items={undated}
+            layout={props.layout}
+            hideTableHeader={dated.length > 0}
+            columns={columns}
+          />
+        </>
       )}
+      <Pagination
+        page={currentPage}
+        pageCount={pageCount}
+        from={from}
+        to={Math.min(from + size, props.block.items.length)}
+        total={props.block.items.length}
+        onChange={setPage}
+      />
     </>
   );
 }
@@ -629,11 +476,7 @@ function SemanticContentBlock(props: {
   timeline?: boolean;
 }) {
   const timeline = props.timeline === true;
-  const layoutState = useBlockLayout(
-    props.block.key,
-    props.block.kind,
-    timeline);
-
+  const layoutState = useBlockLayout(props.block.key, props.block.kind, timeline);
   return (
     <section className={`semantic-content-block ${timeline ? "timeline-block" : ""}`}>
       <header className="semantic-content-block-header">
@@ -648,12 +491,11 @@ function SemanticContentBlock(props: {
           onChange={layoutState.change}
         />
       </header>
-
-      {timeline ? (
-        <TimelineBlockBody items={props.block.items} layout={layoutState.layout} />
-      ) : (
-        <GroupedBlockBody block={props.block} layout={layoutState.layout} />
-      )}
+      <PagedBlockBody
+        block={props.block}
+        layout={layoutState.layout}
+        timeline={timeline}
+      />
     </section>
   );
 }
@@ -665,9 +507,7 @@ function timelineSort(left: SemanticContentItem, right: SemanticContentItem): nu
     const byDate = left.sortDate.localeCompare(right.sortDate, "ru");
     if (byDate !== 0) return byDate;
   }
-  return left.sectionTitle.localeCompare(right.sectionTitle, "ru") ||
-    left.title.localeCompare(right.title, "ru") ||
-    left.key.localeCompare(right.key, "ru");
+  return left.title.localeCompare(right.title, "ru") || left.key.localeCompare(right.key, "ru");
 }
 
 function SectionsMenu(props: {
@@ -675,54 +515,11 @@ function SectionsMenu(props: {
   selected: Set<string>;
   onChange: (selected: Set<string>) => void;
 }) {
-  const [query, setQuery] = useState("");
-  const allSelected = props.selected.size === props.blocks.length;
-  const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
-  const visibleBlocks = normalizedQuery.length === 0
-    ? props.blocks
-    : props.blocks.filter(block =>
-        block.title.toLocaleLowerCase("ru-RU").includes(normalizedQuery));
-  const searchable = props.blocks.length >= 8;
-
   return (
-    <details
-      className="semantic-sections-menu"
-      onToggle={event => {
-        if (!event.currentTarget.open) setQuery("");
-      }}
-    >
-      <summary>
-        {allSelected
-          ? `Разделы: все ${props.blocks.length}`
-          : `Разделы: ${props.selected.size} из ${props.blocks.length}`}
-      </summary>
+    <details className="semantic-sections-menu">
+      <summary>Разделы: {props.selected.size} из {props.blocks.length}</summary>
       <div className="semantic-sections-popover">
-        <div className="semantic-sections-actions">
-          <button
-            type="button"
-            onClick={() => props.onChange(new Set(props.blocks.map(block => block.key)))}
-          >
-            Выбрать все
-          </button>
-          <button type="button" onClick={() => props.onChange(new Set())}>
-            Снять все
-          </button>
-        </div>
-        {searchable && (
-          <label className="semantic-sections-search">
-            <span className="visually-hidden">Найти раздел</span>
-            <input
-              type="search"
-              value={query}
-              autoComplete="off"
-              placeholder="Найти раздел…"
-              onChange={event => setQuery(event.target.value)}
-            />
-          </label>
-        )}
-        {visibleBlocks.length === 0 ? (
-          <div className="semantic-sections-no-results">Разделы не найдены</div>
-        ) : visibleBlocks.map(block => (
+        {props.blocks.map(block => (
           <label key={block.key}>
             <input
               type="checkbox"
@@ -743,40 +540,35 @@ function SectionsMenu(props: {
   );
 }
 
-function hideCurrentEntity(
+function prepareBlocks(
   blocks: SemanticContentBlockDefinition[],
   currentResourceId: string | undefined
 ): SemanticContentBlockDefinition[] {
   if (!currentResourceId) return blocks;
-
-  return blocks.map(block => ({
-    ...block,
-    items: block.items.flatMap(item => {
-      if (item.members === null) return [item];
-
-      const members = item.members.filter(member =>
-        member.resourceId !== currentResourceId);
-      if (members.length === 0) return [];
-      if (members.length === item.members.length) return [item];
-
-      if (item.resourceId !== currentResourceId) {
-        return [{ ...item, members }];
+  return blocks.map(block => {
+    const items: SemanticContentItem[] = [];
+    for (const item of block.items) {
+      if (item.members === null) {
+        items.push(item);
+        continue;
       }
-
-      const preview = members.find(member => member.documentUri === item.documentUri) ??
-        members.find(member => member.documentUri !== null) ??
-        members[0];
-      if (!preview) return [];
-
-      return [{
-        ...item,
-        resourceId: preview.resourceId,
-        documentUri: preview.documentUri,
-        hideDisplayName: preview.hideDisplayName,
-        members
-      }];
-    })
-  }));
+      const members = item.members.filter(member => member.resourceId !== currentResourceId);
+      if (members.length === 0 && !item.hasDocument) continue;
+      let next = { ...item, members };
+      if (item.resourceId === currentResourceId) {
+        const replacement = members.find(member => member.hasDocument) ?? members[0];
+        if (!replacement) continue;
+        next = {
+          ...next,
+          resourceId: replacement.resourceId,
+          documentUri: replacement.documentUri,
+          hasDocument: replacement.hasDocument
+        };
+      }
+      items.push(next);
+    }
+    return { ...block, items };
+  });
 }
 
 export function SemanticContentBlocks({
@@ -784,7 +576,7 @@ export function SemanticContentBlocks({
   currentResourceId
 }: SemanticContentBlocksProps) {
   const prepared = useMemo(
-    () => hideCurrentEntity(blocks, currentResourceId),
+    () => prepareBlocks(blocks, currentResourceId),
     [blocks, currentResourceId]
   );
   const nonEmpty = useMemo(
@@ -805,24 +597,19 @@ export function SemanticContentBlocks({
     setSelected(new Set(keys));
   }, [nonEmpty]);
 
+  if (nonEmpty.length === 0) return null;
+
   const visibleBlocks = nonEmpty.filter(block => selected.has(block.key));
-  const timelineItems = visibleBlocks
-    .flatMap(block => block.items)
-    .sort(timelineSort);
+  const timelineItems = visibleBlocks.flatMap(block => block.items).sort(timelineSort);
   const timelineBlock: SemanticContentBlockDefinition = {
     key: "$timeline",
     title: "Хронология",
-    kind: timelineItems.some(item =>
-      item.documentUri !== null || item.hideDisplayName)
-      ? "media"
-      : "text",
+    kind: timelineItems.some(item => item.hasDocument) ? "media" : "text",
     items: timelineItems
   };
 
-  if (nonEmpty.length === 0) return null;
-
   return (
-    <div className="semantic-content-sections">
+    <div className="semantic-content-sections semantic-public-content">
       <div className="semantic-page-toolbar">
         <label className="timeline-toggle">
           <input
@@ -832,11 +619,9 @@ export function SemanticContentBlocks({
           />
           <span>Хронология</span>
         </label>
-        <SectionsMenu
-          blocks={nonEmpty}
-          selected={selected}
-          onChange={setSelected}
-        />
+        {nonEmpty.length > 1 && (
+          <SectionsMenu blocks={nonEmpty} selected={selected} onChange={setSelected} />
+        )}
       </div>
 
       {visibleBlocks.length === 0 ? (
