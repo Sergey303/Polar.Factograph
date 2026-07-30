@@ -7,6 +7,7 @@ public sealed record ProjectDefinition
     public required string Name { get; init; }
     public required OntologyDefinition Ontology { get; init; }
     public required IndexDefinition Index { get; init; }
+    public string[] HomeResourceIds { get; init; } = Array.Empty<string>();
     public CassetteDefinition[] Cassettes { get; init; } = Array.Empty<CassetteDefinition>();
     public Dictionary<string, RoleDefinition> Roles { get; init; } = new(StringComparer.Ordinal);
     public MemberDefinition[] Members { get; init; } = Array.Empty<MemberDefinition>();
