@@ -183,11 +183,7 @@ public sealed class ResourceHtmlMetadataImageTests : IDisposable
             ],
             Array.Empty<PresentedResourceDirectLink>(),
             Array.Empty<PresentedResourceInverseLink>(),
-            new ResourceProvenance(
-                Guid.NewGuid(),
-                "cassette",
-                "source.fog",
-                DateTimeOffset.UnixEpoch)),
+            Provenance: null),
         Array.Empty<SemanticPhotoCard>(),
         Array.Empty<SemanticResourceLink>(),
         Array.Empty<SemanticResourceLink>(),
