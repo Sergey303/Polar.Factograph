@@ -57,11 +57,20 @@ Presented incoming links and public search results do not expose source cassette
 
 Ordinary name/word search and ontology class search are separate contracts. Class suggestions never displace a better-ranked entity result. `/api/search/by-type` expands descendants of the selected class and returns one authorized, sorted page of entity summaries. Duplicate suggestions are restricted to the requested class or its descendants.
 
+The internal search model keeps the matched predicate, language, source cassette, and ranking diagnostics. The public name/word response returns only the distinct visible matched literal values needed for the result snippet. Raw predicate identifiers and evidence language metadata do not leave the application layer.
+
 The ontology write-schema route returns localized classes and their inherited writable properties. Each property contains its stable id, display label, literal/resource kind, range identifiers, and localized enumeration choices. It requires project `read` and never returns the ontology path, raw XML, members, roles, or cassette configuration.
 
 Collection browsing follows the legacy membership-resource join and is documented in [COLLECTIONS.md](COLLECTIONS.md).
 
-Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon` is optional and falls back to `small` when a cassette has no dedicated icon file. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests. The image route selects the best authorized image representation in the order `normal`, `medium`, `small`, `icon`, then an image original; it does not return a non-image original as an Open Graph image.
+Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon` is optional and falls back to `small` when a cassette has no dedicated icon file. The content route supports HTTP range requests. The image route selects the best authorized image representation in the order `normal`, `medium`, `small`, `icon`, then an image original; it does not return a non-image original as an Open Graph image.
+
+`/api/documents/location` is also capability-shaped:
+
+- every authorized reader receives only availability flags for the original and preview variants;
+- a user with effective `replaceDocuments` access in the source cassette receives its logical id and display name so the editor can authorize replacement;
+- a user with `rebuildIndex` also receives that logical cassette reference;
+- the response never includes local paths, the repeated document URI, or internal folder/document slot numbers.
 
 `/api/project` returns a capability-shaped workspace overview rather than the raw access snapshot:
 
