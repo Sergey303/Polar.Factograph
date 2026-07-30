@@ -1,6 +1,7 @@
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Api.Writes;
 using Polar.Factograph.Application;
+using Polar.Factograph.Domain;
 
 namespace Polar.Factograph.Api.Endpoints;
 
@@ -24,7 +25,9 @@ public static class OntologyEndpoints
         ProjectAccessContext context = await contextFactory.CreateAccessAsync(
             httpContext,
             cancellationToken);
-        _ = ProjectAuthorization.RequireRead(context.Access);
+        _ = ProjectAuthorization.RequireWritableCassetteRight(
+            context.Access,
+            CassetteRights.WriteMetadata);
         OntologyCatalog catalog = await catalogs.GetAsync(
             context.Project.Ontology.Path,
             cancellationToken);
