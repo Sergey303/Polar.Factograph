@@ -6,6 +6,10 @@ import type {
   SemanticResourceLink
 } from "../api/models";
 import { followAppLink, resourceHref } from "../app/routes";
+import {
+  PageVirtualizedChunks,
+  type PageVirtualizedChunkDefinition
+} from "./PageVirtualizedChunks";
 
 type BlockLayout = "list" | "table" | "small" | "medium" | "large";
 type BlockKind = "media" | "text";
@@ -274,63 +278,74 @@ function pageSize(layout: BlockLayout): number {
   }
 }
 
+function timelineChunkSize(layout: BlockLayout): number {
+  return layout === "table" ? 40 : 24;
+}
+
+function estimatedTimelineItemHeight(layout: BlockLayout): number {
+  return layout === "table" ? 52 : 78;
+}
+
+function TimelineItemSequence(props: {
+  items: SemanticContentItem[];
+  layout: BlockLayout;
+  hideFirstTableHeader?: boolean;
+  eagerFirst?: boolean;
+}) {
+  const chunks = useMemo<PageVirtualizedChunkDefinition[]>(() => {
+    const size = timelineChunkSize(props.layout);
+    const estimate = estimatedTimelineItemHeight(props.layout);
+    const result: PageVirtualizedChunkDefinition[] = [];
+    for (let from = 0; from < props.items.length; from += size) {
+      const items = props.items.slice(from, from + size);
+      const hideTableHeader = props.layout === "table" &&
+        (props.hideFirstTableHeader === true || from > 0);
+      result.push({
+        key: `${props.layout}:${items[0]?.key ?? from}`,
+        estimatedHeight: items.length * estimate +
+          (props.layout === "table" && !hideTableHeader ? 34 : 0),
+        eager: props.eagerFirst === true && from === 0,
+        content: (
+          <BlockItems
+            items={items}
+            layout={props.layout}
+            showSection
+            hideTableHeader={hideTableHeader}
+          />
+        )
+      });
+    }
+    return result;
+  }, [props.eagerFirst, props.hideFirstTableHeader, props.items, props.layout]);
+
+  return <PageVirtualizedChunks chunks={chunks} />;
+}
+
 function TimelineBlockBody(props: {
   items: SemanticContentItem[];
   layout: BlockLayout;
 }) {
-  const size = pageSize(props.layout);
-  const [visibleCount, setVisibleCount] = useState(size);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setVisibleCount(size);
-  }, [props.items, size]);
-
-  useEffect(() => {
-    const target = loadMoreRef.current;
-    if (target === null || visibleCount >= props.items.length) return;
-
-    const observer = new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting)) {
-        setVisibleCount(value => Math.min(props.items.length, value + size));
-      }
-    }, { rootMargin: "700px 0px" });
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [props.items.length, size, visibleCount]);
-
-  const visible = props.items.slice(0, visibleCount);
-  const firstUndated = visible.findIndex(item => item.sortDate === null);
-  const dated = firstUndated < 0 ? visible : visible.slice(0, firstUndated);
-  const undated = firstUndated < 0 ? [] : visible.slice(firstUndated);
-  const hasMore = visible.length < props.items.length;
+  const firstUndated = props.items.findIndex(item => item.sortDate === null);
+  const dated = firstUndated < 0 ? props.items : props.items.slice(0, firstUndated);
+  const undated = firstUndated < 0 ? [] : props.items.slice(firstUndated);
 
   return (
     <>
-      <BlockItems items={dated} layout={props.layout} showSection />
+      <TimelineItemSequence
+        items={dated}
+        layout={props.layout}
+        eagerFirst
+      />
       {undated.length > 0 && (
         <>
           <div className="timeline-undated-label">Без указанной даты</div>
-          <BlockItems
+          <TimelineItemSequence
             items={undated}
             layout={props.layout}
-            showSection
-            hideTableHeader={dated.length > 0}
+            hideFirstTableHeader={dated.length > 0}
+            eagerFirst={dated.length === 0}
           />
         </>
-      )}
-      {hasMore && (
-        <div className="timeline-load-more" ref={loadMoreRef}>
-          <span>Показано {visible.length} из {props.items.length}</span>
-          <button
-            className="button ghost compact"
-            type="button"
-            onClick={() => setVisibleCount(value => Math.min(props.items.length, value + size))}
-          >
-            Показать ещё
-          </button>
-        </div>
       )}
     </>
   );
