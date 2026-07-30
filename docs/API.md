@@ -47,6 +47,14 @@ GET /api/documents/image?uri={iiss-uri}
 
 The portrait route returns ontology labels, inverse labels, enumeration display values, and ontology property order while preserving raw RDF identifiers and literal values. The semantic page route additionally returns the canonical public entity plus ontology-grouped links and legacy compatibility arrays. `lang` defaults to `ru`.
 
+Resource provenance is capability-shaped rather than returned uniformly:
+
+- a read-only viewer receives `provenance: null`;
+- a user with `writeMetadata` in the resource's source cassette receives only that cassette's logical id, which lets the editor choose the correct revision target;
+- a user with `rebuildIndex` receives the full source record id, Fog source, and modification time.
+
+Presented incoming links and public search results do not expose source cassette ids. Internal application and storage models retain cassette provenance for authorization, sorting, diagnostics, and write routing.
+
 Ordinary name/word search and ontology class search are separate contracts. Class suggestions never displace a better-ranked entity result. `/api/search/by-type` expands descendants of the selected class and returns one authorized, sorted page of entity summaries. Duplicate suggestions are restricted to the requested class or its descendants.
 
 The ontology write-schema route returns localized classes and their inherited writable properties. Each property contains its stable id, display label, literal/resource kind, range identifiers, and localized enumeration choices. It requires project `read` and never returns the ontology path, raw XML, members, roles, or cassette configuration.
@@ -55,7 +63,15 @@ Collection browsing follows the legacy membership-resource join and is documente
 
 Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon` is optional and falls back to `small` when a cassette has no dedicated icon file. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests. The image route selects the best authorized image representation in the order `normal`, `medium`, `small`, `icon`, then an image original; it does not return a non-image original as an Open Graph image.
 
-`/api/project` returns a safe overview: project identity, effective project rights, readable cassettes, and the default write cassette. It does not expose project members, role definitions, or filesystem paths.
+`/api/project` returns a capability-shaped workspace overview rather than the raw access snapshot:
+
+- every reader receives only the stable project id, project name, and `canAdmin` capability;
+- a read-only viewer receives no cassette list and no default write cassette;
+- an editor receives only readable cassettes whose project configuration and effective access snapshot both allow writing, together with only the cassette rights used by write operations;
+- an administrator with `rebuildIndex` receives all readable cassette rights needed by the administration workspace;
+- the default write cassette is returned only when it is present in the exposed cassette list.
+
+The response does not expose the current user id, the raw project-right set, project members, role definitions, or filesystem paths.
 
 Portrait, semantic page, ontology schema, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
 
