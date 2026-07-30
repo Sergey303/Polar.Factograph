@@ -35,18 +35,22 @@ internal static partial class SemanticDateParser
             return null;
         }
 
-        string display = value.Trim();
-        string compact = Whitespace().Replace(display.ToLowerInvariant(), string.Empty);
+        string source = value.Trim();
+        string compact = Whitespace().Replace(source.ToLowerInvariant(), string.Empty);
 
         Match numeric = NumericDate().Match(compact);
         if (numeric.Success &&
             int.TryParse(numeric.Groups["year"].Value, out int year))
         {
+            bool hasMonth = numeric.Groups["month"].Success;
+            bool hasDay = numeric.Groups["day"].Success;
             int month = ParsePart(numeric.Groups["month"].Value, 1);
             int day = ParsePart(numeric.Groups["day"].Value, 1);
             if (ValidDate(year, month, day))
             {
-                return new SemanticDateValue(display, SortKey(year, month, day));
+                return new SemanticDateValue(
+                    Format(year, hasMonth ? month : null, hasDay ? day : null),
+                    SortKey(year, month, day));
             }
         }
 
@@ -55,33 +59,53 @@ internal static partial class SemanticDateParser
             int.TryParse(named.Groups["year"].Value, out year) &&
             RussianMonths.TryGetValue(named.Groups["month"].Value, out int namedMonth))
         {
+            bool hasDay = named.Groups["day"].Success;
             int day = ParsePart(named.Groups["day"].Value, 1);
             if (ValidDate(year, namedMonth, day))
             {
-                return new SemanticDateValue(display, SortKey(year, namedMonth, day));
+                return new SemanticDateValue(
+                    Format(year, namedMonth, hasDay ? day : null),
+                    SortKey(year, namedMonth, day));
             }
         }
 
         if (DateTimeOffset.TryParse(
-                display,
+                source,
                 RussianCulture,
                 DateTimeStyles.AllowWhiteSpaces,
                 out DateTimeOffset parsed) ||
             DateTimeOffset.TryParse(
-                display,
+                source,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AllowWhiteSpaces,
                 out parsed))
         {
             return new SemanticDateValue(
-                display,
+                Format(parsed.Year, parsed.Month, parsed.Day),
                 SortKey(parsed.Year, parsed.Month, parsed.Day));
         }
 
         Match leadingYear = LeadingYear().Match(compact);
         return leadingYear.Success && int.TryParse(leadingYear.Groups["year"].Value, out year)
-            ? new SemanticDateValue(display, SortKey(year, 1, 1))
+            ? new SemanticDateValue(Format(year, null, null), SortKey(year, 1, 1))
             : null;
+    }
+
+    private static string Format(int year, int? month, int? day)
+    {
+        if (month is null)
+        {
+            return year.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (day is null)
+        {
+            string monthName = RussianCulture.DateTimeFormat.MonthNames[month.Value - 1];
+            return $"{monthName} {year}";
+        }
+
+        string genitiveMonth = RussianCulture.DateTimeFormat.MonthGenitiveNames[month.Value - 1];
+        return $"{day.Value} {genitiveMonth} {year}";
     }
 
     private static int ParsePart(string value, int fallback) =>
