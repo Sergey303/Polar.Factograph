@@ -65,12 +65,21 @@ export function ResourceDocumentMetadata(props: ResourceDocumentMetadataProps) {
     setMeta("name", "twitter:title", props.title, restore);
     setMeta("name", "twitter:description", props.description, restore);
 
-    if (props.imageUrl) {
-      const image = new URL(props.imageUrl, document.baseURI).href;
-      setMeta("property", "og:image", image, restore);
+    const candidateImage = props.imageUrl
+      ? new URL(props.imageUrl, document.baseURI).href
+      : null;
+    const serverImage = document.head
+      .querySelector<HTMLMetaElement>('meta[property="og:image"]')
+      ?.content ?? null;
+    const verifiedImage = candidateImage !== null && serverImage === candidateImage
+      ? candidateImage
+      : null;
+
+    if (verifiedImage !== null) {
+      setMeta("property", "og:image", verifiedImage, restore);
       setMeta("property", "og:image:alt", props.title, restore);
       setMeta("name", "twitter:card", "summary_large_image", restore);
-      setMeta("name", "twitter:image", image, restore);
+      setMeta("name", "twitter:image", verifiedImage, restore);
       setMeta("name", "twitter:image:alt", props.title, restore);
     } else {
       setMeta("name", "twitter:card", "summary", restore);
