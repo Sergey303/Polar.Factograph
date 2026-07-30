@@ -116,6 +116,7 @@ export interface SemanticResourcePage {
   organizations: SemanticResourceLink[];
   collections: SemanticResourceLink[];
   relatedResources: SemanticResourceLink[];
+  links?: SemanticResourceLink[];
 }
 
 export interface DocumentLocation {
