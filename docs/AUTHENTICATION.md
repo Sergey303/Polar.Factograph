@@ -95,6 +95,8 @@ The number preserves unique `iiss://` allocation and compatibility with later do
 
 Registered users are overlaid onto the project membership at request time. Existing explicit entries in `project.json` keep priority for authenticated users. Every RDF mutation made by an editor is routed only to the Fog assigned to that editor. A registered viewer has no writable Fog. The synthetic public viewer is rejected by the Fog resolver before the legacy writable-source fallback, so it cannot obtain write access even if a higher-level authorization check is accidentally bypassed. Static project users that are absent from `identity.json` retain the legacy writable-Fog selection behavior.
 
+User-correctable registration validation remains visible to the browser. Operational or project-configuration failures return the stable `registration_unavailable` code with HTTP 409 and a neutral message. Role names, cassette identifiers, paths, and the original exception remain in server logs only.
+
 ## Browser session API
 
 ```text
