@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.Features;
 using Polar.Factograph.Api.Documents;
 using Polar.Factograph.Application;
+using Polar.Factograph.Domain;
 using Polar.Factograph.Fog;
 
 namespace Polar.Factograph.Api.Infrastructure;
