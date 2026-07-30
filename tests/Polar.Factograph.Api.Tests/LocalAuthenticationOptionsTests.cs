@@ -56,6 +56,56 @@ public sealed class LocalAuthenticationOptionsTests
         Assert.False(options.IsEditor(LocalLoginName.Normalize("reader")));
     }
 
+    [Fact]
+    public void Read_disables_public_reading_by_default()
+    {
+        LocalAuthenticationOptions options = LocalAuthenticationOptions.Read(
+            new ConfigurationBuilder().Build(),
+            new TestHostEnvironment());
+
+        Assert.False(options.PublicReadEnabled);
+        Assert.Equal(LocalAuthenticationOptions.DefaultPublicUserId, options.PublicUserId);
+        Assert.False(options.IsPublicUser(options.PublicUserId));
+    }
+
+    [Fact]
+    public void Read_configures_stable_public_identity()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Local:PublicReadEnabled"] = "true",
+                ["Authentication:Local:PublicUserId"] = "  public-catalog  "
+            })
+            .Build();
+
+        LocalAuthenticationOptions options = LocalAuthenticationOptions.Read(
+            configuration,
+            new TestHostEnvironment());
+
+        Assert.True(options.PublicReadEnabled);
+        Assert.Equal("public-catalog", options.PublicUserId);
+        Assert.True(options.IsPublicUser("public-catalog"));
+        Assert.False(options.IsPublicUser("other"));
+    }
+
+    [Fact]
+    public void Read_rejects_empty_public_identity_when_public_reading_is_enabled()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Local:PublicReadEnabled"] = "true",
+                ["Authentication:Local:PublicUserId"] = "   "
+            })
+            .Build();
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            LocalAuthenticationOptions.Read(configuration, new TestHostEnvironment()));
+
+        Assert.Contains("PublicUserId", exception.Message, StringComparison.Ordinal);
+    }
+
     private sealed class TestHostEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = Environments.Development;
