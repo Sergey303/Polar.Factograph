@@ -11,6 +11,8 @@ public static class SearchEndpoints
         group.MapGet("/names", SearchNamesAsync);
         group.MapGet("/words", SearchWordsAsync);
         group.MapGet("/duplicates", SearchDuplicatesAsync);
+        group.MapGet("/classes", SearchClassesAsync);
+        group.MapGet("/by-type", SearchByTypeAsync);
         return endpoints;
     }
 
@@ -81,7 +83,48 @@ public static class SearchEndpoints
         return Results.Ok(results);
     }
 
-    private static int NormalizeLimit(int? limit) => limit ?? 50;
+    private static async Task<IResult> SearchClassesAsync(
+        string q,
+        int? limit,
+        string? lang,
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        CancellationToken cancellationToken)
+    {
+        ProjectReadContext context = await contextFactory.CreateReadAsync(
+            httpContext,
+            cancellationToken);
+        ProjectAuthorization.RequireSearch(context.Access);
+        IReadOnlyList<OntologyClassSearchSuggestion> results = context.TypeSearch.Suggest(
+            q,
+            Math.Min(NormalizeLimit(limit, 8), 20),
+            NormalizeLanguage(lang));
+        return Results.Ok(results);
+    }
+
+    private static async Task<IResult> SearchByTypeAsync(
+        string type,
+        int? offset,
+        int? limit,
+        string? lang,
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        CancellationToken cancellationToken)
+    {
+        ProjectReadContext context = await contextFactory.CreateReadAsync(
+            httpContext,
+            cancellationToken);
+        ProjectResourceTypeSearchPage page = await context.TypeSearch.SearchAsync(
+            type,
+            context.Access,
+            Math.Max(offset ?? 0, 0),
+            Math.Min(NormalizeLimit(limit), 100),
+            NormalizeLanguage(lang),
+            cancellationToken);
+        return Results.Ok(page);
+    }
+
+    private static int NormalizeLimit(int? limit, int fallback = 50) => limit ?? fallback;
 
     private static string NormalizeLanguage(string? language) =>
         string.IsNullOrWhiteSpace(language) ? "ru" : language;
