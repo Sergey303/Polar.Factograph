@@ -24,6 +24,7 @@ public static class FactographEndpointMapping
         app.UseStaticFiles();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.MapLegacyPageEndpoints();
         app.MapSystemEndpoints();
         app.MapAuthenticationEndpoints();
         app.MapProjectEndpoints();
