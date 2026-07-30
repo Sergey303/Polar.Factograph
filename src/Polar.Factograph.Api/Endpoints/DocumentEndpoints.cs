@@ -5,18 +5,6 @@ using Polar.Factograph.Fog;
 
 namespace Polar.Factograph.Api.Endpoints;
 
-public sealed record DocumentLocationResponse(
-    string CassetteId,
-    string CassetteName,
-    string DocumentUri,
-    string FolderName,
-    string DocumentNumber,
-    bool OriginalAvailable,
-    bool IconPreviewAvailable,
-    bool SmallPreviewAvailable,
-    bool MediumPreviewAvailable,
-    bool NormalPreviewAvailable);
-
 public static class DocumentEndpoints
 {
     public static IEndpointRouteBuilder MapDocumentEndpoints(this IEndpointRouteBuilder endpoints)
@@ -44,17 +32,9 @@ public static class DocumentEndpoints
             return NotFound(uri);
         }
 
-        return Results.Ok(new DocumentLocationResponse(
-            location.CassetteId,
-            location.CassetteName,
-            location.DocumentUri,
-            location.FolderName,
-            location.DocumentNumber,
-            location.OriginalPath is not null,
-            location.IconPreviewPath is not null,
-            location.SmallPreviewPath is not null,
-            location.MediumPreviewPath is not null,
-            location.NormalPreviewPath is not null));
+        return Results.Ok(DocumentLocationPresentation.Present(
+            location,
+            context.Access));
     }
 
     private static async Task<IResult> GetContentAsync(
