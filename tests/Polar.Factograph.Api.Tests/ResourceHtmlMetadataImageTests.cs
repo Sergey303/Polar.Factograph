@@ -80,6 +80,25 @@ public sealed class ResourceHtmlMetadataImageTests : IDisposable
     }
 
     [Fact]
+    public void ImageUrl_DoesNotChooseOneOfMultipleDocumentUris()
+    {
+        CreateFile("documents", "normal", "0001", "0042.jpg");
+        CreateFile("documents", "normal", "0001", "0043.jpg");
+
+        string? imageUrl = ResourceHtmlMetadataProvider.ImageUrl(
+            Context().Request,
+            Page(
+                "iiss://TestCassette@iis.nsk.su/0001/0042",
+                "iiss://TestCassette@iis.nsk.su/0001/0043"),
+            Project(),
+            Access(canRead: true),
+            new CassetteDocumentPathResolver(),
+            new DocumentContentTypeResolver());
+
+        Assert.Null(imageUrl);
+    }
+
+    [Fact]
     public void InsertResourceMetadata_AddsImageCardsOnlyWhenImageExists()
     {
         const string source =
@@ -166,21 +185,19 @@ public sealed class ResourceHtmlMetadataImageTests : IDisposable
         return context;
     }
 
-    private static PresentedSemanticResourcePage Page(string documentUri) => new(
+    private static PresentedSemanticResourcePage Page(params string[] documentUris) => new(
         "resource-1",
         new PresentedProjectResourcePortrait(
             "resource-1",
             "document",
             "Документ",
-            [
-                new PresentedResourceLiteralField(
-                    "http://fogid.net/o/uri",
-                    "URI",
-                    documentUri,
-                    documentUri,
-                    null,
-                    null)
-            ],
+            documentUris.Select(documentUri => new PresentedResourceLiteralField(
+                "http://fogid.net/o/uri",
+                "URI",
+                documentUri,
+                documentUri,
+                null,
+                null)).ToArray(),
             Array.Empty<PresentedResourceDirectLink>(),
             Array.Empty<PresentedResourceInverseLink>(),
             Provenance: null),
