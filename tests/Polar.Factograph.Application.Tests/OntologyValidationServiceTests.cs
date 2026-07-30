@@ -5,39 +5,42 @@ namespace Polar.Factograph.Application.Tests;
 
 public sealed class OntologyValidationServiceTests
 {
+    private const string O = "http://fogid.net/o/";
+    private const string EntityRoot = O + "sys-obj";
+
     [Fact]
     public void Validate_ReportsBrokenHierarchyAndPropertyReferences()
     {
-        OntologyCatalog catalog = new(
+        OntologyTerm[] terms =
         [
-            Class("entity", label: "Сущность", isAbstract: true),
-            Class("person", label: "Персона", parent: "entity", isEntity: true),
-            Class("broken", label: null, parent: "missing"),
+            Class(EntityRoot, label: "Сущность", isAbstract: true),
+            Class(O + "person", label: "Персона", parent: EntityRoot),
+            Class(O + "broken", label: null, parent: O + "missing"),
             Property(
-                "related",
+                O + "related",
                 OntologyTermKind.ObjectProperty,
-                domains: ["person"],
-                ranges: ["missing-range"]),
+                domains: [O + "person"],
+                ranges: [O + "missing-range"]),
             Property(
-                "comment",
+                O + "comment",
                 OntologyTermKind.DatatypeProperty,
                 domains: [],
                 ranges: [])
-        ]);
+        ];
 
-        OntologyValidationReport report = new OntologyValidationService().Validate(catalog);
+        OntologyValidationReport report = new OntologyValidationService().Validate(terms);
 
         Assert.False(report.IsValid);
         Assert.Contains(report.Issues, issue =>
-            issue.Code == "missing_parent_class" && issue.TermId == "broken");
+            issue.Code == "missing_parent_class" && issue.TermId == O + "broken");
         Assert.Contains(report.Issues, issue =>
-            issue.Code == "missing_range_class" && issue.TermId == "related");
+            issue.Code == "missing_range_class" && issue.TermId == O + "related");
         Assert.Contains(report.Issues, issue =>
-            issue.Code == "missing_label" && issue.TermId == "broken");
+            issue.Code == "missing_label" && issue.TermId == O + "broken");
         Assert.Contains(report.Issues, issue =>
-            issue.Code == "missing_domain" && issue.TermId == "comment");
+            issue.Code == "missing_domain" && issue.TermId == O + "comment");
         Assert.Contains(report.Issues, issue =>
-            issue.Code == "missing_range" && issue.TermId == "comment");
+            issue.Code == "missing_range" && issue.TermId == O + "comment");
         Assert.True(report.ErrorCount >= 2);
         Assert.True(report.WarningCount >= 3);
     }
@@ -45,29 +48,28 @@ public sealed class OntologyValidationServiceTests
     [Fact]
     public void Validate_AcceptsAbstractRangeWithConcreteEntityDescendant()
     {
-        OntologyCatalog catalog = new(
+        OntologyTerm[] terms =
         [
-            Class("entity", label: "Сущность", isAbstract: true),
+            Class(EntityRoot, label: "Сущность", isAbstract: true),
             Class(
-                "organization",
+                O + "organization",
                 label: "Организация",
-                parent: "entity",
+                parent: EntityRoot,
                 isAbstract: true),
             Class(
-                "institute",
+                O + "institute",
                 label: "Институт",
-                parent: "organization",
-                isEntity: true),
-            Class("person", label: "Персона", parent: "entity", isEntity: true),
+                parent: O + "organization"),
+            Class(O + "person", label: "Персона", parent: EntityRoot),
             Property(
-                "works-at",
+                O + "works-at",
                 OntologyTermKind.ObjectProperty,
-                domains: ["person"],
-                ranges: ["organization"],
+                domains: [O + "person"],
+                ranges: [O + "organization"],
                 inverseLabel: "сотрудники")
-        ]);
+        ];
 
-        OntologyValidationReport report = new OntologyValidationService().Validate(catalog);
+        OntologyValidationReport report = new OntologyValidationService().Validate(terms);
 
         Assert.DoesNotContain(report.Issues, issue =>
             issue.Code == "no_concrete_entity_target");
@@ -77,40 +79,62 @@ public sealed class OntologyValidationServiceTests
     [Fact]
     public void Validate_ReportsResourceRangeWithoutPickerTarget()
     {
-        OntologyCatalog catalog = new(
+        OntologyTerm[] terms =
         [
-            Class("entity", label: "Сущность", isAbstract: true),
-            Class("person", label: "Персона", parent: "entity", isEntity: true),
-            Class("relation", label: "Отношение"),
+            Class(EntityRoot, label: "Сущность", isAbstract: true),
+            Class(O + "person", label: "Персона", parent: EntityRoot),
+            Class(O + "relation", label: "Отношение"),
             Property(
-                "relation-link",
+                O + "relation-link",
                 OntologyTermKind.ObjectProperty,
-                domains: ["person"],
-                ranges: ["relation"],
+                domains: [O + "person"],
+                ranges: [O + "relation"],
                 inverseLabel: "обратная связь")
-        ]);
+        ];
 
-        OntologyValidationReport report = new OntologyValidationService().Validate(catalog);
+        OntologyValidationReport report = new OntologyValidationService().Validate(terms);
 
         OntologyValidationIssue issue = Assert.Single(report.Issues, value =>
             value.Code == "no_concrete_entity_target");
         Assert.Equal(OntologyValidationSeverities.Error, issue.Severity);
-        Assert.Equal("relation-link", issue.TermId);
+        Assert.Equal(O + "relation-link", issue.TermId);
+    }
+
+    [Fact]
+    public void Validate_ReportsCyclicClassHierarchyWithoutBuildingCatalog()
+    {
+        OntologyTerm[] terms =
+        [
+            Class(EntityRoot, label: "Сущность", isAbstract: true),
+            Class(O + "first", label: "Первый", parent: O + "second"),
+            Class(O + "second", label: "Второй", parent: O + "first")
+        ];
+
+        OntologyValidationReport report = new OntologyValidationService().Validate(terms);
+
+        OntologyValidationIssue issue = Assert.Single(report.Issues, value =>
+            value.Code == "cyclic_class_hierarchy");
+        Assert.Equal(OntologyValidationSeverities.Error, issue.Severity);
+        Assert.Contains(O + "first", issue.Message, StringComparison.Ordinal);
+        Assert.Contains(O + "second", issue.Message, StringComparison.Ordinal);
     }
 
     private static OntologyTerm Class(
         string id,
         string? label,
         string? parent = null,
-        bool isAbstract = false,
-        bool isEntity = false) => new()
+        bool isAbstract = false) => new(
+        id,
+        OntologyTermKind.Class,
+        label is null ? [] : [new OntologyLocalizedText(label, "ru")],
+        [],
+        Priority: null,
+        ParentClassId: parent,
+        Domains: [],
+        Ranges: [],
+        EnumerationStates: [])
     {
-        Id = id,
-        Kind = OntologyTermKind.Class,
-        Labels = label is null ? [] : [new LocalizedText("ru", label)],
-        ParentClassId = parent,
-        IsAbstract = isAbstract,
-        IsEntityType = isEntity
+        IsAbstract = isAbstract
     };
 
     private static OntologyTerm Property(
@@ -118,15 +142,16 @@ public sealed class OntologyValidationServiceTests
         OntologyTermKind kind,
         IReadOnlyList<string> domains,
         IReadOnlyList<string> ranges,
-        string? inverseLabel = null) => new()
-    {
-        Id = id,
-        Kind = kind,
-        Labels = [new LocalizedText("ru", id)],
-        InverseLabels = inverseLabel is null
+        string? inverseLabel = null) => new(
+        id,
+        kind,
+        [new OntologyLocalizedText(id, "ru")],
+        inverseLabel is null
             ? []
-            : [new LocalizedText("ru", inverseLabel)],
-        Domains = domains,
-        Ranges = ranges
-    };
+            : [new OntologyLocalizedText(inverseLabel, "ru")],
+        Priority: null,
+        ParentClassId: null,
+        Domains: domains,
+        Ranges: ranges,
+        EnumerationStates: []);
 }
