@@ -10,6 +10,7 @@ import {
   navigateToResource,
   navigateToResourceMode,
   navigateToSearch,
+  navigateToSearchFilter,
   type ResourceRouteMode,
   useAppRoute
 } from "./routes";
@@ -48,6 +49,7 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
   const route = useAppRoute();
   const project = useProject(auth.token);
   const searchQuery = route.page === "search" ? route.query : null;
+  const searchTypeId = route.page === "search" ? route.typeId : null;
   const search = useSearch(searchQuery, auth.token);
   const resourceId = route.page === "resource" ? route.resourceId : null;
   const resourceMode: ResourceRouteMode = route.page === "resource"
@@ -89,6 +91,12 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
     navigateToSearch(normalized);
   }
 
+  function changeSearchType(typeId: string | null): void {
+    if (route.page === "search") {
+      navigateToSearchFilter(route.query, typeId);
+    }
+  }
+
   return (
     <div className="app-shell">
       <TopBar
@@ -117,7 +125,9 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
       {route.page === "search" && (
         <SearchPage
           search={search}
+          selectedTypeId={searchTypeId}
           onSearch={submitSearch}
+          onTypeChange={changeSearchType}
         />
       )}
       {route.page === "create-entity" && (
