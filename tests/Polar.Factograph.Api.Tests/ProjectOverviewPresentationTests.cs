@@ -51,6 +51,25 @@ public sealed class ProjectOverviewPresentationTests
     }
 
     [Fact]
+    public void Present_HidesCassetteWhenEffectiveAccessDisallowsWrite()
+    {
+        ProjectOverview overview = ProjectOverviewPresentation.Present(
+            Project(),
+            Access(
+                projectRights: Rights(ProjectRights.Read, ProjectRights.Search),
+                cassetteA: Rights(
+                    CassetteRights.Read,
+                    CassetteRights.WriteMetadata),
+                cassetteB: Rights(CassetteRights.Read),
+                defaultCassetteId: "cassette-a",
+                cassetteAAllowWrite: false));
+
+        Assert.Empty(overview.Cassettes);
+        Assert.Null(overview.DefaultWriteCassetteId);
+        Assert.False(overview.CanAdmin);
+    }
+
+    [Fact]
     public void Present_ExposesAllReadableCassetteRightsToAdministrator()
     {
         ProjectOverview overview = ProjectOverviewPresentation.Present(
@@ -135,7 +154,9 @@ public sealed class ProjectOverviewPresentationTests
         IReadOnlySet<string> projectRights,
         IReadOnlySet<string> cassetteA,
         IReadOnlySet<string> cassetteB,
-        string? defaultCassetteId) => new(
+        string? defaultCassetteId,
+        bool cassetteAAllowWrite = true,
+        bool cassetteBAllowWrite = true) => new(
         "user",
         IsMember: true,
         projectRights,
@@ -144,12 +165,12 @@ public sealed class ProjectOverviewPresentationTests
             ["cassette-a"] = new CassetteAccessSnapshot(
                 "cassette-a",
                 Enabled: true,
-                AllowWrite: true,
+                AllowWrite: cassetteAAllowWrite,
                 cassetteA),
             ["cassette-b"] = new CassetteAccessSnapshot(
                 "cassette-b",
                 Enabled: true,
-                AllowWrite: true,
+                AllowWrite: cassetteBAllowWrite,
                 cassetteB),
             ["cassette-disabled"] = new CassetteAccessSnapshot(
                 "cassette-disabled",
