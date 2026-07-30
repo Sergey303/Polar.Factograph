@@ -4,9 +4,11 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
 {
     public async Task<IReadOnlyList<SemanticRelationEntry>> CollectAsync(
         ProjectResourcePortrait root,
+        IEnumerable<string> additionalRelationIds,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(additionalRelationIds);
 
         Dictionary<string, SemanticRelationEntry> result = new(StringComparer.Ordinal);
         foreach (ResourceDirectLink link in root.DirectLinks)
@@ -22,7 +24,6 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
 
             await AddOrdinaryAsync(
                 result,
-                root,
                 link.TargetResourceId,
                 link.Predicate,
                 graph.PropertyLabel(link.Predicate),
@@ -43,12 +44,26 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
 
             await AddOrdinaryAsync(
                 result,
-                root,
                 link.SourceResourceId,
                 link.Predicate,
                 graph.InversePropertyLabel(link.Predicate),
                 isInverse: true,
                 cancellationToken);
+        }
+
+        foreach (string relationId in additionalRelationIds
+                     .Where(value => !string.IsNullOrWhiteSpace(value))
+                     .Distinct(StringComparer.Ordinal))
+        {
+            if (result.ContainsKey(relationId)) continue;
+
+            ProjectResourcePortrait? relation = await graph.GetAsync(
+                relationId,
+                cancellationToken);
+            if (relation is not null && graph.IsComplexRelation(relation))
+            {
+                await AddComplexAsync(result, root, relation, cancellationToken);
+            }
         }
 
         return result.Values
@@ -154,7 +169,6 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
 
     private async Task AddOrdinaryAsync(
         IDictionary<string, SemanticRelationEntry> result,
-        ProjectResourcePortrait root,
         string resourceId,
         string predicate,
         string relationLabel,
