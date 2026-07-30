@@ -146,7 +146,8 @@ internal sealed class SemanticPhotoCollector(SemanticResourceGraph graph)
             context?.ResourceId,
             context is null ? null : graph.DisplayName(context),
             date?.Display,
-            date?.SortKey);
+            date?.SortKey,
+            graph.HasDocument(document));
     }
 
     private async Task<ProjectResourcePortrait?> FindOrganizationContextAsync(
