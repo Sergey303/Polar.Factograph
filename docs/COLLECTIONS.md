@@ -15,14 +15,19 @@ The compatibility sources are `OpenA/App_Code/GetCollectionPath.cs` and the coll
 GET /api/collections/items?id={collection-id}&limit=100&lang=ru
 ```
 
-The route returns the visible current items of one collection. Each item contains:
+The route returns the visible current items of one collection. Every reader receives:
 
-- the membership resource id;
 - the item resource id;
 - display name;
-- RDF type and ontology label;
-- membership cassette id;
-- item cassette id.
+- RDF type and ontology label.
+
+Membership details are capability-shaped:
+
+- a read-only viewer receives `membershipResourceId: null` and `membershipCassetteId: null`;
+- a user with effective `delete` access in the membership source cassette receives the membership resource id and that cassette's logical id, which are required by the remove request;
+- an administrator with `rebuildIndex` receives the same logical deletion reference.
+
+The response never contains the target resource cassette id, Fog path, local path, or other storage provenance. The internal application model retains membership and target provenance for visibility filtering, deterministic ordering, and guarded deletion.
 
 `lang` defaults to `ru`. `limit` defaults to 100 and accepts values from 1 through 500.
 
@@ -57,6 +62,8 @@ Remove request:
 ```
 
 The remove route requires `delete`. Under the project mutation gate it verifies that the visible current membership is a `collection-member` containing both requested links. It then appends a delete directive for the membership resource only; the collection and item remain unchanged.
+
+The React client offers removal only when both the collection item response and the safe project overview expose the required cassette capability. The server remains authoritative and repeats every authorization and membership check.
 
 Add returns `201 Created` and remove returns `200 OK` when the rebuilt generation is ready. Either route returns `202 Accepted` when Fog was committed but rebuild failed.
 
