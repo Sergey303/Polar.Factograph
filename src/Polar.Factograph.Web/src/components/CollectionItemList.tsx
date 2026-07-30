@@ -25,9 +25,9 @@ export function CollectionItemList({
 
   return (
     <ul className="collection-item-list">
-      {items.map(item => (
+      {items.map((item, index) => (
         <li
-          key={item.membershipResourceId}
+          key={`${item.resourceId}\u0000${item.membershipResourceId ?? index}`}
           className={item.resourceId === selectedId ? "selected" : undefined}
         >
           <button
@@ -36,7 +36,6 @@ export function CollectionItemList({
           >
             <strong>{item.displayName}</strong>
             <span className="muted">{item.typeLabel ?? item.type ?? "Ресурс"}</span>
-            <span className="muted mono">{item.resourceId}</span>
           </button>
           <div className="collection-item-actions">
             <button
