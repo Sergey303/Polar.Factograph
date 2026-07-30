@@ -144,6 +144,14 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         return rewritten.Insert(head + "<head>".Length, tags.ToString());
     }
 
+    internal static void DisableStaticFileCaching(HttpResponse response)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+        response.Headers.Remove("ETag");
+        response.Headers.Remove("Last-Modified");
+        response.Headers["Cache-Control"] = "private, no-store";
+    }
+
     private static string ReplaceTitle(string html, string encodedTitle)
     {
         int start = html.IndexOf("<title", StringComparison.OrdinalIgnoreCase);
@@ -167,13 +175,6 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         return html[..start] +
             $"<title>{encodedTitle}</title>" +
             html[(close + "</title>".Length)..];
-    }
-
-    private static void DisableStaticFileCaching(HttpResponse response)
-    {
-        response.Headers.Remove("ETag");
-        response.Headers.Remove("Last-Modified");
-        response.Headers["Cache-Control"] = "private, no-store";
     }
 
     private static bool ShouldInspect(HttpRequest request)
