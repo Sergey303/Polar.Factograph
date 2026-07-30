@@ -8,6 +8,7 @@ public sealed class DocumentVariantSelectorTests
 {
     [Theory]
     [InlineData("original", DocumentVariant.Original, "original.jpg")]
+    [InlineData("ICON", DocumentVariant.Icon, "icon.jpg")]
     [InlineData("SMALL", DocumentVariant.Small, "small.jpg")]
     [InlineData("medium", DocumentVariant.Medium, "medium.jpg")]
     [InlineData("normal", DocumentVariant.Normal, "normal.jpg")]
@@ -21,6 +22,19 @@ public sealed class DocumentVariantSelectorTests
 
         Assert.Equal(expectedVariant, variant);
         Assert.Equal(expectedPath, DocumentVariantSelector.Select(location, variant));
+    }
+
+    [Fact]
+    public void Select_UsesSmallPreviewWhenIconIsMissing()
+    {
+        CassetteDocumentLocation location = CreateLocation() with
+        {
+            IconPreviewPath = null
+        };
+
+        Assert.Equal(
+            "small.jpg",
+            DocumentVariantSelector.Select(location, DocumentVariant.Icon));
     }
 
     [Fact]
@@ -38,5 +52,8 @@ public sealed class DocumentVariantSelectorTests
         "original.jpg",
         "small.jpg",
         "medium.jpg",
-        "normal.jpg");
+        "normal.jpg")
+    {
+        IconPreviewPath = "icon.jpg"
+    };
 }
