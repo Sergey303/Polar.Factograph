@@ -1,6 +1,7 @@
 import { requestJson, requestJsonBody } from "./http";
 import type {
   FogMaterializationStatistics,
+  OntologyValidationReport,
   PreviewSubsystemStatus,
   ProjectIndexRebuildResult,
   ProjectIndexRuntimeStatus
@@ -29,6 +30,17 @@ export const adminApi = {
   ): Promise<FogMaterializationStatistics> {
     return requestJson<FogMaterializationStatistics>(
       "api/admin/project/materialization-summary",
+      token,
+      signal
+    );
+  },
+
+  getOntologyValidation(
+    token: string,
+    signal?: AbortSignal
+  ): Promise<OntologyValidationReport> {
+    return requestJson<OntologyValidationReport>(
+      "api/admin/project/ontology-validation",
       token,
       signal
     );
