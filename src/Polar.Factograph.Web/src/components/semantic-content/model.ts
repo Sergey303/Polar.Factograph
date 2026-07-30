@@ -43,6 +43,11 @@ function hasDocument(value: {
   return value.hasDocument === true || value.documentUri != null;
 }
 
+function predicatePart(label: string): string | null {
+  const value = label.split("·", 1)[0]?.trim() ?? "";
+  return value.length > 0 ? value : null;
+}
+
 export function photoBlock(
   key: string,
   title: string,
@@ -77,19 +82,30 @@ export function linkBlock(
     key,
     title,
     kind: links.some(hasDocument) ? "media" : "text",
-    items: links.map(link => ({
-      key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}`,
-      resourceId: link.resourceId,
-      title: link.displayName,
-      members: null,
-      values: [],
-      sectionKey: key,
-      sectionTitle: title,
-      documentUri: link.documentUri ?? null,
-      hasDocument: hasDocument(link),
-      displayDate: link.displayDate ?? null,
-      sortDate: link.sortDate ?? null
-    }))
+    items: links.map(link => {
+      const documentBacked = hasDocument(link);
+      return {
+        key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}`,
+        resourceId: link.resourceId,
+        title: link.displayName,
+        members: [
+          {
+            resourceId: link.resourceId,
+            displayName: link.displayName,
+            roleLabel: predicatePart(link.relationLabel),
+            documentUri: link.documentUri ?? null,
+            hasDocument: documentBacked
+          }
+        ],
+        values: [],
+        sectionKey: key,
+        sectionTitle: title,
+        documentUri: link.documentUri ?? null,
+        hasDocument: documentBacked,
+        displayDate: link.displayDate ?? null,
+        sortDate: link.sortDate ?? null
+      };
+    })
   };
 }
 
