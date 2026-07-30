@@ -30,6 +30,17 @@ iiss://Cassette@iis.nsk.su/0001/0001
 
 Allocation happens under both the project operation gate and a cassette-local lock file. Concurrent uploads therefore cannot receive the same pair.
 
+Preview reads recognize the established directories plus one optional compact variant:
+
+```text
+documents/icon/{folder}/{document}.{ext}
+documents/small/{folder}/{document}.{ext}
+documents/medium/{folder}/{document}.{ext}
+documents/normal/{folder}/{document}.{ext}
+```
+
+`icon` is a derived technical preview and does not change RDF/Fog metadata. The table view requests `icon`; when that physical file is absent, the API transparently serves the current `small` preview. Existing cassettes therefore remain compatible. A deployment may start generating physical icon files later without changing resource identifiers or client routes.
+
 ## Atomic file transaction
 
 1. Validate the leaf file name and extension.
@@ -158,5 +169,7 @@ The renderer must create three non-empty files and exit with:
 - any other non-zero code for a retryable failure.
 
 Before and after the process runs, the worker verifies the original length and SHA-256 from the queue request. A superseded request is completed without publishing stale previews. Output files are first written under temporary names and then individually replaced in the established `small`, `medium`, and `normal` directories. An existing preview extension is preserved; otherwise `OutputExtension` is used.
+
+The current external renderer contract deliberately remains three-output. It does not need to change merely because the read API understands `icon`: until a separate compatible tool or later renderer revision creates `documents/icon`, icon requests fall back to `small`.
 
 The repository supplies the safe hosted lifecycle and process adapter, but does not bundle a PDF/image conversion executable. Deployments must provide one that implements the contract above. Existing preview reads continue to use generated files in the established cassette directories.
