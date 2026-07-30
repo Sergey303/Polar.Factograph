@@ -2,9 +2,11 @@ import { useEffect } from "react";
 import { useAdminStatus } from "../app/useAdminStatus";
 import { useIndexRebuild } from "../app/useIndexRebuild";
 import { useMaterializationSummary } from "../app/useMaterializationSummary";
+import { useOntologyValidation } from "../app/useOntologyValidation";
 import { AdminIndexCard } from "./AdminIndexCard";
 import { AdminMaterializationCard } from "./AdminMaterializationCard";
 import { AdminPreviewCard } from "./AdminPreviewCard";
+import { OntologyValidationCard } from "./OntologyValidationCard";
 
 interface AdminDialogProps {
   token: string;
@@ -14,7 +16,9 @@ interface AdminDialogProps {
 export function AdminDialog({ token, onClose }: AdminDialogProps) {
   const status = useAdminStatus(token, true);
   const materialization = useMaterializationSummary(token);
+  const ontology = useOntologyValidation(token);
   const rebuild = useIndexRebuild(token, status.reload);
+  const refreshing = status.loading || ontology.loading;
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent): void {
@@ -23,6 +27,11 @@ export function AdminDialog({ token, onClose }: AdminDialogProps) {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [onClose, rebuild.busy]);
+
+  function reload(): void {
+    status.reload();
+    ontology.reload();
+  }
 
   return (
     <div className="admin-overlay" role="presentation">
@@ -33,8 +42,8 @@ export function AdminDialog({ token, onClose }: AdminDialogProps) {
             <h1>Администрирование</h1>
           </div>
           <div className="button-row">
-            <button className="button ghost" disabled={status.loading} onClick={status.reload}>
-              {status.loading ? "Обновление…" : "Обновить"}
+            <button className="button ghost" disabled={refreshing} onClick={reload}>
+              {refreshing ? "Обновление…" : "Обновить"}
             </button>
             <button className="button" disabled={rebuild.busy} onClick={onClose}>Закрыть</button>
           </div>
@@ -48,6 +57,11 @@ export function AdminDialog({ token, onClose }: AdminDialogProps) {
             busy={rebuild.busy}
             error={rebuild.error}
             onRebuild={() => void rebuild.rebuild()}
+          />
+          <OntologyValidationCard
+            report={ontology.report}
+            loading={ontology.loading}
+            error={ontology.error}
           />
           <AdminPreviewCard status={status.previews} />
           <AdminMaterializationCard
