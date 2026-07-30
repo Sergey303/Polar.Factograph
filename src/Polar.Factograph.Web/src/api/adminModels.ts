@@ -78,3 +78,20 @@ export interface FogMaterializationStatistics {
   syntheticResources: number;
   currentProperties: number;
 }
+
+export type OntologyValidationSeverity = "error" | "warning";
+
+export interface OntologyValidationIssue {
+  severity: OntologyValidationSeverity;
+  code: string;
+  termId: string;
+  message: string;
+}
+
+export interface OntologyValidationReport {
+  termCount: number;
+  errorCount: number;
+  warningCount: number;
+  issues: OntologyValidationIssue[];
+  isValid: boolean;
+}
