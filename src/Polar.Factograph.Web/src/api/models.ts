@@ -133,11 +133,8 @@ export interface SemanticResourcePage {
 }
 
 export interface DocumentLocation {
-  cassetteId: string;
-  cassetteName: string;
-  documentUri: string;
-  folderName: string;
-  documentNumber: string;
+  cassetteId: string | null;
+  cassetteName: string | null;
   originalAvailable: boolean;
   iconPreviewAvailable: boolean;
   smallPreviewAvailable: boolean;
