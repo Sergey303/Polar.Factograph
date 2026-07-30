@@ -62,7 +62,6 @@ export function SearchPage({
             page={classSearch.page}
             loading={classSearch.pageLoading}
             error={classSearch.pageError}
-            query={search.query}
             onBack={onClassBack}
             onOffsetChange={onClassOffsetChange}
           />
