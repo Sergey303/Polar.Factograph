@@ -46,9 +46,6 @@ export function CollectionWorkspace({
         onClear={navigation.clear}
       />
 
-      {navigation.currentId && (
-        <span className="muted mono current-collection-id">{navigation.currentId}</span>
-      )}
       {collection.loading && <p className="muted">Загрузка коллекции…</p>}
       {collection.error && <div className="notice error">{collection.error}</div>}
       {collection.contents && (
@@ -64,11 +61,10 @@ export function CollectionWorkspace({
           <CollectionItemList
             items={collection.contents.items}
             selectedId={selectedResourceId}
-            canRemove={item => hasCassetteRight(
-              project,
-              item.membershipCassetteId,
-              "delete"
-            )}
+            canRemove={item =>
+              item.membershipCassetteId !== null &&
+              item.membershipResourceId !== null &&
+              hasCassetteRight(project, item.membershipCassetteId, "delete")}
             busy={mutation.busy}
             onSelect={onSelect}
             onOpenCollection={navigation.open}
