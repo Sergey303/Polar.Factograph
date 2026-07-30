@@ -84,7 +84,11 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
 
   function submitSearch(query: string): void {
     const normalized = query.trim();
-    if (route.page === "search" && normalized === route.query) {
+    if (
+      route.page === "search" &&
+      normalized === route.query &&
+      route.typeId === null
+    ) {
       search.reload();
       return;
     }
@@ -92,7 +96,7 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
   }
 
   function changeSearchType(typeId: string | null): void {
-    if (route.page === "search") {
+    if (route.page === "search" && route.typeId !== typeId) {
       navigateToSearchFilter(route.query, typeId);
     }
   }
