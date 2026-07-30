@@ -101,6 +101,29 @@ public sealed class OntologyValidationServiceTests
     }
 
     [Fact]
+    public void Validate_ReportsObjectPropertyWithoutRangeAsError()
+    {
+        OntologyTerm[] terms =
+        [
+            Class(EntityRoot, label: "Сущность", isAbstract: true),
+            Class(O + "person", label: "Персона", parent: EntityRoot),
+            Property(
+                O + "friend",
+                OntologyTermKind.ObjectProperty,
+                domains: [O + "person"],
+                ranges: [],
+                inverseLabel: "друзья")
+        ];
+
+        OntologyValidationReport report = new OntologyValidationService().Validate(terms);
+
+        OntologyValidationIssue issue = Assert.Single(report.Issues, value =>
+            value.Code == "missing_range" && value.TermId == O + "friend");
+        Assert.Equal(OntologyValidationSeverities.Error, issue.Severity);
+        Assert.False(report.IsValid);
+    }
+
+    [Fact]
     public void Validate_ReportsCyclicClassHierarchyWithoutBuildingCatalog()
     {
         OntologyTerm[] terms =
