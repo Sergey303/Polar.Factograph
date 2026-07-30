@@ -2,10 +2,12 @@ import { requestBlob, requestJson } from "./http";
 import type {
   DocumentLocation,
   DocumentVariant,
+  OntologyClassSearchSuggestion,
   PotentialDuplicateResource,
   ProjectOverview,
   ResourcePortrait,
   ResourceSearchResult,
+  ResourceTypeSearchPage,
   SemanticResourcePage
 } from "./models";
 import { mergeSearchResults } from "./searchResults";
@@ -50,6 +52,38 @@ export const factographApi = {
       )
     ]);
     return mergeSearchResults(names, words);
+  },
+
+  searchClasses(
+    text: string,
+    token: string,
+    signal?: AbortSignal
+  ): Promise<OntologyClassSearchSuggestion[]> {
+    const parameters = query({ q: text, limit: 8, lang: "ru" });
+    return requestJson<OntologyClassSearchSuggestion[]>(
+      `api/search/classes?${parameters}`,
+      token,
+      signal
+    );
+  },
+
+  searchByType(
+    classId: string,
+    offset: number,
+    token: string,
+    signal?: AbortSignal
+  ): Promise<ResourceTypeSearchPage> {
+    const parameters = query({
+      type: classId,
+      offset,
+      limit: 50,
+      lang: "ru"
+    });
+    return requestJson<ResourceTypeSearchPage>(
+      `api/search/by-type?${parameters}`,
+      token,
+      signal
+    );
   },
 
   findPotentialDuplicates(
