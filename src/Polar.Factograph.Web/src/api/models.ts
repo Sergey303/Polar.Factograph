@@ -80,7 +80,6 @@ export interface PresentedInverseLink {
   predicate: string;
   label: string;
   sourceResourceId: string;
-  sourceCassetteId: string;
 }
 
 export interface ResourceProvenance {
