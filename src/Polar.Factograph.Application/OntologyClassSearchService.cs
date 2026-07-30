@@ -88,7 +88,7 @@ public sealed class OntologyClassSearchService(
         SummaryCacheKey cacheKey = new(
             classId,
             preferredLanguage,
-            string.Join('\n', cassetteIds.Order(StringComparer.Ordinal)));
+            string.Join("\n", cassetteIds.Order(StringComparer.Ordinal)));
         Lazy<Task<ProjectResourceSummary[]>> lazy = _summaryCache.GetOrAdd(
             cacheKey,
             _ => new Lazy<Task<ProjectResourceSummary[]>>(
