@@ -218,8 +218,9 @@ export function ComplexRelationCreatePane(props: ComplexRelationCreatePaneProps)
   }
 
   function editRelation(relation: ExistingRelation): void {
-    const sourceCassette = relation.portrait.provenance.sourceCassetteId;
-    const relationCassetteId = props.cassettes.some(item => item.id === sourceCassette)
+    const sourceCassette = relation.portrait.provenance?.sourceCassetteId;
+    const relationCassetteId = sourceCassette !== undefined &&
+      props.cassettes.some(item => item.id === sourceCassette)
       ? sourceCassette
       : props.cassetteId;
     const draft = resourceDraftFromPortrait(relation.portrait, relationCassetteId);
