@@ -431,9 +431,22 @@ function SectionsMenu(props: {
   selected: Set<string>;
   onChange: (selected: Set<string>) => void;
 }) {
+  const [query, setQuery] = useState("");
   const allSelected = props.selected.size === props.blocks.length;
+  const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
+  const visibleBlocks = normalizedQuery.length === 0
+    ? props.blocks
+    : props.blocks.filter(block =>
+        block.title.toLocaleLowerCase("ru-RU").includes(normalizedQuery));
+  const searchable = props.blocks.length >= 8;
+
   return (
-    <details className="semantic-sections-menu">
+    <details
+      className="semantic-sections-menu"
+      onToggle={event => {
+        if (!event.currentTarget.open) setQuery("");
+      }}
+    >
       <summary>
         {allSelected
           ? `Разделы: все ${props.blocks.length}`
@@ -451,7 +464,21 @@ function SectionsMenu(props: {
             Снять все
           </button>
         </div>
-        {props.blocks.map(block => (
+        {searchable && (
+          <label className="semantic-sections-search">
+            <span className="visually-hidden">Найти раздел</span>
+            <input
+              type="search"
+              value={query}
+              autoComplete="off"
+              placeholder="Найти раздел…"
+              onChange={event => setQuery(event.target.value)}
+            />
+          </label>
+        )}
+        {visibleBlocks.length === 0 ? (
+          <div className="semantic-sections-no-results">Разделы не найдены</div>
+        ) : visibleBlocks.map(block => (
           <label key={block.key}>
             <input
               type="checkbox"
