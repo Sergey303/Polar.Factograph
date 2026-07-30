@@ -19,6 +19,14 @@ function PageVirtualizedChunk({ definition }: {
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
 
   useEffect(() => {
+    if (definition.eager === true) setNearViewport(true);
+  }, [definition.eager]);
+
+  useEffect(() => {
+    setMeasuredHeight(null);
+  }, [definition.estimatedHeight]);
+
+  useEffect(() => {
     const element = elementRef.current;
     if (element === null) return;
     if (typeof IntersectionObserver === "undefined") {
@@ -27,7 +35,9 @@ function PageVirtualizedChunk({ definition }: {
     }
 
     const observer = new IntersectionObserver(entries => {
-      const next = entries.some(entry => entry.isIntersecting);
+      const intersects = entries.some(entry => entry.isIntersecting);
+      const containsFocus = element.contains(document.activeElement);
+      const next = intersects || containsFocus;
       setNearViewport(current => current === next ? current : next);
     }, { rootMargin: "1200px 0px" });
     observer.observe(element);
@@ -59,6 +69,7 @@ function PageVirtualizedChunk({ definition }: {
       ref={elementRef}
       className={`page-virtualized-chunk ${nearViewport ? "active" : "placeholder"}`}
       style={nearViewport ? undefined : { height: `${placeholderHeight}px` }}
+      aria-hidden={nearViewport ? undefined : true}
     >
       {nearViewport ? definition.content : null}
     </div>
