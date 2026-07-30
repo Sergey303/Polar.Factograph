@@ -6,23 +6,37 @@ interface OntologyValidationCardProps {
   error: string | null;
 }
 
+function validationState(report: OntologyValidationReport): {
+  className: string;
+  label: string;
+} {
+  if (report.errorCount > 0) {
+    return { className: "danger", label: "Нужны исправления" };
+  }
+  if (report.warningCount > 0) {
+    return { className: "warning", label: "Есть предупреждения" };
+  }
+  return { className: "ok", label: "Проверка пройдена" };
+}
+
 export function OntologyValidationCard(props: OntologyValidationCardProps) {
+  const state = props.report === null ? null : validationState(props.report);
+
   return (
     <section className="admin-card ontology-validation-card">
-      <header>
+      <div className="admin-card-heading ontology-validation-heading">
         <div>
-          <h3>Онтология</h3>
-          <p>Проверка контрактов универсального просмотра и редактирования.</p>
+          <span className="eyebrow">Схема данных</span>
+          <h2>Онтология</h2>
+          <p>Контракты универсального просмотра, связей и редактирования.</p>
         </div>
-        {props.report !== null && (
-          <span className={`ontology-validation-state ${props.report.isValid ? "valid" : "invalid"}`}>
-            {props.report.isValid ? "Структура допустима" : "Найдены ошибки"}
-          </span>
+        {state !== null && (
+          <span className={`admin-state ${state.className}`}>{state.label}</span>
         )}
-      </header>
+      </div>
 
       {props.loading && props.report === null && (
-        <div className="admin-card-loading">Проверяем онтологию…</div>
+        <p className="muted">Проверяем онтологию…</p>
       )}
       {props.error !== null && (
         <div className="notice error">{props.error}</div>
@@ -30,31 +44,39 @@ export function OntologyValidationCard(props: OntologyValidationCardProps) {
 
       {props.report !== null && (
         <>
-          <div className="ontology-validation-summary">
-            <span><strong>{props.report.termCount}</strong> терминов</span>
-            <span className={props.report.errorCount > 0 ? "error-count" : ""}>
-              <strong>{props.report.errorCount}</strong> ошибок
-            </span>
-            <span className={props.report.warningCount > 0 ? "warning-count" : ""}>
-              <strong>{props.report.warningCount}</strong> предупреждений
-            </span>
-          </div>
+          <dl className="ontology-validation-summary" aria-label="Результат проверки онтологии">
+            <div>
+              <dt>Терминов</dt>
+              <dd>{props.report.termCount}</dd>
+            </div>
+            <div className={props.report.errorCount > 0 ? "danger" : ""}>
+              <dt>Ошибок</dt>
+              <dd>{props.report.errorCount}</dd>
+            </div>
+            <div className={props.report.warningCount > 0 ? "warning" : ""}>
+              <dt>Предупреждений</dt>
+              <dd>{props.report.warningCount}</dd>
+            </div>
+          </dl>
 
           {props.report.issues.length === 0 ? (
             <p className="muted ontology-validation-empty">
               Ссылки классов и свойства, необходимые универсальному интерфейсу, согласованы.
             </p>
           ) : (
-            <details className="ontology-validation-details" open={props.report.errorCount > 0}>
-              <summary>Показать замечания</summary>
+            <details
+              className="ontology-validation-details"
+              open={props.report.errorCount > 0}
+            >
+              <summary>Замечания: {props.report.issues.length}</summary>
               <ol>
                 {props.report.issues.map((issue, index) => (
                   <li className={issue.severity} key={`${issue.termId}:${issue.code}:${index}`}>
-                    <div>
+                    <div className="ontology-validation-issue-heading">
                       <strong>{issue.severity === "error" ? "Ошибка" : "Предупреждение"}</strong>
                       <code>{issue.code}</code>
                     </div>
-                    <span>{issue.message}</span>
+                    <p>{issue.message}</p>
                     <code className="ontology-term-id">{issue.termId}</code>
                   </li>
                 ))}
