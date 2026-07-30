@@ -8,6 +8,16 @@ public sealed class XmlOntologyCatalogLoader
         string ontologyPath,
         CancellationToken cancellationToken = default)
     {
+        IReadOnlyDictionary<string, OntologyTerm> terms = await LoadTermsAsync(
+            ontologyPath,
+            cancellationToken);
+        return new OntologyCatalog(terms);
+    }
+
+    public async Task<IReadOnlyDictionary<string, OntologyTerm>> LoadTermsAsync(
+        string ontologyPath,
+        CancellationToken cancellationToken = default)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(ontologyPath);
 
         string fullPath = Path.GetFullPath(ontologyPath);
@@ -24,8 +34,6 @@ public sealed class XmlOntologyCatalogLoader
         XElement root = document.Root
             ?? throw new InvalidDataException(
                 $"Ontology XML has no root element: {fullPath}");
-        IReadOnlyDictionary<string, OntologyTerm> terms =
-            OntologyTermParser.Parse(root, fullPath);
-        return new OntologyCatalog(terms);
+        return OntologyTermParser.Parse(root, fullPath);
     }
 }
