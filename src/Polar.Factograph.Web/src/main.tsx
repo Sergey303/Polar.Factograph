@@ -7,6 +7,7 @@ import "./styles/layout.css";
 import "./styles/components.css";
 import "./styles/portrait.css";
 import "./styles/semantic-resource.css";
+import "./styles/semantic-sections-menu.css";
 import "./styles/semantic-timeline.css";
 import "./styles/collections.css";
 import "./styles/document-actions.css";
