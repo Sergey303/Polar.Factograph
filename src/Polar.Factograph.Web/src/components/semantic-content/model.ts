@@ -10,23 +10,20 @@ export type BlockKind = "media" | "text";
 export interface SemanticContentMember {
   resourceId: string;
   displayName: string;
-  roleLabel: string | null;
   documentUri: string | null;
-  hideDisplayName: boolean;
+  hasDocument: boolean;
 }
 
 export interface SemanticContentItem {
   key: string;
   resourceId: string;
   title: string;
-  detail: string | null;
-  relationLabel: string | null;
-  typeLabel: string | null;
   members: SemanticContentMember[] | null;
+  values: string[];
   sectionKey: string;
   sectionTitle: string;
   documentUri: string | null;
-  hideDisplayName: boolean;
+  hasDocument: boolean;
   displayDate: string | null;
   sortDate: string | null;
 }
@@ -45,10 +42,6 @@ function hasDocument(value: {
   return value.hasDocument === true || value.documentUri != null;
 }
 
-function publicName(displayName: string, documentBacked: boolean): string {
-  return documentBacked ? "Открыть" : displayName;
-}
-
 export function photoBlock(
   key: string,
   title: string,
@@ -58,24 +51,19 @@ export function photoBlock(
     key,
     title,
     kind: "media",
-    items: photos.map(photo => {
-      const documentBacked = hasDocument(photo);
-      return {
-        key: `${key}:${photo.resourceId}:${photo.contextResourceId ?? ""}`,
-        resourceId: photo.resourceId,
-        title: publicName(photo.displayName, documentBacked),
-        detail: photo.contextLabel,
-        relationLabel: null,
-        typeLabel: null,
-        members: null,
-        sectionKey: key,
-        sectionTitle: title,
-        documentUri: photo.documentUri,
-        hideDisplayName: documentBacked,
-        displayDate: photo.displayDate ?? null,
-        sortDate: photo.sortDate ?? null
-      };
-    })
+    items: photos.map(photo => ({
+      key: `${key}:${photo.resourceId}:${photo.contextResourceId ?? ""}`,
+      resourceId: photo.resourceId,
+      title: photo.displayName,
+      members: null,
+      values: photo.contextLabel ? [photo.contextLabel] : [],
+      sectionKey: key,
+      sectionTitle: title,
+      documentUri: photo.documentUri,
+      hasDocument: hasDocument(photo),
+      displayDate: photo.displayDate ?? null,
+      sortDate: photo.sortDate ?? null
+    }))
   };
 }
 
@@ -88,24 +76,19 @@ export function linkBlock(
     key,
     title,
     kind: links.some(hasDocument) ? "media" : "text",
-    items: links.map(link => {
-      const documentBacked = hasDocument(link);
-      return {
-        key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}:${link.relationLabel}`,
-        resourceId: link.resourceId,
-        title: publicName(link.displayName, documentBacked),
-        detail: null,
-        relationLabel: link.relationLabel,
-        typeLabel: link.typeLabel,
-        members: null,
-        sectionKey: key,
-        sectionTitle: title,
-        documentUri: link.documentUri ?? null,
-        hideDisplayName: documentBacked,
-        displayDate: link.displayDate ?? null,
-        sortDate: link.sortDate ?? null
-      };
-    })
+    items: links.map(link => ({
+      key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}`,
+      resourceId: link.resourceId,
+      title: link.displayName,
+      members: null,
+      values: [],
+      sectionKey: key,
+      sectionTitle: title,
+      documentUri: link.documentUri ?? null,
+      hasDocument: hasDocument(link),
+      displayDate: link.displayDate ?? null,
+      sortDate: link.sortDate ?? null
+    }))
   };
 }
 
@@ -122,34 +105,25 @@ export function relationEntryBlock(
       ? "media"
       : "text",
     items: entries.map(entry => {
-      const previewMember = entry.members.find(member =>
-        member.documentUri !== null && member.documentUri === entry.documentUri) ??
-        entry.members.find(member => member.documentUri !== null) ??
-        entry.members[0];
-      const detail = entry.relationTypeLabel && entry.relationTypeLabel !== entry.title
-        ? entry.relationTypeLabel
-        : null;
+      const documentMember = entry.members.find(member =>
+        hasDocument(member) && member.documentUri === entry.documentUri) ??
+        entry.members.find(hasDocument);
+      const previewMember = documentMember ?? entry.members[0];
       return {
         key: `${key}:${entry.key}`,
         resourceId: previewMember?.resourceId ?? entry.relationResourceId ?? entry.key,
         title: entry.title,
-        detail,
-        relationLabel: entry.title,
-        typeLabel: detail,
-        members: entry.members.map(member => {
-          const documentBacked = hasDocument(member);
-          return {
-            resourceId: member.resourceId,
-            displayName: publicName(member.displayName, documentBacked),
-            roleLabel: member.roleLabel,
-            documentUri: member.documentUri,
-            hideDisplayName: documentBacked
-          };
-        }),
+        members: entry.members.map(member => ({
+          resourceId: member.resourceId,
+          displayName: member.displayName,
+          documentUri: member.documentUri,
+          hasDocument: hasDocument(member)
+        })),
+        values: entry.values.map(value => value.value).filter(Boolean),
         sectionKey: key,
         sectionTitle: title,
-        documentUri: previewMember?.documentUri ?? entry.documentUri,
-        hideDisplayName: previewMember === undefined ? false : hasDocument(previewMember),
+        documentUri: documentMember?.documentUri ?? entry.documentUri,
+        hasDocument: documentMember !== undefined || entry.documentUri !== null,
         displayDate: entry.displayDate,
         sortDate: entry.sortDate
       };
