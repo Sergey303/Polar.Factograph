@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.Features;
+using Polar.Factograph.Api.Documents;
 using Polar.Factograph.Application;
+using Polar.Factograph.Fog;
 
 namespace Polar.Factograph.Api.Infrastructure;
 
@@ -7,10 +9,13 @@ public sealed record ResourceHtmlMetadata(
     string Title,
     string Description,
     string SiteName,
-    string CanonicalUrl);
+    string CanonicalUrl,
+    string? ImageUrl = null);
 
 public sealed class ResourceHtmlMetadataProvider(
-    ProjectRequestContextFactory contextFactory)
+    ProjectRequestContextFactory contextFactory,
+    CassetteDocumentPathResolver? documentResolver = null,
+    DocumentContentTypeResolver? contentTypes = null)
 {
     private const int DescriptionLimit = 240;
 
@@ -40,11 +45,21 @@ public sealed class ResourceHtmlMetadataProvider(
 
         string title = TitleOf(page);
         string siteName = readContext.Project.Name;
+        string? imageUrl = documentResolver is null || contentTypes is null
+            ? null
+            : ImageUrl(
+                context.Request,
+                page,
+                readContext.Project,
+                readContext.Access,
+                documentResolver,
+                contentTypes);
         return new ResourceHtmlMetadata(
             title,
             DescriptionOf(page),
             siteName,
-            CanonicalUrl(context.Request, page.Portrait.ResourceId));
+            CanonicalUrl(context.Request, page.Portrait.ResourceId),
+            imageUrl);
     }
 
     internal static string? TryGetPublicResourceId(HttpRequest request)
@@ -123,6 +138,81 @@ public sealed class ResourceHtmlMetadataProvider(
             ? request.PathBase.Value!.TrimEnd('/')
             : string.Empty;
         return $"{request.Scheme}://{request.Host}{pathBase}/resource/{Uri.EscapeDataString(resourceId)}";
+    }
+
+    internal static string? ImageUrl(
+        HttpRequest request,
+        PresentedSemanticResourcePage page,
+        ProjectDefinition project,
+        ProjectAccessSnapshot access,
+        CassetteDocumentPathResolver resolver,
+        DocumentContentTypeResolver contentTypes)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(access);
+        ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(contentTypes);
+
+        foreach (string documentUri in DocumentUris(page.Portrait))
+        {
+            CassetteDocumentLocation location;
+            try
+            {
+                location = resolver.Resolve(project, documentUri);
+            }
+            catch (Exception exception) when (
+                exception is InvalidDataException or KeyNotFoundException)
+            {
+                continue;
+            }
+
+            if (!access.ReadableCassetteIds.Contains(location.CassetteId))
+            {
+                continue;
+            }
+
+            (string Variant, string? Path)[] candidates =
+            [
+                ("normal", location.NormalPreviewPath),
+                ("medium", location.MediumPreviewPath),
+                ("small", location.SmallPreviewPath),
+                ("icon", location.IconPreviewPath),
+                ("original", location.OriginalPath)
+            ];
+            foreach ((string variant, string? path) in candidates)
+            {
+                if (path is null ||
+                    !contentTypes.Resolve(path).StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                return DocumentContentUrl(request, documentUri, variant);
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> DocumentUris(PresentedProjectResourcePortrait portrait) =>
+        portrait.Literals
+            .Select(field => field.Value.Trim())
+            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal);
+
+    private static string DocumentContentUrl(
+        HttpRequest request,
+        string documentUri,
+        string variant)
+    {
+        string pathBase = request.PathBase.HasValue
+            ? request.PathBase.Value!.TrimEnd('/')
+            : string.Empty;
+        return $"{request.Scheme}://{request.Host}{pathBase}/api/documents/content" +
+            $"?uri={Uri.EscapeDataString(documentUri)}&variant={Uri.EscapeDataString(variant)}";
     }
 
     private static bool IsTerminalPredicate(string predicate, string name) =>
