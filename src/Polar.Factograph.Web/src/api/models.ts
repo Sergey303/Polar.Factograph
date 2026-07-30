@@ -31,7 +31,6 @@ export interface ResourceSearchResult {
   type: string | null;
   typeLabel: string | null;
   score: number;
-  sourceCassetteId: string;
   matches: SearchEvidence[];
 }
 
