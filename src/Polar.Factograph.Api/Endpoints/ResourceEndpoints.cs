@@ -1,5 +1,6 @@
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Application;
+using Polar.Factograph.Domain;
 
 namespace Polar.Factograph.Api.Endpoints;
 
@@ -22,6 +23,9 @@ public static class ResourceEndpoints
         ProjectReadContext context = await contextFactory.CreateReadAsync(
             httpContext,
             cancellationToken);
+        _ = ProjectAuthorization.RequireWritableCassetteRight(
+            context.Access,
+            CassetteRights.WriteMetadata);
         PresentedProjectResourcePortrait? portrait = await context.Portraits.GetAsync(
             id,
             context.Access,
