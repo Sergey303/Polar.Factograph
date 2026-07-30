@@ -19,7 +19,6 @@ export interface SemanticContentItem {
   key: string;
   resourceId: string;
   title: string;
-  caption: string | null;
   members: SemanticContentMember[] | null;
   values: string[];
   sectionKey: string;
@@ -56,13 +55,19 @@ function firstPublicLabel(...values: Array<string | null | undefined>): string |
   return values.find(isPublicLabel)?.trim() ?? null;
 }
 
-function entryCaption(entry: SemanticRelationEntry, documentBacked: boolean): string | null {
+function entryLabel(entry: SemanticRelationEntry, documentBacked: boolean): string | null {
   if (documentBacked) return null;
   return firstPublicLabel(
     entry.relationTypeLabel,
     entry.groupLabel,
     entry.title,
     entry.members.find(member => isPublicLabel(member.roleLabel))?.roleLabel);
+}
+
+function publicValues(values: string[], label: string | null): string[] {
+  const result = label === null ? [...values] : [label, ...values];
+  return result.filter((value, index) =>
+    value.trim().length > 0 && result.indexOf(value) === index);
 }
 
 export function photoBlock(
@@ -78,7 +83,6 @@ export function photoBlock(
       key: `${key}:${photo.resourceId}:${photo.contextResourceId ?? ""}`,
       resourceId: photo.resourceId,
       title: photo.displayName,
-      caption: null,
       members: null,
       values: photo.contextLabel ? [photo.contextLabel] : [],
       sectionKey: key,
@@ -102,15 +106,15 @@ export function linkBlock(
     kind: links.some(hasDocument) ? "media" : "text",
     items: links.map(link => {
       const documentBacked = hasDocument(link);
+      const label = documentBacked
+        ? null
+        : firstPublicLabel(link.groupLabel, link.relationLabel, link.typeLabel);
       return {
         key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}`,
         resourceId: link.resourceId,
         title: link.displayName,
-        caption: documentBacked
-          ? null
-          : firstPublicLabel(link.groupLabel, link.relationLabel, link.typeLabel),
         members: null,
-        values: [],
+        values: publicValues([], label),
         sectionKey: key,
         sectionTitle: title,
         documentUri: link.documentUri ?? null,
@@ -141,13 +145,13 @@ export function relationEntryBlock(
       const previewMember = documentMember ?? entry.members[0];
       const relationOwnsDocument = documentMember === undefined && entry.documentUri !== null;
       const documentBacked = documentMember !== undefined || entry.documentUri !== null;
+      const values = (entry.values ?? []).map(value => value.value).filter(Boolean);
       return {
         key: `${key}:${entry.key}`,
         resourceId: relationOwnsDocument
           ? entry.relationResourceId ?? entry.key
           : previewMember?.resourceId ?? entry.relationResourceId ?? entry.key,
         title: entry.title,
-        caption: entryCaption(entry, documentBacked),
         members: entry.members.map(member => ({
           resourceId: member.resourceId,
           displayName: member.displayName,
@@ -155,7 +159,7 @@ export function relationEntryBlock(
           documentUri: member.documentUri,
           hasDocument: hasDocument(member)
         })),
-        values: (entry.values ?? []).map(value => value.value).filter(Boolean),
+        values: publicValues(values, entryLabel(entry, documentBacked)),
         sectionKey: key,
         sectionTitle: title,
         documentUri: documentMember?.documentUri ?? entry.documentUri,
