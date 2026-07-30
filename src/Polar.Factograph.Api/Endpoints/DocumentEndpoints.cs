@@ -24,6 +24,7 @@ public static class DocumentEndpoints
         RouteGroupBuilder group = endpoints.MapGroup("/api/documents");
         group.MapGet("/location", GetLocationAsync);
         group.MapGet("/content", GetContentAsync);
+        group.MapGet("/image", GetImageAsync);
         return endpoints;
     }
 
@@ -87,6 +88,37 @@ public static class DocumentEndpoints
         return Results.File(
             path,
             contentTypes.Resolve(path),
+            enableRangeProcessing: true);
+    }
+
+    private static async Task<IResult> GetImageAsync(
+        string uri,
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        CassetteDocumentPathResolver resolver,
+        DocumentContentTypeResolver contentTypes,
+        CancellationToken cancellationToken)
+    {
+        ProjectAccessContext context = await contextFactory.CreateAccessAsync(
+            httpContext,
+            cancellationToken);
+        CassetteDocumentLocation? location = ResolveAuthorized(context, resolver, uri);
+        if (location is null)
+        {
+            return NotFound(uri);
+        }
+
+        DocumentImageSelection? image = DocumentImageSelector.Select(location, contentTypes);
+        if (image is null || !File.Exists(image.Path))
+        {
+            return Results.NotFound(new ApiError(
+                "document_image_not_found",
+                $"Document image was not found: {uri}"));
+        }
+
+        return Results.File(
+            image.Path,
+            contentTypes.Resolve(image.Path),
             enableRangeProcessing: true);
     }
 
