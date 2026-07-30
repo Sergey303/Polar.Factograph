@@ -107,6 +107,7 @@ export interface SemanticResourceLink {
   sortDate?: string | null;
   groupKey?: string | null;
   groupLabel?: string | null;
+  hasDocument?: boolean;
 }
 
 export interface SemanticRelationMember {
@@ -116,6 +117,7 @@ export interface SemanticRelationMember {
   typeLabel: string | null;
   roleLabel: string | null;
   documentUri: string | null;
+  hasDocument?: boolean;
 }
 
 export interface SemanticRelationEntry {
@@ -140,6 +142,7 @@ export interface SemanticPhotoCard {
   contextLabel: string | null;
   displayDate?: string | null;
   sortDate?: string | null;
+  hasDocument?: boolean;
 }
 
 export interface SemanticResourcePage {
