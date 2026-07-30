@@ -40,6 +40,12 @@ public sealed class SemanticTimelineDateSelectionTests
         Assert.Equal("org-1", link.ResourceId);
         Assert.Equal("1985", link.DisplayDate);
         Assert.Equal("1985-01-01", link.SortDate);
+
+        SemanticResourceLink unified = Assert.Single(page.Links);
+        Assert.Equal(link.ResourceId, unified.ResourceId);
+        Assert.Equal(link.RelationResourceId, unified.RelationResourceId);
+        Assert.Equal(link.GroupKey, unified.GroupKey);
+        Assert.Equal(link.SortDate, unified.SortDate);
     }
 
     [Fact]
@@ -67,6 +73,13 @@ public sealed class SemanticTimelineDateSelectionTests
         SemanticPhotoCard photo = Assert.Single(page.Photos);
         Assert.Equal("1978", photo.DisplayDate);
         Assert.Equal("1978-01-01", photo.SortDate);
+
+        SemanticResourceLink media = Assert.Single(page.Links);
+        Assert.Equal("photo-1", media.ResourceId);
+        Assert.Equal("iiss://cassette/0001/0001", media.DocumentUri);
+        Assert.Equal("Отражение", media.GroupLabel);
+        Assert.Equal("1978", media.DisplayDate);
+        Assert.Equal("1978-01-01", media.SortDate);
     }
 
     private static ResourceHead Head(string id) => new(
