@@ -16,26 +16,34 @@ public sealed class ResourceHtmlMetadataImageTests : IDisposable
         Guid.NewGuid().ToString("N"));
 
     [Fact]
-    public void ImageUrl_UsesLargestAuthorizedImagePreview()
+    public void ImageUrl_UsesStableEndpointForLargestAuthorizedImagePreview()
     {
         string normal = CreateFile("documents", "normal", "0001", "0042.jpg");
         CreateFile("documents", "small", "0001", "0042.jpg");
         ProjectDefinition project = Project();
         ProjectAccessSnapshot access = Access(canRead: true);
         DefaultHttpContext context = Context();
+        CassetteDocumentPathResolver resolver = new();
+        DocumentContentTypeResolver contentTypes = new();
 
         string? imageUrl = ResourceHtmlMetadataProvider.ImageUrl(
             context.Request,
             Page("iiss://TestCassette@iis.nsk.su/0001/0042"),
             project,
             access,
-            new CassetteDocumentPathResolver(),
-            new DocumentContentTypeResolver());
+            resolver,
+            contentTypes);
+        DocumentImageSelection? selection = DocumentImageSelector.Select(
+            resolver.Resolve(project, "iiss://TestCassette@iis.nsk.su/0001/0042"),
+            contentTypes);
 
         Assert.True(File.Exists(normal));
+        Assert.NotNull(selection);
+        Assert.Equal("normal", selection.Variant);
+        Assert.Equal(Path.GetFullPath(normal), selection.Path);
         Assert.Equal(
-            "https://archive.example/factograph/api/documents/content" +
-            "?uri=iiss%3A%2F%2FTestCassette%40iis.nsk.su%2F0001%2F0042&variant=normal",
+            "https://archive.example/factograph/api/documents/image" +
+            "?uri=iiss%3A%2F%2FTestCassette%40iis.nsk.su%2F0001%2F0042",
             imageUrl);
     }
 
@@ -81,7 +89,7 @@ public sealed class ResourceHtmlMetadataImageTests : IDisposable
             "Description",
             "Archive",
             "https://archive.example/resource/1",
-            "https://archive.example/api/documents/content?uri=1&amp;variant=normal");
+            "https://archive.example/api/documents/image?uri=1");
 
         string withImage = DynamicBaseUrlMiddleware.InsertResourceMetadata(source, metadata);
         string withoutImage = DynamicBaseUrlMiddleware.InsertResourceMetadata(
