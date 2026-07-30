@@ -119,6 +119,23 @@ public sealed class OntologyValidationServiceTests
         Assert.Contains(O + "second", issue.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Fatal_CreatesOneInvalidDocumentLevelIssue()
+    {
+        OntologyValidationReport report = OntologyValidationReports.Fatal(
+            "ontology_document_invalid",
+            "Документ повреждён.");
+
+        Assert.False(report.IsValid);
+        Assert.Equal(0, report.TermCount);
+        Assert.Equal(1, report.ErrorCount);
+        Assert.Equal(0, report.WarningCount);
+        OntologyValidationIssue issue = Assert.Single(report.Issues);
+        Assert.Equal("$ontology", issue.TermId);
+        Assert.Equal("ontology_document_invalid", issue.Code);
+        Assert.Equal("Документ повреждён.", issue.Message);
+    }
+
     private static OntologyTerm Class(
         string id,
         string? label,
