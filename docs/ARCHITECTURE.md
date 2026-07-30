@@ -43,6 +43,9 @@ project.json
 12. A read-store instance is bound to one immutable completed generation and never observes a partially rebuilt generation.
 13. Anonymous public access is represented by a synthetic project member that is forcibly assigned the validated read-only `viewer` role and can never resolve a writable Fog.
 14. Public entity URLs are real server paths. Hash routes remain migration input only and are replaced in browser history.
+15. Public relation sections are derived from one ontology-labelled link stream. Media is detected by an actual `iiss://` attachment, not by a hardcoded domain class such as `photo-doc`.
+16. Timeline virtualization uses the page scroll. Offscreen chunks retain measured placeholders, so no nested scroll container is introduced.
+17. `icon` is an optional derived cassette preview. Its absence falls back to `small` and does not require an RDF, Fog, or identifier migration.
 
 ## Compatibility pipeline
 
@@ -76,6 +79,19 @@ The synthetic resource `cassetterootcollection` is emitted only when no current 
 - ontology-priority property order;
 - stable raw-value fallbacks for unknown ontology terms.
 
+### Semantic relations and time
+
+`SemanticResourcePageService` keeps the specialized legacy arrays for API compatibility but also publishes one deduplicated `Links` stream. Complex relation nodes contribute their final entity targets rather than appearing as public bridge records. Group keys and labels come from relation types and ontology labels.
+
+For timeline ordering:
+
+1. `from-date` is used as the beginning of an interval and `to-date` is retained for display;
+2. otherwise the earliest value among ontology properties whose range is `date` is used;
+3. if the relation has no date and its target is media, the target document date, including a shooting-date property, is used;
+4. undated items follow all dated items.
+
+The React page shows the timeline by default. Unchecking `Хронология` renders one block per selected relation group. Each block owns its list, table, or media-grid view. Grouped blocks use previous/next portions; the timeline uses page-scroll chunk virtualization.
+
 ### Search
 
 The legacy `UpiAdapter` behavior is represented by two materialized indexes:
@@ -91,7 +107,17 @@ The legacy `UpiAdapter` behavior is represented by two materialized indexes:
 
 `IProjectSearchStore` exposes exact-key queries suitable for `DbSet<T>` external indexes. `ProjectResourceSearchService` performs visibility checks, ranking, language-aware display-name selection, type enrichment, and bounded result enrichment.
 
-The browser groups the returned search results by ontology type, shows counts, and stores the selected type in the `type` query parameter. These are result-set facets over the current bounded API response, not yet complete archive-wide aggregate counts. A future server facet contract must calculate totals before the result limit and must not scan all RDF triples per request.
+The browser groups the returned search results by ontology type, shows counts, and stores the selected bounded-result facet in the `type` query parameter. These counts describe only the current API result set, not the entire archive.
+
+Ontology class search is separate from ordinary entity ranking. An exact entity named `Организация` remains the first ordinary result when its name rank wins; a distinct category action may open all instances of the ontology class `Организация`. Class suggestions match localized labels and identifiers. Category retrieval expands ontology descendants, then queries exact `(rdf:type, IRI, classId)` values through the existing `PredicateObjectKey` index. It does not scan unrelated RDF triples. The first implementation resolves and sorts all matching visible summaries before applying offset/limit; a dedicated materialized type/name index may replace this when representative archives show that repeated large-category paging needs it.
+
+Addressable category routes use:
+
+```text
+/search?q=Организация&class={encodedClassId}&offset=50
+```
+
+The ordinary bounded-result facet continues to use `type`; `class` denotes a server category query and takes precedence when both appear.
 
 ### Duplicate prevention
 
@@ -120,6 +146,7 @@ The React application uses real addressable routes:
 
 ```text
 /search?q=...&type=...
+/search?q=...&class=...&offset=...
 /entity/new
 /resource/{encodedResourceId}
 /resource/{encodedResourceId}/edit
@@ -138,9 +165,11 @@ Legacy SORAN1957-style links are preserved by a server redirect:
 
 A request without `id` is redirected temporarily to `/search`. The redirect preserves `PathBase`, so the application may be hosted below the domain root.
 
-For an exact public resource route, `DynamicBaseUrlMiddleware` buffers the SPA HTML, reads the authorized semantic page, resolves the canonical resource identifier, and injects the title, description, canonical link, Open Graph fields, and Twitter summary fields before the response leaves the server. This supports crawlers and social preview bots that do not execute React. The dynamic response removes static-file ETag and Last-Modified validators and uses `private, no-store`, so metadata cannot become stale or leak between access contexts. A metadata read failure is logged and falls back to the normal generic SPA document instead of breaking the page.
+For an exact public resource route, `DynamicBaseUrlMiddleware` buffers the SPA HTML, reads the authorized semantic page, resolves the canonical resource identifier, and injects the title, description, canonical link, Open Graph fields, and Twitter fields before the response leaves the server. When the entity has an authorized media attachment with an image original or preview, the metadata uses the stable `/api/documents/image?uri=...` endpoint. That endpoint selects `normal`, `medium`, `small`, `icon`, then an image original. A non-image original without an image preview is not advertised as `og:image`.
 
-After React loads, `ResourceDocumentMetadata` applies the same title, description, canonical URL, and Open Graph values in the browser. The client layer therefore mirrors rather than replaces the server metadata contract.
+The dynamic response removes static-file ETag and Last-Modified validators and uses `private, no-store`, so metadata cannot become stale or leak between access contexts. A metadata read failure is logged and falls back to the generic SPA document instead of breaking the page.
+
+After React loads, `ResourceDocumentMetadata` mirrors title, description, canonical URL, and server-verified image metadata. It removes an image left by the preceding SPA route and never invents an unverified Open Graph image in the browser.
 
 ## Layers
 
@@ -278,16 +307,17 @@ Completed foundations:
 1. project configuration, validation, roles, and cassette access;
 2. compatible Fog scanning, canonicalization, delete/substitute resolution, and revision selection;
 3. logical RDF projection, physical Polar.DB.Typed rows, indexed search, and atomic generations;
-4. ontology-aware portraits, semantic linked sections, timeline presentation, and document resolution;
+4. ontology-aware portraits, unified semantic links, date-aware timeline/group presentation, and document resolution;
 5. metadata, relation, collection, and document write coordination with per-editor Fog routing;
 6. local authentication, device sessions, editor allow-list reconciliation, and anonymous viewer boundary;
-7. addressable React routes, duplicate warnings, public resource metadata in server and browser HTML, legacy URL redirects, and bounded type facets.
+7. addressable React routes, duplicate warnings, server/browser public metadata with images, legacy URL redirects, bounded result facets, and ontology class search;
+8. page-scroll timeline virtualization and compatible optional icon previews.
 
 Next delivery priorities:
 
-1. complete server-side search facets and pagination before the result limit;
+1. complete materialized server-side search facets and efficient large-category pagination before the result limit;
 2. per-fact temporal/provenance/uncertainty editorial models;
 3. duplicate merge, substitution preview, redirects, and reversible editorial operations;
 4. publication states, moderation, audit history, and rollback;
-5. photo viewer, identification workflow, rights, embargo, and curated exhibitions;
+5. media viewer, identification workflow, rights, embargo, and curated exhibitions;
 6. only after proven compatibility: discussion of a cassette v2 format.
