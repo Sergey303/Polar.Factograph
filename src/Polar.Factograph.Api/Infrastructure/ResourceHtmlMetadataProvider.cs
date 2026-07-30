@@ -156,29 +156,31 @@ public sealed class ResourceHtmlMetadataProvider(
         ArgumentNullException.ThrowIfNull(resolver);
         ArgumentNullException.ThrowIfNull(contentTypes);
 
-        foreach (string documentUri in DocumentUris(page.Portrait))
+        string[] documentUris = DocumentUris(page.Portrait).ToArray();
+        if (documentUris.Length != 1)
         {
-            CassetteDocumentLocation location;
-            try
-            {
-                location = resolver.Resolve(project, documentUri);
-            }
-            catch (Exception exception) when (
-                exception is InvalidDataException or KeyNotFoundException)
-            {
-                continue;
-            }
-
-            if (!access.ReadableCassetteIds.Contains(location.CassetteId) ||
-                DocumentImageSelector.Select(location, contentTypes) is null)
-            {
-                continue;
-            }
-
-            return DocumentImageUrl(request, documentUri);
+            return null;
         }
 
-        return null;
+        string documentUri = documentUris[0];
+        CassetteDocumentLocation location;
+        try
+        {
+            location = resolver.Resolve(project, documentUri);
+        }
+        catch (Exception exception) when (
+            exception is InvalidDataException or KeyNotFoundException)
+        {
+            return null;
+        }
+
+        if (!access.ReadableCassetteIds.Contains(location.CassetteId) ||
+            DocumentImageSelector.Select(location, contentTypes) is null)
+        {
+            return null;
+        }
+
+        return DocumentImageUrl(request, documentUri);
     }
 
     private static IEnumerable<string> DocumentUris(PresentedProjectResourcePortrait portrait) =>
