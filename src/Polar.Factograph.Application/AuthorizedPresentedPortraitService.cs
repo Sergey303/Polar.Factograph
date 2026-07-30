@@ -21,6 +21,9 @@ public sealed class AuthorizedPresentedPortraitService(
 
         return portrait is null
             ? null
-            : presenter.Present(portrait, preferredLanguage);
+            : presenter.Present(
+                portrait,
+                preferredLanguage,
+                ResourceProvenancePresentation.Resolve(portrait, access));
     }
 }
