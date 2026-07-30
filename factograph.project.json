@@ -9,6 +9,7 @@
     "path": "./project-data/index",
     "rebuildMode": "whenSourcesChanged"
   },
+  "homeResourceIds": [],
   "cassettes": [
     {
       "id": "syp-cassette-full",
