@@ -65,7 +65,7 @@ public static class ProjectDiagnosticsEndpoints
     private static async Task<IResult> GetOntologyValidationAsync(
         HttpContext httpContext,
         ProjectRequestContextFactory contextFactory,
-        OntologyCatalogProvider ontologyProvider,
+        XmlOntologyCatalogLoader ontologyLoader,
         OntologyValidationService validation,
         CancellationToken cancellationToken)
     {
@@ -76,9 +76,9 @@ public static class ProjectDiagnosticsEndpoints
             context.Access,
             ProjectRights.RebuildIndex);
 
-        OntologyCatalog ontology = await ontologyProvider.GetAsync(
+        IReadOnlyDictionary<string, OntologyTerm> terms = await ontologyLoader.LoadTermsAsync(
             context.Project.Ontology.Path,
             cancellationToken);
-        return Results.Ok(validation.Validate(ontology));
+        return Results.Ok(validation.Validate(terms.Values));
     }
 }
