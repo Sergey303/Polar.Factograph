@@ -4,7 +4,6 @@ import type {
 } from "../api/models";
 import {
   linkBlock,
-  photoBlock,
   SemanticContentBlocks,
   type SemanticContentBlockDefinition
 } from "./SemanticContentBlocks";
@@ -28,15 +27,19 @@ function linkIdentity(link: SemanticResourceLink): string {
   ].join("\n");
 }
 
-function relationBlocks(page: SemanticResourcePage): SemanticContentBlockDefinition[] {
-  const groups = new Map<string, RelationGroup>();
-  const seen = new Set<string>();
-  const links = [
+function legacyLinks(page: SemanticResourcePage): SemanticResourceLink[] {
+  return [
     ...page.participants,
     ...page.organizations,
     ...page.collections,
     ...page.relatedResources
   ];
+}
+
+function relationBlocks(page: SemanticResourcePage): SemanticContentBlockDefinition[] {
+  const groups = new Map<string, RelationGroup>();
+  const seen = new Set<string>();
+  const links = page.links ?? legacyLinks(page);
 
   for (const link of links) {
     const identity = linkIdentity(link);
@@ -59,10 +62,5 @@ function relationBlocks(page: SemanticResourcePage): SemanticContentBlockDefinit
 }
 
 export function SemanticResourceSections({ page }: SemanticResourceSectionsProps) {
-  const blocks = [
-    photoBlock("photos", "Фотографии", page.photos),
-    ...relationBlocks(page)
-  ];
-
-  return <SemanticContentBlocks blocks={blocks} />;
+  return <SemanticContentBlocks blocks={relationBlocks(page)} />;
 }
