@@ -1,3 +1,4 @@
+import { documentImageUrl } from "../api/factographApi";
 import type { ProjectOverview, SemanticResourcePage } from "../api/models";
 import { resourceDocumentUris } from "../app/resourceDocuments";
 import { CopyResourceLinkButton } from "./CopyResourceLinkButton";
@@ -52,6 +53,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const documents = resourceDocumentUris(portrait);
   const title = titleOf(page);
   const siteName = props.project?.name ?? "Polar.Factograph";
+  const metadataImageUrl = documents[0] ? documentImageUrl(documents[0]) : null;
 
   return (
     <>
@@ -60,6 +62,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
         title={title}
         description={descriptionOf(page)}
         siteName={siteName}
+        imageUrl={metadataImageUrl}
       />
       <article className="portrait">
         <header className="portrait-header public-portrait-header">
