@@ -1,10 +1,12 @@
 using System.Security.Claims;
+using Polar.Factograph.Api.Authentication;
 
 namespace Polar.Factograph.Api.Infrastructure;
 
 public sealed class CurrentUserResolver(
     IConfiguration configuration,
-    IHostEnvironment environment)
+    IHostEnvironment environment,
+    LocalAuthenticationOptions authentication)
 {
     public string Resolve(HttpContext httpContext)
     {
@@ -22,9 +24,16 @@ public sealed class CurrentUserResolver(
         string? developmentUser = environment.IsDevelopment()
             ? configuration["Api:DevelopmentUserId"]
             : null;
+        if (!string.IsNullOrWhiteSpace(developmentUser))
+        {
+            return developmentUser;
+        }
 
-        return !string.IsNullOrWhiteSpace(developmentUser)
-            ? developmentUser
-            : throw new ApiAuthenticationException();
+        if (authentication.PublicReadEnabled)
+        {
+            return authentication.PublicUserId;
+        }
+
+        throw new ApiAuthenticationException();
     }
 }
