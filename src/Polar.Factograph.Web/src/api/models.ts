@@ -125,9 +125,10 @@ export interface DocumentLocation {
   folderName: string;
   documentNumber: string;
   originalAvailable: boolean;
+  iconPreviewAvailable: boolean;
   smallPreviewAvailable: boolean;
   mediumPreviewAvailable: boolean;
   normalPreviewAvailable: boolean;
 }
 
-export type DocumentVariant = "original" | "small" | "medium" | "normal";
+export type DocumentVariant = "original" | "icon" | "small" | "medium" | "normal";
