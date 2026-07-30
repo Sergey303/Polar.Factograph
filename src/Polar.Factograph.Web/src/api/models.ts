@@ -115,7 +115,7 @@ export interface SemanticRelationMember {
   type: string | null;
   typeLabel: string | null;
   roleLabel: string | null;
-  documentUri?: string | null;
+  documentUri: string | null;
 }
 
 export interface SemanticRelationEntry {
