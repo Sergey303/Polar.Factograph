@@ -6,6 +6,7 @@ import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
 import { ResourceDocumentMetadata } from "./ResourceDocumentMetadata";
 import { SemanticResourceSections } from "./SemanticResourceSections";
+import { TechnicalResourceDetails } from "./TechnicalResourceDetails";
 
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
@@ -82,6 +83,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
         />
         <LiteralFields fields={portrait.literals} />
         <SemanticResourceSections page={page} />
+        <TechnicalResourceDetails portrait={portrait} />
       </article>
     </>
   );
