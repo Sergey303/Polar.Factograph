@@ -25,21 +25,24 @@ The current compatibility increment contains:
 - external RDF and search indexes built before `CURRENT` is switched;
 - a concrete RDF/search store bound to one completed generation;
 - raw resource portraits with direct and inverse relations;
+- one semantic resource page with ontology-grouped final links, timeline dates, media attachments, and legacy compatibility arrays;
 - ontology catalog and ontology-aware presentation contracts;
-- safe `iiss://` resolution plus authorized metadata and streamed original/preview content;
+- ordinary entity search plus separate ontology class suggestions and indexed class-instance paging;
+- safe `iiss://` resolution plus authorized metadata, original/preview content, optional `icon` fallback, and a stable best-image endpoint;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
 - local application-cookie authentication with reloadable JSON users and devices;
 - one numbered writable cassette Fog assigned to each registered user;
 - atomic append-only resource, delete, substitute, and collection membership mutations;
 - ontology-aware write validation for class, domain, property kind, enumeration, target existence, and object range;
+- structural ontology diagnostics that report malformed documents, missing parents, cycles, broken domain/range references, and unusable resource-picker constraints before strict runtime catalog construction;
 - atomic streamed document original upload and replacement with independent cassette rights;
 - durable preview-generation requests created after document add and replacement;
 - atomic preview queue claiming, retry scheduling, stale-lease recovery, dead-letter isolation, and administrative diagnostics;
 - a configurable hosted preview worker with safe external-process invocation, source-version checks, fair cassette processing, runtime health, and failure counters;
-- a React/TypeScript workspace for search, portraits, relation and collection navigation, document replacement, and ontology-driven resource revisions;
+- a React/TypeScript workspace for search, ontology categories, portraits, timeline/grouped relation navigation, document replacement, and ontology-driven resource revisions;
 - an authorized write-schema route exposing only localized classes, allowed properties, value kinds, ranges, and enumeration choices;
 - a two-stage document intake workflow that preserves a committed original while retrying only RDF metadata;
-- an authorized React administration dashboard for safe index status, preview health, on-demand Fog statistics, and confirmed full rebuilds;
+- an authorized React administration dashboard for safe index status, ontology validation, preview health, on-demand Fog statistics, and confirmed full rebuilds;
 - index runtime diagnostics for `DIRTY`, `CURRENT`, completed generations, and interrupted builds;
 - shared mutation orchestration with serialized rebuild, `DIRTY` recovery, and stale-read protection;
 - integration tests against unchanged `SypCassete_current.fog` and real Polar.DB.Typed persistence.
@@ -144,6 +147,7 @@ POST /api/auth/logout
 GET  /api/project
 GET  /api/ontology/write-schema
 GET  /api/resources/portrait?id={rdf-id}
+GET  /api/resources/page?id={rdf-id}
 POST /api/resources
 POST /api/resources/delete
 POST /api/resources/substitute
@@ -152,15 +156,19 @@ POST /api/collections/items
 POST /api/collections/items/remove
 GET  /api/search/names?q={text}
 GET  /api/search/words?q={text}
+GET  /api/search/classes?q={text}
+GET  /api/search/by-type?type={class-id}&offset=0
 GET  /api/documents/location?uri={iiss-uri}
 GET  /api/documents/content?uri={iiss-uri}&variant={variant}
+GET  /api/documents/image?uri={iiss-uri}
 POST /api/documents/files?fileName={name.ext}&cassetteId={optional-id}
 PUT  /api/documents/files?uri={iiss-uri}&fileName={name.ext}
 GET  /api/admin/project/sources
 GET  /api/admin/project/materialization-summary
+GET  /api/admin/project/ontology-validation
 GET  /api/admin/index/status
 POST /api/admin/index/rebuild
 GET  /api/admin/previews/status
 ```
 
-See [API](docs/API.md), [authentication](docs/AUTHENTICATION.md), [architecture](docs/ARCHITECTURE.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), [web workspace](src/Polar.Factograph.Web/README.md), and [legacy sources](docs/LEGACY_SOURCES.md).
+See [API](docs/API.md), [authentication](docs/AUTHENTICATION.md), [architecture](docs/ARCHITECTURE.md), [ontology validation](docs/ONTOLOGY_VALIDATION.md), [project configuration](docs/PROJECT_CONFIGURATION.md), [Fog writing](docs/WRITING.md), [document writing](docs/DOCUMENT_WRITING.md), [collections](docs/COLLECTIONS.md), [code structure](docs/CODE_STRUCTURE.md), [UX](docs/UX.md), [web workspace](src/Polar.Factograph.Web/README.md), and [legacy sources](docs/LEGACY_SOURCES.md).
