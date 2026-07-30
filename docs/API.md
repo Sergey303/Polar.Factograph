@@ -26,17 +26,14 @@ For local development only, `appsettings.Development.json` may provide:
 }
 ```
 
-## Read routes
+## Public read routes
 
 ```text
 GET /api/system/health
 GET /api/project
-GET /api/ontology/write-schema?lang=ru
-GET /api/resources/portrait?id={rdf-id}&lang=ru
 GET /api/resources/page?id={rdf-id}&lang=ru
 GET /api/search/names?q={text}&limit=50&lang=ru
 GET /api/search/words?q={text}&limit=50&lang=ru
-GET /api/search/duplicates?type={class-id}&predicate={property-id}&value={text}&limit=10&lang=ru
 GET /api/search/classes?q={text}&limit=8&lang=ru
 GET /api/search/by-type?type={class-id}&offset=0&limit=50&lang=ru
 GET /api/collections/items?id={collection-id}&limit=100&lang=ru
@@ -45,27 +42,17 @@ GET /api/documents/content?uri={iiss-uri}&variant={variant}
 GET /api/documents/image?uri={iiss-uri}
 ```
 
-The portrait route returns ontology labels, inverse labels, enumeration display values, and ontology property order while preserving raw RDF identifiers and literal values. The semantic page route additionally returns the canonical public entity plus ontology-grouped links and legacy compatibility arrays. `lang` defaults to `ru`.
+The semantic page route returns the canonical public entity plus ontology-grouped links, timeline data, media attachments, and legacy compatibility arrays. `lang` defaults to `ru`.
 
-Resource provenance is capability-shaped rather than returned uniformly:
-
-- a read-only viewer receives `provenance: null`;
-- a user with `writeMetadata` in the resource's source cassette receives only that cassette's logical id, which lets the editor choose the correct revision target;
-- a user with `rebuildIndex` receives the full source record id, Fog source, and modification time.
-
-Presented incoming links and public search results do not expose source cassette ids. Internal application and storage models retain cassette provenance for authorization, sorting, diagnostics, and write routing.
-
-Ordinary name/word search and ontology class search are separate contracts. Class suggestions never displace a better-ranked entity result. `/api/search/by-type` expands descendants of the selected class and returns one authorized, sorted page of entity summaries. Duplicate suggestions are restricted to the requested class or its descendants.
+Ordinary name/word search and ontology class search are separate contracts. Class suggestions never displace a better-ranked entity result. `/api/search/by-type` expands descendants of the selected class and returns one authorized, sorted page of entity summaries.
 
 The internal search model keeps the matched predicate, language, source cassette, and ranking diagnostics. The public name/word response returns only the distinct visible matched literal values needed for the result snippet. Raw predicate identifiers and evidence language metadata do not leave the application layer.
 
-The ontology write-schema route returns localized classes and their inherited writable properties. Each property contains its stable id, display label, literal/resource kind, range identifiers, and localized enumeration choices. It requires project `read` and never returns the ontology path, raw XML, members, roles, or cassette configuration.
-
-Collection browsing follows the legacy membership-resource join and is documented in [COLLECTIONS.md](COLLECTIONS.md).
+Collection browsing follows the legacy membership-resource join and is documented in [COLLECTIONS.md](COLLECTIONS.md). A viewer receives only the visible item identity and presentation. Membership resource and cassette identifiers are returned only when the user has effective `delete` access for that membership or has `rebuildIndex`.
 
 Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon` is optional and falls back to `small` when a cassette has no dedicated icon file. The content route supports HTTP range requests. The image route selects the best authorized image representation in the order `normal`, `medium`, `small`, `icon`, then an image original; it does not return a non-image original as an Open Graph image.
 
-`/api/documents/location` is also capability-shaped:
+`/api/documents/location` is capability-shaped:
 
 - every authorized reader receives only availability flags for the original and preview variants;
 - a user with effective `replaceDocuments` access in the source cassette receives its logical id and display name so the editor can authorize replacement;
@@ -82,9 +69,31 @@ Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon
 
 The response does not expose the current user id, the raw project-right set, project members, role definitions, or filesystem paths.
 
-Portrait, semantic page, ontology schema, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
-
 The public health response reports the service as `ok` or `degraded` and exposes only whether preview processing is enabled plus its coarse state. Disabled preview processing is healthy. A failed, stopped, or unresponsive enabled worker makes the service status `degraded`, but the response never includes timestamps, filesystem paths, process output, or exception text.
+
+## Editor read routes
+
+```text
+GET /api/ontology/write-schema?lang=ru
+GET /api/resources/portrait?id={rdf-id}&lang=ru
+GET /api/search/duplicates?type={class-id}&predicate={property-id}&value={text}&limit=10&lang=ru
+```
+
+These routes require project `read` plus at least one enabled, readable cassette with effective `AllowWrite=true` and `writeMetadata`.
+
+The write-schema route returns localized classes and inherited writable properties. Each property contains its stable id, display label, literal/resource kind, range identifiers, and localized enumeration choices. It never returns the ontology path, raw XML, members, roles, or cassette configuration.
+
+The raw portrait route supports editors that must preserve complete literals and direct links when appending a new revision. The public page uses `/api/resources/page` instead.
+
+Duplicate suggestions are an editor preflight used before creating a resource. They remain restricted to the requested class or its descendants and also require normal search access.
+
+Resource provenance is capability-shaped rather than returned uniformly:
+
+- a read-only viewer receives `provenance: null` through the semantic page;
+- a user with `writeMetadata` in the resource's source cassette receives only that cassette's logical id, which lets the editor choose the correct revision target;
+- a user with `rebuildIndex` receives the full source record id, Fog source, and modification time.
+
+Presented incoming links do not expose source cassette ids. Internal application and storage models retain cassette provenance for authorization, sorting, diagnostics, and write routing.
 
 ## Document binary write
 
@@ -224,3 +233,5 @@ The API uses stable error codes:
 - `invalid_request` — 400;
 - `project_unavailable` or `storage_unavailable` — 503;
 - `internal_error` — 500.
+
+Authorization failures return a neutral `forbidden` message. User identifiers, role/right names, cassette details, and exception text remain in server logs only. Project-runtime and storage failures likewise use stable neutral 503 messages and never return local paths, generation identifiers, Fog filenames, or raw `IOException` text.
