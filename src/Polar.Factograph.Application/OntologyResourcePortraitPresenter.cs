@@ -16,8 +16,7 @@ public sealed record PresentedResourceDirectLink(
 public sealed record PresentedResourceInverseLink(
     string Predicate,
     string Label,
-    string SourceResourceId,
-    string SourceCassetteId);
+    string SourceResourceId);
 
 public sealed record PresentedProjectResourcePortrait(
     string ResourceId,
@@ -88,8 +87,7 @@ public sealed class OntologyResourcePortraitPresenter
                 link.Predicate,
                 _ontology.InverseLabelOf(link.Predicate, preferredLanguage)
                     ?? PropertyLabel(link.Predicate, preferredLanguage),
-                link.SourceResourceId,
-                link.SourceCassetteId))
+                link.SourceResourceId))
             .ToArray();
 
         return new PresentedProjectResourcePortrait(
