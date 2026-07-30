@@ -13,7 +13,6 @@ import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
 import { ResourceDocumentMetadata } from "./ResourceDocumentMetadata";
 import { SemanticResourceSections } from "./SemanticResourceSections";
-import { TechnicalResourceDetails } from "./TechnicalResourceDetails";
 
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
@@ -94,10 +93,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
       />
       <article className="portrait">
         <header className="portrait-header public-portrait-header">
-          <div>
-            <span className="eyebrow">{portrait.typeLabel ?? portrait.type ?? "Ресурс"}</span>
-            <h1>{title}</h1>
-          </div>
+          <h1>{title}</h1>
           <CopyResourceLinkButton resourceId={portrait.resourceId} />
         </header>
 
@@ -115,7 +111,6 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
         />
         <LiteralFields fields={fields} />
         <SemanticResourceSections page={page} />
-        <TechnicalResourceDetails portrait={portrait} />
       </article>
     </>
   );
