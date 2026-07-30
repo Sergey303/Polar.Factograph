@@ -31,6 +31,30 @@ public static class ProjectAuthorization
         return access.ReadableCassetteIds;
     }
 
+    public static IReadOnlySet<string> RequireWritableCassetteRight(
+        ProjectAccessSnapshot access,
+        string cassetteRight)
+    {
+        ArgumentNullException.ThrowIfNull(access);
+        ArgumentException.ThrowIfNullOrWhiteSpace(cassetteRight);
+        RequireProjectRight(access, ProjectRights.Read);
+
+        HashSet<string> allowed = access.Cassettes.Values
+            .Where(snapshot =>
+                snapshot.Enabled &&
+                snapshot.AllowWrite &&
+                snapshot.CanRead &&
+                snapshot.Rights.Contains(cassetteRight))
+            .Select(snapshot => snapshot.CassetteId)
+            .ToHashSet(StringComparer.Ordinal);
+        if (allowed.Count == 0)
+        {
+            throw new ProjectAuthorizationException(access.UserId, cassetteRight);
+        }
+
+        return allowed;
+    }
+
     public static void RequireProjectRight(
         ProjectAccessSnapshot access,
         string projectRight)
