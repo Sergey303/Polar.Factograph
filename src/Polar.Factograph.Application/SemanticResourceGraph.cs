@@ -100,6 +100,7 @@ internal sealed class SemanticResourceGraph(
                 : new SemanticDateValue($"{from.Display}–{to.Display}", from.SortKey);
         }
 
+        SemanticDateValue? earliest = null;
         foreach (ResourceLiteralField field in portrait.Literals)
         {
             if (!IsDateProperty(field.Predicate))
@@ -108,13 +109,14 @@ internal sealed class SemanticResourceGraph(
             }
 
             SemanticDateValue? value = SemanticDateParser.Parse(field.Value);
-            if (value is not null)
+            if (value is not null &&
+                (earliest is null || string.CompareOrdinal(value.SortKey, earliest.SortKey) < 0))
             {
-                return value;
+                earliest = value;
             }
         }
 
-        return null;
+        return earliest;
     }
 
     public IReadOnlyList<string> DirectTargets(
