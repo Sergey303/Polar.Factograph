@@ -21,7 +21,7 @@ export function useAdminStatus(token: string, enabled: boolean) {
   return {
     index: indexQuery.data ?? null,
     previews: previewQuery.data ?? null,
-    loading: enabled && (indexQuery.isPending || previewQuery.isPending),
+    loading: enabled && (indexQuery.isFetching || previewQuery.isFetching),
     error: errors.length > 0 ? [...new Set(errors)].join(" · ") : null,
     reload: () => {
       if (!enabled) return;
