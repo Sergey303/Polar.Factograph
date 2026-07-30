@@ -24,7 +24,7 @@ project.json
   -> storage ports for RDF, portraits, and search
   -> ontology-aware application models
   -> Minimal API
-  -> web client
+  -> React/TypeScript public and editorial workspace
 ```
 
 ## Main invariants
@@ -41,6 +41,8 @@ project.json
 10. Application services depend on logical storage ports and do not know the concrete `DbSet<T>` layout.
 11. Ontology presentation never replaces raw RDF identifiers or values; it adds display labels and ordering while preserving fallbacks.
 12. A read-store instance is bound to one immutable completed generation and never observes a partially rebuilt generation.
+13. Anonymous public access is represented by a synthetic project member that is forcibly assigned the validated read-only `viewer` role and can never resolve a writable Fog.
+14. Public entity URLs are real server paths. Hash routes remain migration input only and are replaced in browser history.
 
 ## Compatibility pipeline
 
@@ -89,14 +91,63 @@ The legacy `UpiAdapter` behavior is represented by two materialized indexes:
 
 `IProjectSearchStore` exposes exact-key queries suitable for `DbSet<T>` external indexes. `ProjectResourceSearchService` performs visibility checks, ranking, language-aware display-name selection, type enrichment, and bounded result enrichment.
 
+The browser groups the returned search results by ontology type, shows counts, and stores the selected type in the `type` query parameter. These are result-set facets over the current bounded API response, not yet complete archive-wide aggregate counts. A future server facet contract must calculate totals before the result limit and must not scan all RDF triples per request.
+
+### Duplicate prevention
+
+Before a new entity is written, the editor checks entered short textual properties against existing visible resources:
+
+- exact `(predicate, literal kind, value)` matches use the existing `PredicateObjectKey` index;
+- names and aliases additionally use transliteration and keyboard-layout variants through the name-search index;
+- candidates are restricted to the selected ontology type or its descendants;
+- numeric, date, Boolean, enumeration, empty, and oversized values are excluded;
+- the user may reuse an existing entity or explicitly continue creating a new one.
+
+No additional normalized-literal index is created for all RDF properties until its storage and rebuild cost is measured on representative projects.
+
+## Public and editorial delivery
+
+The same API and project index serve two access modes:
+
+- an anonymous public visitor receives a synthetic project member id and the validated `viewer` access snapshot;
+- an authenticated viewer receives their stored viewer role;
+- an authenticated editor receives the role selected by `EditorLogins` and a dedicated writable Fog;
+- administration remains available only through explicit project rights.
+
+Startup fails when public reading is enabled but the effective public snapshot lacks `read/search`, contains any other project right, contains any cassette right other than `read`, or resolves a default writable cassette. The Fog resolver independently rejects the public user before its compatibility fallback for legacy static users.
+
+The React application uses real addressable routes:
+
+```text
+/search?q=...&type=...
+/entity/new
+/resource/{encodedResourceId}
+/resource/{encodedResourceId}/edit
+/resource/{encodedResourceId}/relations
+/resource/{encodedResourceId}/documents/new
+```
+
+The API host serves the SPA fallback for these paths. Client navigation uses `history.pushState`; browser back/forward uses `popstate`. Old hash URLs are migrated with `replaceState`.
+
+Legacy SORAN1957-style links are preserved by a server redirect:
+
+```text
+/default.aspx?id={legacyResourceId}
+  -> 301 /resource/{encodedResourceId}
+```
+
+A request without `id` is redirected temporarily to `/search`. The redirect preserves `PathBase`, so the application may be hosted below the domain root.
+
+Client-side resource metadata updates the document title, canonical URL, description, and Open Graph fields after the portrait loads. Server-generated metadata for non-JavaScript crawlers and social preview bots remains a separate delivery step.
+
 ## Layers
 
 - `Polar.Factograph.Domain` — project configuration and stable contracts.
-- `Polar.Factograph.Application` — configuration loading, validation, authorization boundaries, portraits, ontology presentation, search ranking, and future write use cases.
-- `Polar.Factograph.Fog` — compatible cassette discovery, streaming Fog reading, canonicalization, revision resolution, future writing, and document path resolution.
+- `Polar.Factograph.Application` — configuration loading, validation, authorization boundaries, portraits, ontology presentation, search ranking, and write use cases.
+- `Polar.Factograph.Fog` — compatible cassette discovery, streaming Fog reading, canonicalization, revision resolution, writing, and document path resolution.
 - `Polar.Factograph.Storage` — logical RDF/search contracts, physical rows, atomic generation lifecycle, concrete `Polar.DB.Typed.DbSet<T>` writer, and concrete RDF/search store.
-- `Polar.Factograph.Api` — Minimal API host.
-- `web` — future React/TypeScript client.
+- `Polar.Factograph.Api` — Minimal API host, authentication, public access boundary, compatibility redirects, and runtime coordination.
+- `Polar.Factograph.Web` — React/TypeScript public catalogue and permission-driven editorial workspace.
 
 ## Polar.DB source dependency
 
@@ -220,15 +271,22 @@ The store remains bound to the generation path captured during opening. A later 
 
 ## Delivery order
 
-1. Configuration and contracts — complete.
-2. Read-only Fog scanner and compatibility fixtures — complete.
-3. Streaming record canonicalization and legacy revision resolution — complete.
-4. Logical RDF projection, physical rows, and atomic generation lifecycle — complete.
-5. Raw portraits, ontology catalog/presentation, compatible document path resolution, and indexed-search contracts — complete.
-6. Concrete `Polar.DB.Typed.DbSet<T>` generation writer, RDF store, and search store — complete.
-7. Read-only portrait/search/document API endpoints.
-8. Legacy-equivalent React UX.
-9. Compatible metadata editing and write routing.
-10. Documents, uploads, collection management, delete, and substitute operations.
-11. Administration, diagnostics, authentication, and incremental rebuilds.
-12. Only after proven compatibility: discussion of a cassette v2 format.
+Completed foundations:
+
+1. project configuration, validation, roles, and cassette access;
+2. compatible Fog scanning, canonicalization, delete/substitute resolution, and revision selection;
+3. logical RDF projection, physical Polar.DB.Typed rows, indexed search, and atomic generations;
+4. ontology-aware portraits, semantic linked sections, timeline presentation, and document resolution;
+5. metadata, relation, collection, and document write coordination with per-editor Fog routing;
+6. local authentication, device sessions, editor allow-list reconciliation, and anonymous viewer boundary;
+7. addressable React routes, duplicate warnings, public resource metadata, legacy URL redirects, and bounded type facets.
+
+Next delivery priorities:
+
+1. server-generated public resource metadata for crawlers and social previews;
+2. complete server-side search facets and pagination before the result limit;
+3. per-fact temporal/provenance/uncertainty editorial models;
+4. duplicate merge, substitution preview, redirects, and reversible editorial operations;
+5. publication states, moderation, audit history, and rollback;
+6. photo viewer, identification workflow, rights, embargo, and curated exhibitions;
+7. only after proven compatibility: discussion of a cassette v2 format.
