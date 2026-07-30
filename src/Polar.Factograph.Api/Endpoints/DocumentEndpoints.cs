@@ -12,6 +12,7 @@ public sealed record DocumentLocationResponse(
     string FolderName,
     string DocumentNumber,
     bool OriginalAvailable,
+    bool IconPreviewAvailable,
     bool SmallPreviewAvailable,
     bool MediumPreviewAvailable,
     bool NormalPreviewAvailable);
@@ -49,6 +50,7 @@ public static class DocumentEndpoints
             location.FolderName,
             location.DocumentNumber,
             location.OriginalPath is not null,
+            location.IconPreviewPath is not null,
             location.SmallPreviewPath is not null,
             location.MediumPreviewPath is not null,
             location.NormalPreviewPath is not null));
