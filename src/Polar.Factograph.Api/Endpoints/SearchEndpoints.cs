@@ -1,5 +1,6 @@
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Application;
+using Polar.Factograph.Domain;
 
 namespace Polar.Factograph.Api.Endpoints;
 
@@ -75,6 +76,10 @@ public static class SearchEndpoints
         ProjectReadContext context = await contextFactory.CreateReadAsync(
             httpContext,
             cancellationToken);
+        _ = ProjectAuthorization.RequireSearch(context.Access);
+        _ = ProjectAuthorization.RequireWritableCassetteRight(
+            context.Access,
+            CassetteRights.WriteMetadata);
         IReadOnlyList<PotentialDuplicateResource> results =
             await context.PotentialDuplicates.FindAsync(
                 type,
