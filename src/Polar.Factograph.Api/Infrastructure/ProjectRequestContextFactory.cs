@@ -44,6 +44,7 @@ public sealed class ProjectRequestContextFactory(
         ProjectPotentialDuplicateService potentialDuplicates = new(store, reads, ontology);
         AuthorizedProjectCollectionService collections = new(
             new ProjectCollectionService(store, store, ontology));
+        OntologyClassSearchService typeSearch = new(store, store, ontology);
 
         return new ProjectReadContext(
             context.Project,
@@ -53,6 +54,7 @@ public sealed class ProjectRequestContextFactory(
             portraits,
             semanticPages,
             potentialDuplicates,
-            collections);
+            collections,
+            typeSearch);
     }
 }
