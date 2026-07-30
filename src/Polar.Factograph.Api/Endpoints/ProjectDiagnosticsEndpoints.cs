@@ -13,6 +13,7 @@ public static class ProjectDiagnosticsEndpoints
         RouteGroupBuilder group = endpoints.MapGroup("/api/admin/project");
         group.MapGet("/sources", GetSourcesAsync);
         group.MapGet("/materialization-summary", GetSummaryAsync);
+        group.MapGet("/ontology-validation", GetOntologyValidationAsync);
         return endpoints;
     }
 
@@ -59,5 +60,25 @@ public static class ProjectDiagnosticsEndpoints
             openRecords,
             cancellationToken);
         return Results.Ok(summary);
+    }
+
+    private static async Task<IResult> GetOntologyValidationAsync(
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        OntologyCatalogProvider ontologyProvider,
+        OntologyValidationService validation,
+        CancellationToken cancellationToken)
+    {
+        ProjectAccessContext context = await contextFactory.CreateAccessAsync(
+            httpContext,
+            cancellationToken);
+        ProjectAuthorization.RequireProjectRight(
+            context.Access,
+            ProjectRights.RebuildIndex);
+
+        OntologyCatalog ontology = await ontologyProvider.GetAsync(
+            context.Project.Ontology.Path,
+            cancellationToken);
+        return Results.Ok(validation.Validate(ontology));
     }
 }
