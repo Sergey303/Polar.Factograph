@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -52,28 +53,30 @@ public sealed class DynamicBaseUrlMiddlewareTests
     {
         const string source =
             "<!doctype html><html><head><title>Polar.Factograph</title></head><body></body></html>";
+        const string canonical =
+            "https://example.org/factograph/resource/iiss%3A%2F%2F1";
         ResourceHtmlMetadata metadata = new(
             "Alpha <Beta>",
             "Description & check",
             "Archive \"RAS\"",
-            "https://example.org/factograph/resource/iiss%3A%2F%2F1");
+            canonical);
 
         string html = DynamicBaseUrlMiddleware.InsertResourceMetadata(source, metadata);
 
         Assert.Contains(
-            "<title>Alpha &lt;Beta&gt; — Archive &quot;RAS&quot;</title>",
+            $"<title>{HtmlEncoder.Default.Encode("Alpha <Beta> — Archive \"RAS\"")}</title>",
             html,
             StringComparison.Ordinal);
         Assert.Contains(
-            "<meta name=\"description\" content=\"Description &amp; check\">",
+            $"<meta name=\"description\" content=\"{HtmlEncoder.Default.Encode("Description & check")}\">",
             html,
             StringComparison.Ordinal);
         Assert.Contains(
-            "<meta property=\"og:title\" content=\"Alpha &lt;Beta&gt;\">",
+            $"<meta property=\"og:title\" content=\"{HtmlEncoder.Default.Encode("Alpha <Beta>")}\">",
             html,
             StringComparison.Ordinal);
         Assert.Contains(
-            "<link rel=\"canonical\" href=\"https://example.org/factograph/resource/iiss%3A%2F%2F1\">",
+            $"<link rel=\"canonical\" href=\"{HtmlEncoder.Default.Encode(canonical)}\">",
             html,
             StringComparison.Ordinal);
         Assert.DoesNotContain("<title>Polar.Factograph</title>", html, StringComparison.Ordinal);
@@ -118,7 +121,7 @@ public sealed class DynamicBaseUrlMiddlewareTests
 
         Assert.Equal("Александр Марчук", title);
         Assert.True(description.Length <= 240);
-        Assert.EndsWith("…", description, StringComparison.Ordinal);
+        Assert.True(description.EndsWith('…'));
     }
 
     [Fact]
