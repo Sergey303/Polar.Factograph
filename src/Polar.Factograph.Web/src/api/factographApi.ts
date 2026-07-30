@@ -22,6 +22,10 @@ export function documentContentUrl(uri: string, variant: DocumentVariant): strin
   return `api/documents/content?${query({ uri, variant })}`;
 }
 
+export function documentImageUrl(uri: string): string {
+  return `api/documents/image?${query({ uri })}`;
+}
+
 export const factographApi = {
   getProject(token: string, signal?: AbortSignal): Promise<ProjectOverview> {
     return requestJson<ProjectOverview>("api/project", token, signal);
