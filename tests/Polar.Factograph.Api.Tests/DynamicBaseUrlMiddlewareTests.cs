@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging.Abstractions;
 using Polar.Factograph.Api.Infrastructure;
+using Polar.Factograph.Application;
 using Xunit;
 
 namespace Polar.Factograph.Api.Tests;
@@ -79,6 +80,48 @@ public sealed class DynamicBaseUrlMiddlewareTests
     }
 
     [Fact]
+    public void DisableStaticFileCaching_RemovesValidatorsAndPreventsStorage()
+    {
+        DefaultHttpContext context = new();
+        context.Response.Headers.ETag = "\"static-index\"";
+        context.Response.Headers.LastModified = "Wed, 29 Jul 2026 00:00:00 GMT";
+
+        DynamicBaseUrlMiddleware.DisableStaticFileCaching(context.Response);
+
+        Assert.False(context.Response.Headers.ContainsKey("ETag"));
+        Assert.False(context.Response.Headers.ContainsKey("Last-Modified"));
+        Assert.Equal("private, no-store", context.Response.Headers.CacheControl.ToString());
+    }
+
+    [Fact]
+    public void MetadataText_UsesNameAndTruncatesDescription()
+    {
+        string longDescription = new('x', 260);
+        PresentedSemanticResourcePage page = Page(
+            new PresentedResourceLiteralField(
+                "http://fogid.net/o/alias",
+                "Псевдоним",
+                "Александр Марчук",
+                "Александр Марчук",
+                "ru",
+                null),
+            new PresentedResourceLiteralField(
+                "http://fogid.net/o/description",
+                "Описание",
+                longDescription,
+                longDescription,
+                "ru",
+                null));
+
+        string title = ResourceHtmlMetadataProvider.TitleOf(page);
+        string description = ResourceHtmlMetadataProvider.DescriptionOf(page);
+
+        Assert.Equal("Александр Марчук", title);
+        Assert.True(description.Length <= 240);
+        Assert.EndsWith("…", description, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TryGetPublicResourceId_UsesRawEncodedPathAndPathBase()
     {
         DefaultHttpContext context = new();
@@ -120,6 +163,27 @@ public sealed class DynamicBaseUrlMiddlewareTests
             "https://archive.example:8443/factograph/resource/iiss%3A%2F%2Fsoran%2F0001%2F0042",
             url);
     }
+
+    private static PresentedSemanticResourcePage Page(
+        params PresentedResourceLiteralField[] literals) => new(
+        "resource-1",
+        new PresentedProjectResourcePortrait(
+            "resource-1",
+            "person",
+            "Персона",
+            literals,
+            Array.Empty<PresentedResourceDirectLink>(),
+            Array.Empty<PresentedResourceInverseLink>(),
+            new ResourceProvenance(
+                Guid.NewGuid(),
+                "cassette",
+                "source.fog",
+                DateTimeOffset.UnixEpoch)),
+        Array.Empty<SemanticPhotoCard>(),
+        Array.Empty<SemanticResourceLink>(),
+        Array.Empty<SemanticResourceLink>(),
+        Array.Empty<SemanticResourceLink>(),
+        Array.Empty<SemanticResourceLink>());
 
     private static DefaultHttpContext CreateContext(string pathBase)
     {
