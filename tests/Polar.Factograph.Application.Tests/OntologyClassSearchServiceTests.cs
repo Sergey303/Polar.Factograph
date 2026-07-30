@@ -150,6 +150,26 @@ public sealed class OntologyClassSearchServiceTests : IAsyncLifetime
         Assert.Equal("Бета", result.DisplayName);
     }
 
+    [Fact]
+    public async Task SearchAsync_ReusesResolvedCategoryAcrossPages()
+    {
+        SearchStore store = new(
+            [Head("a", "public"), Head("b", "public")],
+            [
+                Type("a", O + "organization", "public"),
+                Type("b", O + "institute", "public")
+            ],
+            [Name("a", "Альфа", "public"), Name("b", "Бета", "public")]);
+        OntologyClassSearchService service = new(store, store, _ontology);
+
+        _ = await service.SearchAsync(O + "organization", Access(), offset: 0, limit: 1);
+        int firstEnumerationCount = store.TypeEnumerationPatterns.Count;
+        _ = await service.SearchAsync(O + "organization", Access(), offset: 1, limit: 1);
+
+        Assert.True(firstEnumerationCount > 0);
+        Assert.Equal(firstEnumerationCount, store.TypeEnumerationPatterns.Count);
+    }
+
     private static ProjectAccessSnapshot Access() => new(
         "viewer",
         IsMember: true,
