@@ -42,12 +42,14 @@ public static class AuthenticationEndpoints
             ? new LocalSessionResponse(
                 false,
                 options.RegistrationEnabled,
+                options.PublicReadEnabled,
                 tokens.RequestToken!,
                 null,
                 Array.Empty<LocalDeviceResponse>())
             : new LocalSessionResponse(
                 true,
                 options.RegistrationEnabled,
+                options.PublicReadEnabled,
                 tokens.RequestToken!,
                 new LocalUserResponse(
                     session.User.Id,
@@ -293,6 +295,7 @@ public sealed record LocalLoginRequest(
 public sealed record LocalSessionResponse(
     bool Authenticated,
     bool RegistrationEnabled,
+    bool PublicReadEnabled,
     string AntiforgeryToken,
     LocalUserResponse? User,
     LocalDeviceResponse[] Devices);
