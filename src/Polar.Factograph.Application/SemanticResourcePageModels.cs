@@ -13,6 +13,27 @@ public sealed record SemanticResourceLink(
     string? GroupKey = null,
     string? GroupLabel = null);
 
+public sealed record SemanticRelationMember(
+    string ResourceId,
+    string DisplayName,
+    string? Type,
+    string? TypeLabel,
+    string? RoleLabel,
+    string? DocumentUri = null);
+
+public sealed record SemanticRelationEntry(
+    string Key,
+    string Title,
+    string? RelationResourceId,
+    string? RelationType,
+    string? RelationTypeLabel,
+    string GroupKey,
+    string GroupLabel,
+    string? DisplayDate,
+    string? SortDate,
+    string? DocumentUri,
+    IReadOnlyList<SemanticRelationMember> Members);
+
 public sealed record SemanticPhotoCard(
     string ResourceId,
     string DisplayName,
@@ -33,4 +54,7 @@ public sealed record PresentedSemanticResourcePage(
 {
     public IReadOnlyList<SemanticResourceLink> Links { get; init; } =
         Array.Empty<SemanticResourceLink>();
+
+    public IReadOnlyList<SemanticRelationEntry> Entries { get; init; } =
+        Array.Empty<SemanticRelationEntry>();
 }
