@@ -53,6 +53,11 @@ public sealed class SemanticResourcePageService(
             graph,
             root,
             cancellationToken);
+        IReadOnlyList<SemanticResourceLink> links = MergeLinks(
+            participants,
+            organizations,
+            collections,
+            related);
 
         return new PresentedSemanticResourcePage(
             resourceId,
@@ -61,7 +66,10 @@ public sealed class SemanticResourcePageService(
             participants,
             organizations,
             collections,
-            related);
+            related)
+        {
+            Links = links
+        };
     }
 
     private static async Task<IReadOnlyList<SemanticResourceLink>> CollectParticipantsAsync(
@@ -378,6 +386,23 @@ public sealed class SemanticResourcePageService(
         {
             result.Add(key, link);
         }
+    }
+
+    private static IReadOnlyList<SemanticResourceLink> MergeLinks(
+        params IReadOnlyList<SemanticResourceLink>[] groups)
+    {
+        Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
+        foreach (IReadOnlyList<SemanticResourceLink> group in groups)
+        {
+            foreach (SemanticResourceLink link in group)
+            {
+                string key = $"{link.RelationResourceId ?? string.Empty}\n" +
+                    $"{link.ResourceId}\n{link.GroupKey ?? link.RelationLabel}";
+                result.TryAdd(key, link);
+            }
+        }
+
+        return Sort(result.Values);
     }
 
     private static SemanticResourceLink[] Sort(IEnumerable<SemanticResourceLink> links) =>
