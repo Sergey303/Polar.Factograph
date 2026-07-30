@@ -117,6 +117,12 @@ h3 {
   background: var(--surface-soft);
 }
 
+.notice.warning {
+  border-color: #ddc987;
+  color: #6b5618;
+  background: #fff9e8;
+}
+
 .notice.error {
   border-color: #e8c6c6;
   color: var(--danger);
