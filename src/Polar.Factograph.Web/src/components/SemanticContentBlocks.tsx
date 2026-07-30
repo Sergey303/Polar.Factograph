@@ -152,14 +152,22 @@ function SemanticThumbnail(props: {
   item: SemanticContentItem;
   layout: BlockLayout;
 }) {
+  const source = props.item.documentUri === null
+    ? null
+    : documentContentUrl(props.item.documentUri, previewVariant(props.layout));
   const [failed, setFailed] = useState(false);
-  if (props.item.documentUri === null || failed) {
+
+  useEffect(() => {
+    setFailed(false);
+  }, [source]);
+
+  if (source === null || failed) {
     return <span className="semantic-item-placeholder" aria-hidden="true">◇</span>;
   }
 
   return (
     <img
-      src={documentContentUrl(props.item.documentUri, previewVariant(props.layout))}
+      src={source}
       alt=""
       loading="lazy"
       onError={() => setFailed(true)}
@@ -302,8 +310,9 @@ function TimelineItemSequence(props: {
       const items = props.items.slice(from, from + size);
       const hideTableHeader = props.layout === "table" &&
         (props.hideFirstTableHeader === true || from > 0);
+      const contentKey = items.map(item => item.key).join("\n");
       result.push({
-        key: `${props.layout}:${items[0]?.key ?? from}`,
+        key: `${props.layout}:${contentKey}`,
         estimatedHeight: items.length * estimate +
           (props.layout === "table" && !hideTableHeader ? 34 : 0),
         eager: props.eagerFirst === true && from === 0,
