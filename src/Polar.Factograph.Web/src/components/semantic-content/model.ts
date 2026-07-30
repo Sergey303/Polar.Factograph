@@ -45,6 +45,10 @@ function hasDocument(value: {
   return value.hasDocument === true || value.documentUri != null;
 }
 
+function publicName(displayName: string, documentBacked: boolean): string {
+  return documentBacked ? "Открыть" : displayName;
+}
+
 export function photoBlock(
   key: string,
   title: string,
@@ -54,21 +58,24 @@ export function photoBlock(
     key,
     title,
     kind: "media",
-    items: photos.map(photo => ({
-      key: `${key}:${photo.resourceId}:${photo.contextResourceId ?? ""}`,
-      resourceId: photo.resourceId,
-      title: photo.displayName,
-      detail: photo.contextLabel,
-      relationLabel: null,
-      typeLabel: null,
-      members: null,
-      sectionKey: key,
-      sectionTitle: title,
-      documentUri: photo.documentUri,
-      hideDisplayName: hasDocument(photo),
-      displayDate: photo.displayDate ?? null,
-      sortDate: photo.sortDate ?? null
-    }))
+    items: photos.map(photo => {
+      const documentBacked = hasDocument(photo);
+      return {
+        key: `${key}:${photo.resourceId}:${photo.contextResourceId ?? ""}`,
+        resourceId: photo.resourceId,
+        title: publicName(photo.displayName, documentBacked),
+        detail: photo.contextLabel,
+        relationLabel: null,
+        typeLabel: null,
+        members: null,
+        sectionKey: key,
+        sectionTitle: title,
+        documentUri: photo.documentUri,
+        hideDisplayName: documentBacked,
+        displayDate: photo.displayDate ?? null,
+        sortDate: photo.sortDate ?? null
+      };
+    })
   };
 }
 
@@ -81,21 +88,24 @@ export function linkBlock(
     key,
     title,
     kind: links.some(hasDocument) ? "media" : "text",
-    items: links.map(link => ({
-      key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}:${link.relationLabel}`,
-      resourceId: link.resourceId,
-      title: link.displayName,
-      detail: null,
-      relationLabel: link.relationLabel,
-      typeLabel: link.typeLabel,
-      members: null,
-      sectionKey: key,
-      sectionTitle: title,
-      documentUri: link.documentUri ?? null,
-      hideDisplayName: hasDocument(link),
-      displayDate: link.displayDate ?? null,
-      sortDate: link.sortDate ?? null
-    }))
+    items: links.map(link => {
+      const documentBacked = hasDocument(link);
+      return {
+        key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}:${link.relationLabel}`,
+        resourceId: link.resourceId,
+        title: publicName(link.displayName, documentBacked),
+        detail: null,
+        relationLabel: link.relationLabel,
+        typeLabel: link.typeLabel,
+        members: null,
+        sectionKey: key,
+        sectionTitle: title,
+        documentUri: link.documentUri ?? null,
+        hideDisplayName: documentBacked,
+        displayDate: link.displayDate ?? null,
+        sortDate: link.sortDate ?? null
+      };
+    })
   };
 }
 
@@ -126,13 +136,16 @@ export function relationEntryBlock(
         detail,
         relationLabel: entry.title,
         typeLabel: detail,
-        members: entry.members.map(member => ({
-          resourceId: member.resourceId,
-          displayName: member.displayName,
-          roleLabel: member.roleLabel,
-          documentUri: member.documentUri,
-          hideDisplayName: hasDocument(member)
-        })),
+        members: entry.members.map(member => {
+          const documentBacked = hasDocument(member);
+          return {
+            resourceId: member.resourceId,
+            displayName: publicName(member.displayName, documentBacked),
+            roleLabel: member.roleLabel,
+            documentUri: member.documentUri,
+            hideDisplayName: documentBacked
+          };
+        }),
         sectionKey: key,
         sectionTitle: title,
         documentUri: previewMember?.documentUri ?? entry.documentUri,
