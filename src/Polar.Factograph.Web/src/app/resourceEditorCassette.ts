@@ -9,7 +9,7 @@ export function preferredResourceCassette(
   portrait: ResourcePortrait | null,
   writable: ProjectCassetteOverview[]
 ): string {
-  const sourceId = portrait?.provenance.sourceCassetteId;
+  const sourceId = portrait?.provenance?.sourceCassetteId;
   if (sourceId !== undefined && writable.some(item => item.id === sourceId)) {
     return sourceId;
   }
