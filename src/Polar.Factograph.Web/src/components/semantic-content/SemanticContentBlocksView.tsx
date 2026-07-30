@@ -168,15 +168,16 @@ function ResourceLink(props: {
   resourceId: string;
   displayName: string;
   documentUri: string | null;
+  hideDisplayName: boolean;
 }) {
-  const documentBacked = props.documentUri !== null;
+  const hidden = props.hideDisplayName || props.documentUri !== null;
   return (
     <a
       href={resourceHref(props.resourceId)}
       onClick={followAppLink}
-      aria-label={documentBacked ? "Открыть связанный документ" : undefined}
+      aria-label={hidden ? "Открыть связанный документ" : undefined}
     >
-      {documentBacked ? "Открыть" : props.displayName}
+      {hidden ? "Открыть" : props.displayName}
     </a>
   );
 }
@@ -194,6 +195,7 @@ function RelationMembers({ members }: { members: SemanticContentMember[] }) {
             resourceId={member.resourceId}
             displayName={member.displayName}
             documentUri={member.documentUri}
+            hideDisplayName={member.hideDisplayName}
           />
         </span>
       ))}
@@ -221,6 +223,7 @@ function ItemName(props: {
             resourceId={props.item.resourceId}
             displayName={props.item.title}
             documentUri={props.item.documentUri}
+            hideDisplayName={props.item.hideDisplayName}
           />
           {props.showSection && props.item.relationLabel && (
             <span>{props.item.relationLabel}</span>
@@ -239,6 +242,14 @@ interface FlatTableRow {
   key: string;
   item: SemanticContentItem;
   member: SemanticContentMember | null;
+}
+
+interface TableColumnVisibility {
+  media: boolean;
+  relation: boolean;
+  type: boolean;
+  role: boolean;
+  section: boolean;
 }
 
 function flattenTableRows(items: SemanticContentItem[]): FlatTableRow[] {
@@ -267,6 +278,10 @@ function rowDisplayName(row: FlatTableRow): string {
   return row.member?.displayName ?? row.item.title;
 }
 
+function rowHideDisplayName(row: FlatTableRow): boolean {
+  return row.member?.hideDisplayName ?? row.item.hideDisplayName;
+}
+
 function rowRelation(row: FlatTableRow, showSection: boolean): string | null {
   if (!showSection) return null;
   return row.item.members === null
@@ -279,16 +294,28 @@ function rowType(row: FlatTableRow, showSection: boolean): string | null {
   return row.item.typeLabel;
 }
 
+function tableColumns(
+  items: SemanticContentItem[],
+  showSection: boolean
+): TableColumnVisibility {
+  const rows = flattenTableRows(items);
+  return {
+    media: rows.some(row => rowDocumentUri(row) !== null),
+    relation: showSection && rows.some(row => rowRelation(row, true) !== null),
+    type: rows.some(row => rowType(row, showSection) !== null),
+    role: rows.some(row => row.member?.roleLabel != null),
+    section: showSection
+  };
+}
+
 function TableItems(props: {
   items: SemanticContentItem[];
   showSection: boolean;
   hideTableHeader?: boolean;
+  columns?: TableColumnVisibility;
 }) {
   const rows = flattenTableRows(props.items);
-  const showMedia = props.showSection || rows.some(row => rowDocumentUri(row) !== null);
-  const showRelation = props.showSection;
-  const showType = props.showSection || rows.some(row => rowType(row, false) !== null);
-  const showRole = props.showSection || rows.some(row => row.member?.roleLabel != null);
+  const columns = props.columns ?? tableColumns(props.items, props.showSection);
 
   return (
     <div className="semantic-table-wrap">
@@ -296,16 +323,16 @@ function TableItems(props: {
         {!props.hideTableHeader && (
           <thead>
             <tr>
-              {showMedia && (
+              {columns.media && (
                 <th className="semantic-media-column">
                   <span className="visually-hidden">Изображение</span>
                 </th>
               )}
-              {showRelation && <th className="semantic-relation-column">Связь</th>}
-              {showType && <th className="semantic-type-column">Тип</th>}
-              {showRole && <th className="semantic-role-column">Роль</th>}
+              {columns.relation && <th className="semantic-relation-column">Связь</th>}
+              {columns.type && <th className="semantic-type-column">Тип</th>}
+              {columns.role && <th className="semantic-role-column">Роль</th>}
               <th>Объект</th>
-              {props.showSection && <th className="semantic-section-column">Раздел</th>}
+              {columns.section && <th className="semantic-section-column">Раздел</th>}
               <th className="semantic-date-cell">Дата</th>
             </tr>
           </thead>
@@ -313,9 +340,10 @@ function TableItems(props: {
         <tbody>
           {rows.map(row => {
             const documentUri = rowDocumentUri(row);
+            const hideDisplayName = rowHideDisplayName(row);
             return (
               <tr key={row.key}>
-                {showMedia && (
+                {columns.media && (
                   <td className="semantic-media-column">
                     {documentUri === null ? (
                       <span><SemanticThumbnail documentUri={null} layout="table" /></span>
@@ -331,17 +359,17 @@ function TableItems(props: {
                     )}
                   </td>
                 )}
-                {showRelation && (
+                {columns.relation && (
                   <td className="semantic-relation-cell">
                     {rowRelation(row, props.showSection) ?? "—"}
                   </td>
                 )}
-                {showType && (
+                {columns.type && (
                   <td className="semantic-type-cell">
                     {rowType(row, props.showSection) ?? "—"}
                   </td>
                 )}
-                {showRole && (
+                {columns.role && (
                   <td className="semantic-role-cell">{row.member?.roleLabel ?? "—"}</td>
                 )}
                 <td className="semantic-object-cell">
@@ -349,9 +377,10 @@ function TableItems(props: {
                     resourceId={rowResourceId(row)}
                     displayName={rowDisplayName(row)}
                     documentUri={documentUri}
+                    hideDisplayName={hideDisplayName}
                   />
                 </td>
-                {props.showSection && (
+                {columns.section && (
                   <td className="semantic-section-cell">{row.item.sectionTitle}</td>
                 )}
                 <td className="semantic-date-cell">{row.item.displayDate ?? "—"}</td>
@@ -369,6 +398,7 @@ function BlockItems(props: {
   layout: BlockLayout;
   showSection: boolean;
   hideTableHeader?: boolean;
+  tableColumns?: TableColumnVisibility;
 }) {
   if (props.items.length === 0) return null;
 
@@ -378,6 +408,7 @@ function BlockItems(props: {
         items={props.items}
         showSection={props.showSection}
         hideTableHeader={props.hideTableHeader}
+        columns={props.tableColumns}
       />
     );
   }
@@ -391,9 +422,9 @@ function BlockItems(props: {
               className="semantic-icon-preview"
               href={resourceHref(item.resourceId)}
               onClick={followAppLink}
-              aria-label={item.documentUri === null
-                ? `Открыть ${item.title}`
-                : "Открыть связанный документ"}
+              aria-label={item.hideDisplayName || item.documentUri !== null
+                ? "Открыть связанный документ"
+                : `Открыть ${item.title}`}
             >
               <SemanticThumbnail documentUri={item.documentUri} layout={props.layout} />
             </a>
@@ -476,6 +507,7 @@ function estimatedTimelineItemHeight(layout: BlockLayout): number {
 function TimelineItemSequence(props: {
   items: SemanticContentItem[];
   layout: BlockLayout;
+  columns: TableColumnVisibility;
   hideFirstTableHeader?: boolean;
   eagerFirst?: boolean;
 }) {
@@ -499,12 +531,19 @@ function TimelineItemSequence(props: {
             layout={props.layout}
             showSection
             hideTableHeader={hideTableHeader}
+            tableColumns={props.columns}
           />
         )
       });
     }
     return result;
-  }, [props.eagerFirst, props.hideFirstTableHeader, props.items, props.layout]);
+  }, [
+    props.columns,
+    props.eagerFirst,
+    props.hideFirstTableHeader,
+    props.items,
+    props.layout
+  ]);
 
   return <PageVirtualizedChunks chunks={chunks} />;
 }
@@ -516,12 +555,14 @@ function TimelineBlockBody(props: {
   const firstUndated = props.items.findIndex(item => item.sortDate === null);
   const dated = firstUndated < 0 ? props.items : props.items.slice(0, firstUndated);
   const undated = firstUndated < 0 ? [] : props.items.slice(firstUndated);
+  const columns = useMemo(() => tableColumns(props.items, true), [props.items]);
 
   return (
     <>
       <TimelineItemSequence
         items={dated}
         layout={props.layout}
+        columns={columns}
         eagerFirst
       />
       {undated.length > 0 && (
@@ -530,6 +571,7 @@ function TimelineBlockBody(props: {
           <TimelineItemSequence
             items={undated}
             layout={props.layout}
+            columns={columns}
             hideFirstTableHeader={dated.length > 0}
             eagerFirst={dated.length === 0}
           />
@@ -730,6 +772,7 @@ function hideCurrentEntity(
         ...item,
         resourceId: preview.resourceId,
         documentUri: preview.documentUri,
+        hideDisplayName: preview.hideDisplayName,
         members
       }];
     })
@@ -769,7 +812,10 @@ export function SemanticContentBlocks({
   const timelineBlock: SemanticContentBlockDefinition = {
     key: "$timeline",
     title: "Хронология",
-    kind: timelineItems.some(item => item.documentUri !== null) ? "media" : "text",
+    kind: timelineItems.some(item =>
+      item.documentUri !== null || item.hideDisplayName)
+      ? "media"
+      : "text",
     items: timelineItems
   };
 
