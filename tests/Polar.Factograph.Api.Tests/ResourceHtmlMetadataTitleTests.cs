@@ -7,7 +7,7 @@ namespace Polar.Factograph.Api.Tests;
 public sealed class ResourceHtmlMetadataTitleTests
 {
     [Fact]
-    public void TitleOf_HidesNameWhenResourceHasDocumentUri()
+    public void TitleOf_HidesNameWhenResourceHasSeveralDocumentUris()
     {
         PresentedSemanticResourcePage page = Page(
             new PresentedResourceLiteralField(
@@ -17,13 +17,8 @@ public sealed class ResourceHtmlMetadataTitleTests
                 "Скрытое название документа",
                 "ru",
                 null),
-            new PresentedResourceLiteralField(
-                "http://fogid.net/o/uri",
-                "URI",
-                "iiss://cassette/0001/0042",
-                "iiss://cassette/0001/0042",
-                null,
-                null));
+            UriField("iiss://cassette/0001/0042"),
+            UriField("iiss://cassette/0001/0043"));
 
         string title = ResourceHtmlMetadataProvider.TitleOf(page);
 
@@ -45,6 +40,14 @@ public sealed class ResourceHtmlMetadataTitleTests
 
         Assert.Equal("Обычная сущность", ResourceHtmlMetadataProvider.TitleOf(page));
     }
+
+    private static PresentedResourceLiteralField UriField(string value) => new(
+        "http://fogid.net/o/uri",
+        "URI",
+        value,
+        value,
+        null,
+        null);
 
     private static PresentedSemanticResourcePage Page(
         params PresentedResourceLiteralField[] literals) => new(
