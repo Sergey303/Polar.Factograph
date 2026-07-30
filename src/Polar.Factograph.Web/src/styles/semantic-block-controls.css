@@ -41,6 +41,54 @@
   scroll-margin-top: 8rem;
 }
 
+.semantic-relation-title {
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.semantic-relation-members {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.22rem 0.5rem;
+}
+
+.semantic-relation-members:empty {
+  display: none;
+}
+
+.semantic-relation-member {
+  display: inline-flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.28rem;
+}
+
+.semantic-relation-member:not(:last-child)::after {
+  margin-left: 0.2rem;
+  color: var(--text-muted);
+  content: "—";
+}
+
+.semantic-relation-member a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.semantic-relation-member a:hover,
+.semantic-relation-member a:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.semantic-relation-member small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
 @media (hover: none) {
   .block-layout-menu > summary {
     border-color: var(--border);
@@ -51,6 +99,15 @@
 @media (max-width: 720px) {
   .block-layout-current {
     display: none;
+  }
+
+  .semantic-relation-members {
+    display: grid;
+    gap: 0.28rem;
+  }
+
+  .semantic-relation-member:not(:last-child)::after {
+    content: none;
   }
 }
 
