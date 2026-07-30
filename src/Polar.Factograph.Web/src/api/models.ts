@@ -109,6 +109,29 @@ export interface SemanticResourceLink {
   groupLabel?: string | null;
 }
 
+export interface SemanticRelationMember {
+  resourceId: string;
+  displayName: string;
+  type: string | null;
+  typeLabel: string | null;
+  roleLabel: string | null;
+  documentUri?: string | null;
+}
+
+export interface SemanticRelationEntry {
+  key: string;
+  title: string;
+  relationResourceId: string | null;
+  relationType: string | null;
+  relationTypeLabel: string | null;
+  groupKey: string;
+  groupLabel: string;
+  displayDate: string | null;
+  sortDate: string | null;
+  documentUri: string | null;
+  members: SemanticRelationMember[];
+}
+
 export interface SemanticPhotoCard {
   resourceId: string;
   displayName: string;
@@ -128,6 +151,7 @@ export interface SemanticResourcePage {
   collections: SemanticResourceLink[];
   relatedResources: SemanticResourceLink[];
   links?: SemanticResourceLink[];
+  entries?: SemanticRelationEntry[];
 }
 
 export interface DocumentLocation {
