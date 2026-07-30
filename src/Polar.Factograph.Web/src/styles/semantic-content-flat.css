@@ -1,75 +1,262 @@
-.semantic-content-table-flat {
-  min-width: 48rem;
-  table-layout: auto;
+.semantic-public-content {
+  --semantic-card-min-small: 13rem;
+  --semantic-card-min-medium: 18rem;
+  --semantic-card-min-large: 26rem;
 }
 
-.semantic-content-table-flat th,
-.semantic-content-table-flat td {
-  overflow-wrap: anywhere;
+.semantic-public-content .semantic-content-block {
+  gap: 0.9rem;
 }
 
-.semantic-content-table-flat .semantic-relation-column,
-.semantic-content-table-flat .semantic-relation-cell {
-  width: 11rem;
+.semantic-public-content .semantic-content-block-header h2 {
+  font-size: 1.05rem;
 }
 
-.semantic-content-table-flat .semantic-type-column,
-.semantic-content-table-flat .semantic-type-cell {
-  width: 10rem;
+.semantic-public-grid {
+  gap: 1rem;
 }
 
-.semantic-content-table-flat .semantic-role-column,
-.semantic-content-table-flat .semantic-role-cell {
-  width: 11rem;
+.semantic-public-grid.semantic-icon-grid-small {
+  grid-template-columns: repeat(auto-fill, minmax(var(--semantic-card-min-small), 1fr));
 }
 
-.semantic-content-table-flat .semantic-section-column,
-.semantic-content-table-flat .semantic-section-cell {
-  width: 11rem;
+.semantic-public-grid.semantic-icon-grid-medium {
+  grid-template-columns: repeat(auto-fill, minmax(var(--semantic-card-min-medium), 1fr));
 }
 
-.semantic-content-table-flat .semantic-relation-cell,
-.semantic-content-table-flat .semantic-type-cell,
-.semantic-content-table-flat .semantic-role-cell,
-.semantic-content-table-flat .semantic-section-cell {
+.semantic-public-grid.semantic-icon-grid-large {
+  grid-template-columns: repeat(auto-fill, minmax(var(--semantic-card-min-large), 1fr));
+}
+
+.semantic-public-grid .semantic-icon-card {
+  gap: 0.55rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.semantic-public-grid .semantic-icon-card.text-only {
+  min-height: 7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.semantic-public-grid .semantic-icon-preview {
+  background: var(--surface-soft);
+}
+
+.semantic-public-grid.semantic-icon-grid-small .semantic-icon-preview {
+  height: 10rem;
+}
+
+.semantic-public-grid.semantic-icon-grid-medium .semantic-icon-preview {
+  height: 14rem;
+}
+
+.semantic-public-grid.semantic-icon-grid-large .semantic-icon-preview {
+  height: 20rem;
+}
+
+.semantic-public-facts {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.22rem 0.65rem;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
-.semantic-content-table-flat .semantic-object-cell a {
+.semantic-public-facts strong {
+  min-width: 0;
   color: inherit;
-  font-weight: 750;
+  font-size: 0.95rem;
+}
+
+.semantic-public-facts a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: inherit;
+  font-weight: 650;
   text-decoration: none;
 }
 
-.semantic-content-table-flat .semantic-object-cell a:hover,
-.semantic-content-table-flat .semantic-object-cell a:focus-visible {
+.semantic-public-facts a:hover,
+.semantic-public-facts a:focus-visible {
   color: var(--accent);
   text-decoration: underline;
 }
 
-.semantic-relation-member small {
-  order: -1;
+.semantic-public-facts span:not(:last-child)::after,
+.semantic-public-facts a:not(:last-child)::after {
+  margin-left: 0.65rem;
+  color: var(--border-strong, var(--border));
+  content: "·";
+  pointer-events: none;
+}
+
+.semantic-public-facts time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.semantic-public-list .semantic-content-list-item {
+  grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0;
+}
+
+.semantic-public-list .semantic-content-list-item.text-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.semantic-public-list .semantic-list-preview {
+  width: 100%;
+  height: 7rem;
+  border-radius: 0.55rem;
+  background: var(--surface-soft);
+}
+
+.semantic-document-glyph {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 1.35rem;
+}
+
+.semantic-public-table {
+  min-width: 36rem;
+  table-layout: auto;
+}
+
+.semantic-public-table th,
+.semantic-public-table td {
+  overflow-wrap: anywhere;
+}
+
+.semantic-public-table th:first-child,
+.semantic-public-table .semantic-material-cell {
+  width: 9rem;
+}
+
+.semantic-public-table th:last-child,
+.semantic-public-table .semantic-date-cell {
+  width: 9rem;
+}
+
+.semantic-public-table td {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.semantic-public-table td a {
+  color: inherit;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.semantic-public-table td a:hover,
+.semantic-public-table td a:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.semantic-table-material {
+  display: grid;
+  width: 7.5rem;
+  height: 5.2rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--surface-soft);
+}
+
+.semantic-table-material img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.timeline-undated-label {
+  margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .semantic-public-content {
+    --semantic-card-min-small: 11rem;
+    --semantic-card-min-medium: 14rem;
+    --semantic-card-min-large: 18rem;
+  }
 }
 
 @media (max-width: 720px) {
-  .semantic-content-table-flat {
+  .semantic-public-list .semantic-content-list-item {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+  }
+
+  .semantic-public-list .semantic-list-preview {
+    height: 5.5rem;
+  }
+
+  .semantic-public-table {
     min-width: 0;
   }
 
-  .semantic-content-table-flat tr {
-    grid-template-columns: 3.2rem minmax(0, 1fr);
+  .semantic-public-table thead {
+    display: none;
   }
 
-  .semantic-content-table-flat td:not(.semantic-media-column) {
-    grid-column: 2;
+  .semantic-public-table,
+  .semantic-public-table tbody,
+  .semantic-public-table tr,
+  .semantic-public-table td {
+    display: block;
+    width: 100%;
   }
 
-  .semantic-content-table-flat tr:not(:has(.semantic-media-column)) {
+  .semantic-public-table tr {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .semantic-public-table td {
+    padding: 0.18rem 0;
+    border: 0;
+  }
+
+  .semantic-public-table .semantic-material-cell,
+  .semantic-public-table .semantic-date-cell {
+    width: auto;
+  }
+
+  .semantic-table-material {
+    width: 8rem;
+    height: 5.5rem;
+    margin-bottom: 0.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .semantic-public-list .semantic-content-list-item,
+  .semantic-public-list .semantic-content-list-item.text-only {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .semantic-content-table-flat tr:not(:has(.semantic-media-column)) td {
-    grid-column: 1;
+  .semantic-public-list .semantic-list-preview {
+    width: 9rem;
+    height: 6.5rem;
+  }
+
+  .semantic-public-grid.semantic-icon-grid-small,
+  .semantic-public-grid.semantic-icon-grid-medium,
+  .semantic-public-grid.semantic-icon-grid-large {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
