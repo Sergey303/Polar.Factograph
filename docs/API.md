@@ -33,24 +33,31 @@ GET /api/system/health
 GET /api/project
 GET /api/ontology/write-schema?lang=ru
 GET /api/resources/portrait?id={rdf-id}&lang=ru
+GET /api/resources/page?id={rdf-id}&lang=ru
 GET /api/search/names?q={text}&limit=50&lang=ru
 GET /api/search/words?q={text}&limit=50&lang=ru
+GET /api/search/duplicates?type={class-id}&predicate={property-id}&value={text}&limit=10&lang=ru
+GET /api/search/classes?q={text}&limit=8&lang=ru
+GET /api/search/by-type?type={class-id}&offset=0&limit=50&lang=ru
 GET /api/collections/items?id={collection-id}&limit=100&lang=ru
 GET /api/documents/location?uri={iiss-uri}
 GET /api/documents/content?uri={iiss-uri}&variant={variant}
+GET /api/documents/image?uri={iiss-uri}
 ```
 
-The portrait route returns ontology labels, inverse labels, enumeration display values, and ontology property order while preserving raw RDF identifiers and literal values. `lang` defaults to `ru`.
+The portrait route returns ontology labels, inverse labels, enumeration display values, and ontology property order while preserving raw RDF identifiers and literal values. The semantic page route additionally returns the canonical public entity plus ontology-grouped links and legacy compatibility arrays. `lang` defaults to `ru`.
+
+Ordinary name/word search and ontology class search are separate contracts. Class suggestions never displace a better-ranked entity result. `/api/search/by-type` expands descendants of the selected class and returns one authorized, sorted page of entity summaries. Duplicate suggestions are restricted to the requested class or its descendants.
 
 The ontology write-schema route returns localized classes and their inherited writable properties. Each property contains its stable id, display label, literal/resource kind, range identifiers, and localized enumeration choices. It requires project `read` and never returns the ontology path, raw XML, members, roles, or cassette configuration.
 
 Collection browsing follows the legacy membership-resource join and is documented in [COLLECTIONS.md](COLLECTIONS.md).
 
-Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon` is optional and falls back to `small` when a cassette has no dedicated icon file. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests.
+Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon` is optional and falls back to `small` when a cassette has no dedicated icon file. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests. The image route selects the best authorized image representation in the order `normal`, `medium`, `small`, `icon`, then an image original; it does not return a non-image original as an Open Graph image.
 
 `/api/project` returns a safe overview: project identity, effective project rights, readable cassettes, and the default write cassette. It does not expose project members, role definitions, or filesystem paths.
 
-Portrait, ontology schema, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
+Portrait, semantic page, ontology schema, collection, and document reads require the project `read` right. Search requires both `read` and `search`. Cassette visibility is derived from the access snapshot inside the server.
 
 The public health response reports the service as `ok` or `degraded` and exposes only whether preview processing is enabled plus its coarse state. Disabled preview processing is healthy. A failed, stopped, or unresponsive enabled worker makes the service status `degraded`, but the response never includes timestamps, filesystem paths, process output, or exception text.
 
@@ -188,7 +195,7 @@ The API uses stable error codes:
 
 - `authentication_required` — 401;
 - `forbidden` — 403;
-- `resource_not_found`, `collection_not_found`, `document_not_found`, or `document_variant_not_found` — 404;
+- `resource_not_found`, `collection_not_found`, `document_not_found`, `document_variant_not_found`, or `document_image_not_found` — 404;
 - `invalid_request` — 400;
 - `project_unavailable` or `storage_unavailable` — 503;
 - `internal_error` — 500.
