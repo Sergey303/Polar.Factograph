@@ -313,7 +313,7 @@ public sealed class OntologyClassSearchServiceTests : IAsyncLifetime
             <SubClassOf rdf:resource="http://example.org/o/organization" />
           </Class>
           <Class rdf:about="http://example.org/o/organization-event">
-            <label xml:lang="ru">Организационное событие</label>
+            <label xml:lang="ru">Организация событий</label>
             <SubClassOf rdf:resource="http://example.org/o/entity" />
           </Class>
           <Class rdf:about="http://example.org/o/person">
