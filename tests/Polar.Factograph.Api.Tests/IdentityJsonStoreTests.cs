@@ -87,8 +87,9 @@ public sealed class IdentityJsonStoreTests : IDisposable
         {
             Users = [user]
         });
-        using IdentityJsonStore store = CreateStore(monitor);
-        IdentityProjectMemberOverlay overlay = new(store);
+        LocalAuthenticationOptions options = CreateOptions();
+        using IdentityJsonStore store = CreateStore(monitor, options);
+        IdentityProjectMemberOverlay overlay = new(store, options);
         ProjectDefinition project = CreateProject();
 
         ProjectDefinition result = overlay.Apply(project, user.Id);
@@ -98,6 +99,36 @@ public sealed class IdentityJsonStoreTests : IDisposable
             value => value.UserId == user.Id);
         Assert.Equal(["editor"], member.Roles);
         Assert.Contains(result.Members, value => value.UserId == "admin");
+    }
+
+    [Fact]
+    public void Overlay_forces_public_identity_to_viewer_even_if_static_member_is_editor()
+    {
+        Directory.CreateDirectory(_root);
+        TestOptionsMonitor<IdentityData> monitor = new(new IdentityData());
+        LocalAuthenticationOptions options = CreateOptions(publicReadEnabled: true);
+        using IdentityJsonStore store = CreateStore(monitor, options);
+        IdentityProjectMemberOverlay overlay = new(store, options);
+        ProjectDefinition project = CreateProject() with
+        {
+            Members =
+            [
+                .. CreateProject().Members,
+                new MemberDefinition
+                {
+                    UserId = options.PublicUserId,
+                    Roles = ["editor"]
+                }
+            ]
+        };
+
+        ProjectDefinition result = overlay.Apply(project, options.PublicUserId);
+
+        MemberDefinition member = Assert.Single(
+            result.Members,
+            value => value.UserId == options.PublicUserId);
+        Assert.Equal([LocalAuthenticationOptions.PublicViewerRole], member.Roles);
+        Assert.Empty(member.CassetteOverrides);
     }
 
     [Fact]
@@ -118,8 +149,9 @@ public sealed class IdentityJsonStoreTests : IDisposable
         {
             Users = [user]
         });
-        using IdentityJsonStore store = CreateStore(monitor);
-        IdentityFogSourceResolver resolver = new(store);
+        LocalAuthenticationOptions options = CreateOptions();
+        using IdentityJsonStore store = CreateStore(monitor, options);
+        IdentityFogSourceResolver resolver = new(store, options);
         ProjectDefinition project = CreateProject(cassettePath);
         FogSourceDescriptor assigned = CreateSource(
             cassettePath,
@@ -153,8 +185,9 @@ public sealed class IdentityJsonStoreTests : IDisposable
         {
             Users = [viewer]
         });
-        using IdentityJsonStore store = CreateStore(monitor);
-        IdentityFogSourceResolver resolver = new(store);
+        LocalAuthenticationOptions options = CreateOptions();
+        using IdentityJsonStore store = CreateStore(monitor, options);
+        IdentityFogSourceResolver resolver = new(store, options);
         ProjectDefinition project = CreateProject(cassettePath);
         FogSourceDescriptor legacyWritable = CreateSource(
             cassettePath,
@@ -167,6 +200,27 @@ public sealed class IdentityJsonStoreTests : IDisposable
         Assert.Contains("not an editor", exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Fog_resolver_never_uses_legacy_writable_source_for_public_viewer()
+    {
+        Directory.CreateDirectory(_root);
+        string cassettePath = Path.Combine(_root, "cassette");
+        TestOptionsMonitor<IdentityData> monitor = new(new IdentityData());
+        LocalAuthenticationOptions options = CreateOptions(publicReadEnabled: true);
+        using IdentityJsonStore store = CreateStore(monitor, options);
+        IdentityFogSourceResolver resolver = new(store, options);
+        ProjectDefinition project = CreateProject(cassettePath);
+        FogSourceDescriptor legacyWritable = CreateSource(
+            cassettePath,
+            "meta/cassette_current.fog",
+            "admin");
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            resolver.Resolve(project, [legacyWritable], options.PublicUserId, "main"));
+
+        Assert.Contains("public viewer", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
@@ -176,18 +230,25 @@ public sealed class IdentityJsonStoreTests : IDisposable
     }
 
     private IdentityJsonStore CreateStore(
-        IOptionsMonitor<IdentityData> monitor) => new(
+        IOptionsMonitor<IdentityData> monitor,
+        LocalAuthenticationOptions? options = null) => new(
         monitor,
-        new LocalAuthenticationOptions(
-            Path.Combine(_root, "identity.json"),
-            Path.Combine(_root, "keys"),
-            "test-session",
-            "main",
-            RegistrationEnabled: true,
-            SessionDays: 30,
-            MaxFogBytes: 1024 * 1024,
-            EditorLogins: new HashSet<string>(StringComparer.Ordinal)),
+        options ?? CreateOptions(),
         NullLogger<IdentityJsonStore>.Instance);
+
+    private LocalAuthenticationOptions CreateOptions(bool publicReadEnabled = false) => new(
+        Path.Combine(_root, "identity.json"),
+        Path.Combine(_root, "keys"),
+        "test-session",
+        "main",
+        RegistrationEnabled: true,
+        SessionDays: 30,
+        MaxFogBytes: 1024 * 1024,
+        EditorLogins: new HashSet<string>(StringComparer.Ordinal))
+    {
+        PublicReadEnabled = publicReadEnabled,
+        PublicUserId = LocalAuthenticationOptions.DefaultPublicUserId
+    };
 
     private static IdentityUser CreateUser(string id, string login) => new()
     {
@@ -225,6 +286,14 @@ public sealed class IdentityJsonStoreTests : IDisposable
         ],
         Roles = new Dictionary<string, RoleDefinition>(StringComparer.Ordinal)
         {
+            ["viewer"] = new RoleDefinition
+            {
+                ProjectRights = [ProjectRights.Read, ProjectRights.Search],
+                CassetteRights = new Dictionary<string, string[]>(StringComparer.Ordinal)
+                {
+                    ["main"] = [CassetteRights.Read]
+                }
+            },
             ["editor"] = new RoleDefinition
             {
                 ProjectRights = [ProjectRights.Read],
