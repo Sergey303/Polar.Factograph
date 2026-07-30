@@ -20,6 +20,7 @@ export interface LocalDevice {
 export interface LocalSession {
   authenticated: boolean;
   registrationEnabled: boolean;
+  publicReadEnabled: boolean;
   antiforgeryToken: string;
   user: LocalUser | null;
   devices: LocalDevice[];
