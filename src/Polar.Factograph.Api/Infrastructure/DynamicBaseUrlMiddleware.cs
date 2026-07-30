@@ -12,14 +12,14 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         ResourceHtmlMetadataProvider metadataProvider,
         ILogger<DynamicBaseUrlMiddleware> logger)
     {
-        if (!ShouldInspect(context.Request))
+        bool resourceViewRequest =
+            ResourceHtmlMetadataProvider.TryGetPublicResourceId(context.Request) is not null;
+        if (!ShouldInspect(context.Request, resourceViewRequest))
         {
             await next(context);
             return;
         }
 
-        bool resourceViewRequest =
-            ResourceHtmlMetadataProvider.TryGetPublicResourceId(context.Request) is not null;
         if (resourceViewRequest)
         {
             context.Request.Headers.Remove("If-None-Match");
@@ -177,12 +177,17 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
             html[(close + "</title>".Length)..];
     }
 
-    private static bool ShouldInspect(HttpRequest request)
+    private static bool ShouldInspect(HttpRequest request, bool resourceViewRequest)
     {
         if (!HttpMethods.IsGet(request.Method) ||
             request.Path.StartsWithSegments("/api"))
         {
             return false;
+        }
+
+        if (resourceViewRequest)
+        {
+            return true;
         }
 
         return !Path.HasExtension(request.Path.Value) ||
