@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Logging;
 using Polar.Factograph.Api.Authentication;
 using Polar.Factograph.Api.Infrastructure;
 
@@ -68,6 +69,7 @@ public static class AuthenticationEndpoints
         LocalRegisterRequest request,
         IAntiforgery antiforgery,
         LocalAuthenticationService authentication,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         IResult? rejection = await ValidateAntiforgeryAsync(context, antiforgery);
@@ -93,7 +95,11 @@ public static class AuthenticationEndpoints
         }
         catch (InvalidOperationException exception)
         {
-            return Error(StatusCodes.Status409Conflict, "registration_unavailable", exception.Message);
+            loggerFactory.CreateLogger("Polar.Factograph.Api.Authentication")
+                .LogWarning(exception, "Local registration is unavailable.");
+            AuthenticationFailureResponse response =
+                AuthenticationErrorPresentation.RegistrationUnavailable(exception);
+            return Results.Json(response.Error, statusCode: response.StatusCode);
         }
     }
 
