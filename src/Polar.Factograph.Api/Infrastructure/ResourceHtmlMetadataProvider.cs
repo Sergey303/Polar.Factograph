@@ -107,6 +107,13 @@ public sealed class ResourceHtmlMetadataProvider(
     internal static string TitleOf(PresentedSemanticResourcePage page)
     {
         ArgumentNullException.ThrowIfNull(page);
+        if (DocumentUris(page.Portrait).Any())
+        {
+            return page.Portrait.TypeLabel
+                ?? page.Portrait.Type
+                ?? "Документ";
+        }
+
         PresentedResourceLiteralField? named = page.Portrait.Literals.FirstOrDefault(field =>
             IsTerminalPredicate(field.Predicate, "name") ||
             IsTerminalPredicate(field.Predicate, "alias"));
