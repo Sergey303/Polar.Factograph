@@ -4,7 +4,12 @@ import type { ResourceWriteResponse } from "../api/resourceWriteModels";
 import { cassettesWithRight } from "../app/projectAccess";
 import { emptyResourceDraft } from "../app/resourceDraftFactory";
 import { preferredResourceCassette } from "../app/resourceEditorCassette";
-import { navigateToResource, navigateToSearch } from "../app/routes";
+import {
+  followAppLink,
+  navigateToResource,
+  navigateToSearch,
+  searchHref
+} from "../app/routes";
 import { ResourceEditorPane } from "./ResourceEditorPane";
 
 interface EntityCreatePageProps {
@@ -25,6 +30,32 @@ export function EntityCreatePage(props: EntityCreatePageProps) {
 
   function saved(result: ResourceWriteResponse): void {
     navigateToResource(result.resourceId, true);
+  }
+
+  if (props.project === null) {
+    return (
+      <main className="page-shell resource-page-shell">
+        <section className="panel resource-page-panel">
+          <div className="empty-state"><strong>Загрузка проекта…</strong></div>
+        </section>
+      </main>
+    );
+  }
+
+  if (writable.length === 0) {
+    return (
+      <main className="page-shell resource-page-shell">
+        <section className="panel resource-page-panel">
+          <div className="empty-state">
+            <strong>Создание сущностей доступно только редакторам</strong>
+            <span>Публичный режим позволяет просматривать и искать материалы без изменения данных.</span>
+            <a className="button primary" href={searchHref} onClick={followAppLink}>
+              Перейти к поиску
+            </a>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
