@@ -71,6 +71,12 @@ function useBlockLayout(blockKey: string, kind: BlockKind, timeline: boolean) {
   const [layout, setLayout] = useState<BlockLayout>(() =>
     storedLayout(blockKey, kind, timeline));
 
+  useEffect(() => {
+    if (!layoutsFor(kind).includes(layout)) {
+      setLayout(defaultLayout(kind, timeline));
+    }
+  }, [kind, layout, timeline]);
+
   function change(next: BlockLayout): void {
     setLayout(next);
     try {
@@ -279,10 +285,10 @@ function TableItems(props: {
   hideTableHeader?: boolean;
 }) {
   const rows = flattenTableRows(props.items);
-  const showMedia = rows.some(row => rowDocumentUri(row) !== null);
-  const showRelation = rows.some(row => rowRelation(row, props.showSection) !== null);
-  const showType = rows.some(row => rowType(row, props.showSection) !== null);
-  const showRole = rows.some(row => row.member?.roleLabel != null);
+  const showMedia = props.showSection || rows.some(row => rowDocumentUri(row) !== null);
+  const showRelation = props.showSection;
+  const showType = props.showSection || rows.some(row => rowType(row, false) !== null);
+  const showRole = props.showSection || rows.some(row => row.member?.roleLabel != null);
 
   return (
     <div className="semantic-table-wrap">
@@ -718,6 +724,8 @@ function hideCurrentEntity(
       const preview = members.find(member => member.documentUri === item.documentUri) ??
         members.find(member => member.documentUri !== null) ??
         members[0];
+      if (!preview) return [];
+
       return [{
         ...item,
         resourceId: preview.resourceId,
