@@ -3,6 +3,7 @@ import { documentContentUrl } from "../api/factographApi";
 import type {
   DocumentVariant,
   SemanticPhotoCard,
+  SemanticRelationEntry,
   SemanticResourceLink
 } from "../api/models";
 import { followAppLink, resourceHref } from "../app/routes";
@@ -14,11 +15,18 @@ import {
 type BlockLayout = "list" | "table" | "small" | "medium" | "large";
 type BlockKind = "media" | "text";
 
+interface SemanticContentMember {
+  resourceId: string;
+  displayName: string;
+  roleLabel: string | null;
+}
+
 interface SemanticContentItem {
   key: string;
   resourceId: string;
   title: string;
   detail: string | null;
+  members: SemanticContentMember[] | null;
   sectionKey: string;
   sectionTitle: string;
   documentUri: string | null;
@@ -175,16 +183,40 @@ function SemanticThumbnail(props: {
   );
 }
 
+function RelationMembers({ members }: { members: SemanticContentMember[] }) {
+  return (
+    <div className="semantic-relation-members">
+      {members.map((member, index) => (
+        <span
+          className="semantic-relation-member"
+          key={`${member.resourceId}:${member.roleLabel ?? ""}:${index}`}
+        >
+          <a href={resourceHref(member.resourceId)} onClick={followAppLink}>
+            {member.displayName}
+          </a>
+          {member.roleLabel && <small>{member.roleLabel}</small>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function ItemName(props: {
   item: SemanticContentItem;
   showSection: boolean;
 }) {
+  const relation = props.item.members !== null;
   return (
     <div className="semantic-item-name">
-      <a href={resourceHref(props.item.resourceId)} onClick={followAppLink}>
-        {props.item.title}
-      </a>
+      {relation ? (
+        <strong className="semantic-relation-title">{props.item.title}</strong>
+      ) : (
+        <a href={resourceHref(props.item.resourceId)} onClick={followAppLink}>
+          {props.item.title}
+        </a>
+      )}
       {props.item.detail && <span>{props.item.detail}</span>}
+      {props.item.members && <RelationMembers members={props.item.members} />}
       {props.showSection && <small>{props.item.sectionTitle}</small>}
     </div>
   );
@@ -611,6 +643,7 @@ export function photoBlock(
       resourceId: photo.resourceId,
       title: photo.displayName,
       detail: photo.contextLabel,
+      members: null,
       sectionKey: key,
       sectionTitle: title,
       documentUri: photo.documentUri,
@@ -634,11 +667,48 @@ export function linkBlock(
       resourceId: link.resourceId,
       title: link.displayName,
       detail: [link.relationLabel, link.typeLabel].filter(Boolean).join(" · ") || null,
+      members: null,
       sectionKey: key,
       sectionTitle: title,
       documentUri: link.documentUri ?? null,
       displayDate: link.displayDate ?? null,
       sortDate: link.sortDate ?? null
     }))
+  };
+}
+
+export function relationEntryBlock(
+  key: string,
+  title: string,
+  entries: SemanticRelationEntry[]
+): SemanticContentBlockDefinition {
+  return {
+    key,
+    title,
+    kind: entries.some(entry => entry.documentUri !== null) ? "media" : "text",
+    items: entries.map(entry => {
+      const previewMember = entry.members.find(member =>
+        member.documentUri !== null && member.documentUri === entry.documentUri) ??
+        entry.members[0];
+      const detail = entry.relationTypeLabel && entry.relationTypeLabel !== entry.title
+        ? entry.relationTypeLabel
+        : null;
+      return {
+        key: `${key}:${entry.key}`,
+        resourceId: previewMember?.resourceId ?? entry.relationResourceId ?? entry.key,
+        title: entry.title,
+        detail,
+        members: entry.members.map(member => ({
+          resourceId: member.resourceId,
+          displayName: member.displayName,
+          roleLabel: member.roleLabel
+        })),
+        sectionKey: key,
+        sectionTitle: title,
+        documentUri: entry.documentUri,
+        displayDate: entry.displayDate,
+        sortDate: entry.sortDate
+      };
+    })
   };
 }
