@@ -21,7 +21,7 @@ import { useSearch } from "./useSearch";
 export function App() {
   const auth = useAuthentication();
 
-  if (auth.initializing || !auth.authenticated) {
+  if (auth.initializing || (!auth.authenticated && !auth.publicReadEnabled)) {
     return (
       <AuthenticationPage
         initializing={auth.initializing}
@@ -36,14 +36,14 @@ export function App() {
     );
   }
 
-  return <AuthenticatedWorkspace auth={auth} />;
+  return <ProjectWorkspace auth={auth} />;
 }
 
-interface AuthenticatedWorkspaceProps {
+interface ProjectWorkspaceProps {
   auth: ReturnType<typeof useAuthentication>;
 }
 
-function AuthenticatedWorkspace({ auth }: AuthenticatedWorkspaceProps) {
+function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
   const [adminOpen, setAdminOpen] = useState(false);
   const route = useAppRoute();
   const project = useProject(auth.token);
