@@ -52,12 +52,18 @@ public sealed class SemanticResourcePageService(
         IReadOnlyList<SemanticResourceLink> related = await CollectRelatedAsync(
             graph,
             root,
+            false,
+            cancellationToken);
+        IReadOnlyList<SemanticResourceLink> unifiedRelated = await CollectRelatedAsync(
+            graph,
+            root,
+            true,
             cancellationToken);
         IReadOnlyList<SemanticResourceLink> links = MergeLinks(
             participants,
             organizations,
             collections,
-            related);
+            unifiedRelated);
 
         return new PresentedSemanticResourcePage(
             resourceId,
@@ -254,6 +260,7 @@ public sealed class SemanticResourcePageService(
     private static async Task<IReadOnlyList<SemanticResourceLink>> CollectRelatedAsync(
         SemanticResourceGraph graph,
         ProjectResourcePortrait root,
+        bool includeTechnicalRelations,
         CancellationToken cancellationToken)
     {
         Dictionary<string, SemanticResourceLink> result = new(StringComparer.Ordinal);
@@ -264,15 +271,18 @@ public sealed class SemanticResourcePageService(
                 cancellationToken);
             if (target is not null && graph.IsComplexRelation(target))
             {
-                await AddComplexRelationTargetsAsync(
-                    result,
-                    graph,
-                    root,
-                    target,
-                    BuildComplexRelationLabel(
-                        graph.PropertyLabel(link.Predicate),
-                        graph.TypeLabel(target)),
-                    cancellationToken);
+                if (includeTechnicalRelations || !graph.IsTechnical(target))
+                {
+                    await AddComplexRelationTargetsAsync(
+                        result,
+                        graph,
+                        root,
+                        target,
+                        BuildComplexRelationLabel(
+                            graph.PropertyLabel(link.Predicate),
+                            graph.TypeLabel(target)),
+                        cancellationToken);
+                }
                 continue;
             }
 
@@ -291,15 +301,18 @@ public sealed class SemanticResourcePageService(
                 cancellationToken);
             if (source is not null && graph.IsComplexRelation(source))
             {
-                await AddComplexRelationTargetsAsync(
-                    result,
-                    graph,
-                    root,
-                    source,
-                    BuildComplexRelationLabel(
-                        graph.InversePropertyLabel(link.Predicate),
-                        graph.TypeLabel(source)),
-                    cancellationToken);
+                if (includeTechnicalRelations || !graph.IsTechnical(source))
+                {
+                    await AddComplexRelationTargetsAsync(
+                        result,
+                        graph,
+                        root,
+                        source,
+                        BuildComplexRelationLabel(
+                            graph.InversePropertyLabel(link.Predicate),
+                            graph.TypeLabel(source)),
+                        cancellationToken);
+                }
                 continue;
             }
 
