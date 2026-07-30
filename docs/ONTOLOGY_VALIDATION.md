@@ -40,6 +40,7 @@ Current error codes include:
 - `parent_is_not_class` — `SubClassOf` points to a non-class term;
 - `cyclic_class_hierarchy` — class inheritance contains a cycle;
 - `missing_domain_class` / `domain_is_not_class`;
+- `missing_range` for an object property — without a range the universal picker cannot find or create a valid target entity;
 - `missing_range_class` / `range_is_not_class` for object properties;
 - `no_concrete_entity_target` — an object-property range has no non-abstract descendant of `sys-obj`, so the universal resource picker cannot offer a valid entity;
 - `ontology_file_not_found`;
@@ -54,7 +55,7 @@ Current warning codes include:
 
 - `missing_label` — the interface falls back to the raw URI;
 - `missing_domain` — the property cannot be placed in a type-driven universal form;
-- `missing_range` — a literal is edited as plain text, while an object property cannot constrain its picker;
+- `missing_range` for a datatype property — the value is edited as plain text;
 - `missing_inverse_label` — incoming relations use the ordinary property label.
 
 Unknown literal datatype ranges are not rejected merely because their URI is not declared as a local ontology term. Existing cassettes may use external or legacy datatype identifiers, and the universal editor can safely fall back to text.
