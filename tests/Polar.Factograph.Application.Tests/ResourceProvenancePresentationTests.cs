@@ -17,8 +17,8 @@ public sealed class ResourceProvenancePresentationTests
     {
         ProjectResourcePortrait portrait = Portrait();
         ProjectAccessSnapshot access = Access(
-            projectRights: [ProjectRights.Read],
-            cassetteRights: [CassetteRights.Read]);
+            projectRights: Rights(ProjectRights.Read),
+            cassetteRights: Rights(CassetteRights.Read));
 
         ResourceProvenanceDetail detail = ResourceProvenancePresentation.Resolve(
             portrait,
@@ -36,8 +36,8 @@ public sealed class ResourceProvenancePresentationTests
     {
         ProjectResourcePortrait portrait = Portrait();
         ProjectAccessSnapshot access = Access(
-            projectRights: [ProjectRights.Read],
-            cassetteRights: [CassetteRights.Read, CassetteRights.WriteMetadata]);
+            projectRights: Rights(ProjectRights.Read),
+            cassetteRights: Rights(CassetteRights.Read, CassetteRights.WriteMetadata));
 
         ResourceProvenanceDetail detail = ResourceProvenancePresentation.Resolve(
             portrait,
@@ -59,8 +59,8 @@ public sealed class ResourceProvenancePresentationTests
     {
         ProjectResourcePortrait portrait = Portrait();
         ProjectAccessSnapshot access = Access(
-            projectRights: [ProjectRights.Read, ProjectRights.RebuildIndex],
-            cassetteRights: [CassetteRights.Read]);
+            projectRights: Rights(ProjectRights.Read, ProjectRights.RebuildIndex),
+            cassetteRights: Rights(CassetteRights.Read));
 
         ResourceProvenanceDetail detail = ResourceProvenancePresentation.Resolve(
             portrait,
@@ -84,21 +84,19 @@ public sealed class ResourceProvenancePresentationTests
         ProjectAccessSnapshot access = new(
             "editor",
             IsMember: true,
-            new HashSet<string>([ProjectRights.Read], StringComparer.Ordinal),
+            Rights(ProjectRights.Read),
             new Dictionary<string, CassetteAccessSnapshot>(StringComparer.Ordinal)
             {
                 ["cassette-a"] = new CassetteAccessSnapshot(
                     "cassette-a",
                     Enabled: true,
                     AllowWrite: false,
-                    new HashSet<string>([CassetteRights.Read], StringComparer.Ordinal)),
+                    Rights(CassetteRights.Read)),
                 ["cassette-b"] = new CassetteAccessSnapshot(
                     "cassette-b",
                     Enabled: true,
                     AllowWrite: true,
-                    new HashSet<string>(
-                        [CassetteRights.Read, CassetteRights.WriteMetadata],
-                        StringComparer.Ordinal))
+                    Rights(CassetteRights.Read, CassetteRights.WriteMetadata))
             },
             DefaultWriteCassetteId: "cassette-b");
 
@@ -115,7 +113,7 @@ public sealed class ResourceProvenancePresentationTests
         Literals: [],
         DirectLinks: [],
         InverseLinks: [],
-        Provenance);
+        Provenance: Provenance);
 
     private static ProjectAccessSnapshot Access(
         IReadOnlySet<string> projectRights,
@@ -132,4 +130,7 @@ public sealed class ResourceProvenancePresentationTests
                 cassetteRights)
         },
         DefaultWriteCassetteId: null);
+
+    private static IReadOnlySet<string> Rights(params string[] values) =>
+        new HashSet<string>(values, StringComparer.Ordinal);
 }
