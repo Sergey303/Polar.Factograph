@@ -47,6 +47,18 @@ function removeMeta(
   });
 }
 
+function sameDocumentImage(serverValue: string, candidateValue: string): boolean {
+  try {
+    const server = new URL(serverValue, document.baseURI);
+    const candidate = new URL(candidateValue, document.baseURI);
+    return server.origin === candidate.origin &&
+      server.pathname === candidate.pathname &&
+      server.searchParams.get("uri") === candidate.searchParams.get("uri");
+  } catch {
+    return false;
+  }
+}
+
 export function ResourceDocumentMetadata(props: ResourceDocumentMetadataProps) {
   useEffect(() => {
     const restore: Array<() => void> = [];
@@ -71,8 +83,10 @@ export function ResourceDocumentMetadata(props: ResourceDocumentMetadataProps) {
     const serverImage = document.head
       .querySelector<HTMLMetaElement>('meta[property="og:image"]')
       ?.content ?? null;
-    const verifiedImage = candidateImage !== null && serverImage === candidateImage
-      ? candidateImage
+    const verifiedImage = candidateImage !== null &&
+      serverImage !== null &&
+      sameDocumentImage(serverImage, candidateImage)
+      ? serverImage
       : null;
 
     if (verifiedImage !== null) {
