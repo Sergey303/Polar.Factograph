@@ -9,6 +9,9 @@ internal sealed class SemanticResourceGraph(
 {
     private readonly Dictionary<string, ProjectResourcePortrait?> _cache =
         new(StringComparer.Ordinal);
+    private readonly HashSet<string> _observedRelationIds = new(StringComparer.Ordinal);
+
+    public IReadOnlySet<string> ObservedRelationIds => _observedRelationIds;
 
     public async ValueTask<ProjectResourcePortrait?> GetAsync(
         string resourceId,
@@ -172,6 +175,11 @@ internal sealed class SemanticResourceGraph(
         string? groupKey = null,
         string? groupLabel = null)
     {
+        if (relation is not null)
+        {
+            _observedRelationIds.Add(relation.ResourceId);
+        }
+
         ProjectResourcePortrait? portrait = await GetAsync(resourceId, cancellationToken);
         if (portrait is null || IsTechnical(portrait))
         {
