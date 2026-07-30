@@ -9,6 +9,7 @@ public sealed class ApiExceptionMiddleware(
     ILogger<ApiExceptionMiddleware> logger)
 {
     private const int ClientClosedRequest = 499;
+    private const string ForbiddenMessage = "Недостаточно прав для выполнения операции.";
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -26,11 +27,25 @@ public sealed class ApiExceptionMiddleware(
         }
         catch (ProjectAuthorizationException exception)
         {
-            await WriteAsync(context, StatusCodes.Status403Forbidden, "forbidden", exception.Message);
+            logger.LogWarning(
+                exception,
+                "Project authorization denied for user {UserId}; required right {RequiredRight}.",
+                exception.UserId,
+                exception.RequiredRight);
+            await WriteAsync(
+                context,
+                StatusCodes.Status403Forbidden,
+                "forbidden",
+                ForbiddenMessage);
         }
         catch (UnauthorizedAccessException exception)
         {
-            await WriteAsync(context, StatusCodes.Status403Forbidden, "forbidden", exception.Message);
+            logger.LogWarning(exception, "Authorization denied by an API operation.");
+            await WriteAsync(
+                context,
+                StatusCodes.Status403Forbidden,
+                "forbidden",
+                ForbiddenMessage);
         }
         catch (ProjectRuntimeUnavailableException exception)
         {
