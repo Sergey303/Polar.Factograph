@@ -62,6 +62,24 @@ public sealed class ComplexRelationSemanticPageTests
             Assert.DoesNotContain(personPage.RelatedResources, link =>
                 link.ResourceId == "aspirant-1");
 
+            SemanticRelationEntry personEntry = Assert.Single(personPage.Entries);
+            Assert.Equal("aspirant-1", personEntry.Key);
+            Assert.Equal("aspirant-1", personEntry.RelationResourceId);
+            Assert.Equal("Аспирант", personEntry.Title);
+            Assert.Equal(O + "aspirant", personEntry.GroupKey);
+            Assert.Equal("Аспирант", personEntry.GroupLabel);
+            Assert.Equal("1987–1990", personEntry.DisplayDate);
+            Assert.Equal("1987-01-01", personEntry.SortDate);
+            Assert.Equal(2, personEntry.Members.Count);
+            SemanticRelationMember personMember = Assert.Single(
+                personEntry.Members,
+                member => member.ResourceId == "person-1");
+            Assert.Equal("ученик", personMember.RoleLabel);
+            SemanticRelationMember organizationMember = Assert.Single(
+                personEntry.Members,
+                member => member.ResourceId == "org-1");
+            Assert.Equal("в учебном заведении", organizationMember.RoleLabel);
+
             Assert.NotNull(organizationPage);
             SemanticResourceLink learner = Assert.Single(organizationPage.RelatedResources);
             Assert.Equal("person-1", learner.ResourceId);
@@ -74,6 +92,22 @@ public sealed class ComplexRelationSemanticPageTests
             Assert.Equal("Аспирант", learner.GroupLabel);
             Assert.DoesNotContain(organizationPage.RelatedResources, link =>
                 link.ResourceId == "aspirant-1");
+
+            SemanticRelationEntry organizationEntry = Assert.Single(organizationPage.Entries);
+            Assert.Equal("aspirant-1", organizationEntry.RelationResourceId);
+            Assert.Equal("Аспирант", organizationEntry.Title);
+            Assert.Equal("1987–1990", organizationEntry.DisplayDate);
+            Assert.Equal(2, organizationEntry.Members.Count);
+            Assert.Equal(
+                "в учебном заведении",
+                Assert.Single(
+                    organizationEntry.Members,
+                    member => member.ResourceId == "org-1").RoleLabel);
+            Assert.Equal(
+                "ученик",
+                Assert.Single(
+                    organizationEntry.Members,
+                    member => member.ResourceId == "person-1").RoleLabel);
         }
         finally
         {
