@@ -18,6 +18,14 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
             return;
         }
 
+        bool resourceViewRequest =
+            ResourceHtmlMetadataProvider.TryGetPublicResourceId(context.Request) is not null;
+        if (resourceViewRequest)
+        {
+            context.Request.Headers.Remove("If-None-Match");
+            context.Request.Headers.Remove("If-Modified-Since");
+        }
+
         Stream originalBody = context.Response.Body;
         await using MemoryStream bufferedBody = new();
         context.Response.Body = bufferedBody;
@@ -47,6 +55,7 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
                 if (metadata is not null)
                 {
                     rewritten = InsertResourceMetadata(rewritten, metadata);
+                    DisableStaticFileCaching(context.Response);
                 }
             }
             catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
@@ -158,6 +167,13 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         return html[..start] +
             $"<title>{encodedTitle}</title>" +
             html[(close + "</title>".Length)..];
+    }
+
+    private static void DisableStaticFileCaching(HttpResponse response)
+    {
+        response.Headers.Remove("ETag");
+        response.Headers.Remove("Last-Modified");
+        response.Headers["Cache-Control"] = "private, no-store";
     }
 
     private static bool ShouldInspect(HttpRequest request)
