@@ -10,6 +10,7 @@ public sealed class CassetteDocumentPathResolverTests
     {
         using TemporaryCassette cassette = TemporaryCassette.Create();
         string original = cassette.CreateFile("originals", "0001", "0042.jpg");
+        string icon = cassette.CreateFile("documents", "icon", "0001", "0042.jpg");
         string small = cassette.CreateFile("documents", "small", "0001", "0042.jpg");
         string medium = cassette.CreateFile("documents", "medium", "0001", "0042.webp");
         ProjectDefinition project = CreateProject(cassette.Path);
@@ -24,6 +25,7 @@ public sealed class CassetteDocumentPathResolverTests
         Assert.Equal("0001", location.FolderName);
         Assert.Equal("0042", location.DocumentNumber);
         Assert.Equal(Path.GetFullPath(original), location.OriginalPath);
+        Assert.Equal(Path.GetFullPath(icon), location.IconPreviewPath);
         Assert.Equal(Path.GetFullPath(small), location.SmallPreviewPath);
         Assert.Equal(Path.GetFullPath(medium), location.MediumPreviewPath);
         Assert.Null(location.NormalPreviewPath);
@@ -33,8 +35,10 @@ public sealed class CassetteDocumentPathResolverTests
     public void Resolve_HidesPreviewOlderThanOriginal()
     {
         using TemporaryCassette cassette = TemporaryCassette.Create();
+        string icon = cassette.CreateFile("documents", "icon", "0001", "0042.jpg");
         string preview = cassette.CreateFile("documents", "small", "0001", "0042.jpg");
         string original = cassette.CreateFile("originals", "0001", "0042.png");
+        File.SetLastWriteTimeUtc(icon, DateTime.UtcNow.AddMinutes(-5));
         File.SetLastWriteTimeUtc(preview, DateTime.UtcNow.AddMinutes(-5));
         File.SetLastWriteTimeUtc(original, DateTime.UtcNow);
         ProjectDefinition project = CreateProject(cassette.Path);
@@ -45,6 +49,7 @@ public sealed class CassetteDocumentPathResolverTests
             "iiss://TestCassette@iis.nsk.su/0001/0042");
 
         Assert.Equal(Path.GetFullPath(original), location.OriginalPath);
+        Assert.Null(location.IconPreviewPath);
         Assert.Null(location.SmallPreviewPath);
     }
 
@@ -52,6 +57,7 @@ public sealed class CassetteDocumentPathResolverTests
     public void Resolve_KeepsPreviewWhenLegacyOriginalIsMissing()
     {
         using TemporaryCassette cassette = TemporaryCassette.Create();
+        string icon = cassette.CreateFile("documents", "icon", "0001", "0042.jpg");
         string preview = cassette.CreateFile("documents", "small", "0001", "0042.jpg");
         ProjectDefinition project = CreateProject(cassette.Path);
         CassetteDocumentPathResolver resolver = new();
@@ -61,6 +67,7 @@ public sealed class CassetteDocumentPathResolverTests
             "iiss://TestCassette@iis.nsk.su/0001/0042");
 
         Assert.Null(location.OriginalPath);
+        Assert.Equal(Path.GetFullPath(icon), location.IconPreviewPath);
         Assert.Equal(Path.GetFullPath(preview), location.SmallPreviewPath);
     }
 
