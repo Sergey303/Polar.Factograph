@@ -1,0 +1,104 @@
+.ontology-class-suggestions {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface));
+}
+
+.ontology-class-suggestions.loading {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.ontology-class-caption {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ontology-class-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ontology-class-suggestions button {
+  display: grid;
+  min-width: min(15rem, 100%);
+  gap: 0.15rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 0.65rem;
+  color: inherit;
+  text-align: left;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.ontology-class-suggestions button:hover,
+.ontology-class-suggestions button:focus-visible {
+  border-color: var(--accent);
+  background: #f0f8f8;
+}
+
+.ontology-class-suggestions button strong {
+  font-size: 0.84rem;
+}
+
+.ontology-class-suggestions button span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.ontology-class-results > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ontology-class-results > header > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.ontology-class-results h1 {
+  margin: 0;
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+}
+
+.ontology-class-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.ontology-class-error {
+  margin: 1rem;
+}
+
+@media (max-width: 620px) {
+  .ontology-class-results > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ontology-class-results > header .button {
+    align-self: flex-start;
+  }
+
+  .ontology-class-pagination {
+    justify-content: space-between;
+    gap: 0.35rem;
+  }
+}
