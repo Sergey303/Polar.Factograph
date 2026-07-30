@@ -10,7 +10,14 @@ public sealed record LocalAuthenticationOptions(
     long MaxFogBytes,
     IReadOnlySet<string> EditorLogins)
 {
+    public const string PublicViewerRole = "viewer";
+    public const string DefaultPublicUserId = "$public";
+
     private const string Section = "Authentication:Local";
+
+    public bool PublicReadEnabled { get; init; }
+
+    public string PublicUserId { get; init; } = DefaultPublicUserId;
 
     public static LocalAuthenticationOptions Read(
         IConfiguration configuration,
@@ -28,6 +35,9 @@ public sealed record LocalAuthenticationOptions(
         string defaultCassetteId = configuration[$"{Section}:DefaultCassetteId"]?.Trim() ?? string.Empty;
         int sessionDays = configuration.GetValue($"{Section}:SessionDays", 30);
         long maxFogBytes = configuration.GetValue($"{Section}:MaxFogBytes", 1024L * 1024L);
+        bool publicReadEnabled = configuration.GetValue($"{Section}:PublicReadEnabled", false);
+        string publicUserId = configuration[$"{Section}:PublicUserId"]?.Trim()
+            ?? DefaultPublicUserId;
         string[] editorValues = configuration
             .GetSection($"{Section}:EditorLogins")
             .Get<string[]>()
@@ -53,6 +63,12 @@ public sealed record LocalAuthenticationOptions(
             throw new InvalidOperationException($"{Section}:MaxFogBytes must be positive.");
         }
 
+        if (publicReadEnabled && string.IsNullOrWhiteSpace(publicUserId))
+        {
+            throw new InvalidOperationException(
+                $"{Section}:PublicUserId must be configured when public reading is enabled.");
+        }
+
         return new LocalAuthenticationOptions(
             identityPath,
             keyPath,
@@ -61,10 +77,17 @@ public sealed record LocalAuthenticationOptions(
             configuration.GetValue($"{Section}:RegistrationEnabled", true),
             sessionDays,
             maxFogBytes,
-            editorLogins);
+            editorLogins)
+        {
+            PublicReadEnabled = publicReadEnabled,
+            PublicUserId = publicUserId
+        };
     }
 
     public bool IsEditor(string normalizedLogin) => EditorLogins.Contains(normalizedLogin);
+
+    public bool IsPublicUser(string userId) =>
+        PublicReadEnabled && string.Equals(PublicUserId, userId, StringComparison.Ordinal);
 
     private static string ResolvePath(string path, string contentRootPath) =>
         Path.IsPathRooted(path)
