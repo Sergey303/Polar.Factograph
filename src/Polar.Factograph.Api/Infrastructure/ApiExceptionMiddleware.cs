@@ -10,6 +10,8 @@ public sealed class ApiExceptionMiddleware(
 {
     private const int ClientClosedRequest = 499;
     private const string ForbiddenMessage = "Недостаточно прав для выполнения операции.";
+    private const string ProjectUnavailableMessage = "Проект временно недоступен. Повторите попытку позже.";
+    private const string StorageUnavailableMessage = "Хранилище временно недоступно. Повторите попытку позже.";
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -49,7 +51,12 @@ public sealed class ApiExceptionMiddleware(
         }
         catch (ProjectRuntimeUnavailableException exception)
         {
-            await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "project_unavailable", exception.Message);
+            logger.LogError(exception, "Project runtime is unavailable.");
+            await WriteAsync(
+                context,
+                StatusCodes.Status503ServiceUnavailable,
+                "project_unavailable",
+                ProjectUnavailableMessage);
         }
         catch (Exception exception) when (exception is InvalidDataException or ArgumentException)
         {
@@ -66,7 +73,12 @@ public sealed class ApiExceptionMiddleware(
         }
         catch (IOException exception)
         {
-            await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "storage_unavailable", exception.Message);
+            logger.LogError(exception, "Storage operation failed.");
+            await WriteAsync(
+                context,
+                StatusCodes.Status503ServiceUnavailable,
+                "storage_unavailable",
+                StorageUnavailableMessage);
         }
         catch (Exception exception)
         {
