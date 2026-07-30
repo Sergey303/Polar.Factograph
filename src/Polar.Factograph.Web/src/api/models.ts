@@ -120,6 +120,11 @@ export interface SemanticRelationMember {
   hasDocument?: boolean;
 }
 
+export interface SemanticRelationValue {
+  label: string;
+  value: string;
+}
+
 export interface SemanticRelationEntry {
   key: string;
   title: string;
@@ -132,6 +137,7 @@ export interface SemanticRelationEntry {
   sortDate: string | null;
   documentUri: string | null;
   members: SemanticRelationMember[];
+  values: SemanticRelationValue[];
 }
 
 export interface SemanticPhotoCard {
