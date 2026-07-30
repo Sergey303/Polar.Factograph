@@ -3,6 +3,22 @@ using Polar.Factograph.Application;
 
 namespace Polar.Factograph.Api.Endpoints;
 
+public sealed record ResourceSearchResponse(
+    string ResourceId,
+    string DisplayName,
+    string? Type,
+    string? TypeLabel,
+    int Score,
+    IReadOnlyList<ProjectSearchEvidence> Matches);
+
+public sealed record ResourceTypeSearchPageResponse(
+    string ClassId,
+    string Label,
+    int Total,
+    int Offset,
+    int Limit,
+    IReadOnlyList<ResourceSearchResponse> Results);
+
 public static class SearchEndpoints
 {
     public static IEndpointRouteBuilder MapSearchEndpoints(this IEndpointRouteBuilder endpoints)
@@ -34,7 +50,7 @@ public static class SearchEndpoints
                 NormalizeLimit(limit),
                 NormalizeLanguage(lang),
                 cancellationToken);
-        return Results.Ok(results);
+        return Results.Ok(results.Select(Present).ToArray());
     }
 
     private static async Task<IResult> SearchWordsAsync(
@@ -55,7 +71,7 @@ public static class SearchEndpoints
                 NormalizeLimit(limit),
                 NormalizeLanguage(lang),
                 cancellationToken);
-        return Results.Ok(results);
+        return Results.Ok(results.Select(Present).ToArray());
     }
 
     private static async Task<IResult> SearchDuplicatesAsync(
@@ -121,8 +137,22 @@ public static class SearchEndpoints
             Math.Min(NormalizeLimit(limit), 100),
             NormalizeLanguage(lang),
             cancellationToken);
-        return Results.Ok(page);
+        return Results.Ok(new ResourceTypeSearchPageResponse(
+            page.ClassId,
+            page.Label,
+            page.Total,
+            page.Offset,
+            page.Limit,
+            page.Results.Select(Present).ToArray()));
     }
+
+    private static ResourceSearchResponse Present(ProjectResourceSearchResult result) => new(
+        result.ResourceId,
+        result.DisplayName,
+        result.Type,
+        result.TypeLabel,
+        result.Score,
+        result.Matches);
 
     private static int NormalizeLimit(int? limit, int fallback = 50) => limit ?? fallback;
 
