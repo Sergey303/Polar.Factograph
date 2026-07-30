@@ -3,7 +3,7 @@ import { type MouseEvent, useEffect, useState } from "react";
 export type ResourceRouteMode = "view" | "edit" | "relations" | "document";
 
 export type AppRoute =
-  | { page: "search"; query: string }
+  | { page: "search"; query: string; typeId: string | null }
   | { page: "create-entity" }
   | { page: "resource"; resourceId: string; mode: ResourceRouteMode };
 
@@ -60,11 +60,14 @@ function navigate(route: string, replace = false): void {
   window.dispatchEvent(new Event(routeChangedEvent));
 }
 
-function searchRoute(query: string): string {
-  const normalized = query.trim();
-  if (normalized.length === 0) return "/search";
-  const parameters = new URLSearchParams({ q: normalized });
-  return `/search?${parameters.toString()}`;
+function searchRoute(query: string, typeId: string | null = null): string {
+  const parameters = new URLSearchParams();
+  const normalizedQuery = query.trim();
+  const normalizedType = typeId?.trim() ?? "";
+  if (normalizedQuery.length > 0) parameters.set("q", normalizedQuery);
+  if (normalizedType.length > 0) parameters.set("type", normalizedType);
+  const encoded = parameters.toString();
+  return encoded.length === 0 ? "/search" : `/search?${encoded}`;
 }
 
 function resourceRoute(resourceId: string, mode: ResourceRouteMode): string {
@@ -84,8 +87,8 @@ function resourceRoute(resourceId: string, mode: ResourceRouteMode): string {
 export const searchHref = applicationHref("/search");
 export const createEntityHref = applicationHref("/entity/new");
 
-export function searchHrefFor(query: string): string {
-  return applicationHref(searchRoute(query));
+export function searchHrefFor(query: string, typeId: string | null = null): string {
+  return applicationHref(searchRoute(query, typeId));
 }
 
 export function resourceHref(
@@ -128,6 +131,14 @@ export function followAppLink(event: MouseEvent<HTMLAnchorElement>): void {
 
 export function navigateToSearch(query = "", replace = false): void {
   navigate(searchRoute(query), replace);
+}
+
+export function navigateToSearchFilter(
+  query: string,
+  typeId: string | null,
+  replace = false
+): void {
+  navigate(searchRoute(query, typeId), replace);
 }
 
 export function navigateToCreateEntity(replace = false): void {
@@ -184,13 +195,15 @@ function currentRoute(): AppRoute {
   const path = applicationPath();
   if (path === null || path === "/") {
     window.history.replaceState(null, "", applicationHref("/search"));
-    return { page: "search", query: "" };
+    return { page: "search", query: "", typeId: null };
   }
 
   if (path === "/search") {
+    const parameters = new URLSearchParams(window.location.search);
     return {
       page: "search",
-      query: new URLSearchParams(window.location.search).get("q")?.trim() ?? ""
+      query: parameters.get("q")?.trim() ?? "",
+      typeId: parameters.get("type")?.trim() || null
     };
   }
 
@@ -218,7 +231,7 @@ function currentRoute(): AppRoute {
   }
 
   window.history.replaceState(null, "", applicationHref("/search"));
-  return { page: "search", query: "" };
+  return { page: "search", query: "", typeId: null };
 }
 
 export function useAppRoute(): AppRoute {
