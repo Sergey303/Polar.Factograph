@@ -72,6 +72,86 @@ public sealed class ProjectAuthorizationTests
         Assert.Equal(new[] { "readable" }, allowed);
     }
 
+    [Fact]
+    public void RequireWritableCassetteRight_ReturnsOnlyEffectiveReadableWrites()
+    {
+        ProjectAccessSnapshot access = new(
+            "user",
+            IsMember: true,
+            Rights(ProjectRights.Read),
+            new Dictionary<string, CassetteAccessSnapshot>(StringComparer.Ordinal)
+            {
+                ["allowed"] = new(
+                    "allowed",
+                    Enabled: true,
+                    AllowWrite: true,
+                    Rights(CassetteRights.Read, CassetteRights.WriteMetadata)),
+                ["read-only"] = new(
+                    "read-only",
+                    Enabled: true,
+                    AllowWrite: false,
+                    Rights(CassetteRights.Read, CassetteRights.WriteMetadata)),
+                ["write-only"] = new(
+                    "write-only",
+                    Enabled: true,
+                    AllowWrite: true,
+                    Rights(CassetteRights.WriteMetadata)),
+                ["disabled"] = new(
+                    "disabled",
+                    Enabled: false,
+                    AllowWrite: true,
+                    Rights(CassetteRights.Read, CassetteRights.WriteMetadata))
+            },
+            DefaultWriteCassetteId: "allowed");
+
+        IReadOnlySet<string> allowed = ProjectAuthorization.RequireWritableCassetteRight(
+            access,
+            CassetteRights.WriteMetadata);
+
+        Assert.Equal(new[] { "allowed" }, allowed);
+    }
+
+    [Fact]
+    public void RequireWritableCassetteRight_RejectsViewer()
+    {
+        ProjectAccessSnapshot access = Snapshot(
+            isMember: true,
+            projectRights: [ProjectRights.Read],
+            readableCassette: true);
+
+        ProjectAuthorizationException exception = Assert.Throws<ProjectAuthorizationException>(
+            () => ProjectAuthorization.RequireWritableCassetteRight(
+                access,
+                CassetteRights.WriteMetadata));
+
+        Assert.Equal(CassetteRights.WriteMetadata, exception.RequiredRight);
+    }
+
+    [Fact]
+    public void RequireWritableCassetteRight_RequiresProjectRead()
+    {
+        ProjectAccessSnapshot access = new(
+            "user",
+            IsMember: true,
+            Rights(),
+            new Dictionary<string, CassetteAccessSnapshot>(StringComparer.Ordinal)
+            {
+                ["cassette"] = new(
+                    "cassette",
+                    Enabled: true,
+                    AllowWrite: true,
+                    Rights(CassetteRights.Read, CassetteRights.WriteMetadata))
+            },
+            DefaultWriteCassetteId: "cassette");
+
+        ProjectAuthorizationException exception = Assert.Throws<ProjectAuthorizationException>(
+            () => ProjectAuthorization.RequireWritableCassetteRight(
+                access,
+                CassetteRights.WriteMetadata));
+
+        Assert.Equal(ProjectRights.Read, exception.RequiredRight);
+    }
+
     private static ProjectAccessSnapshot Snapshot(
         bool isMember,
         IEnumerable<string> projectRights,
@@ -96,4 +176,7 @@ public sealed class ProjectAuthorizationTests
             cassettes,
             DefaultWriteCassetteId: null);
     }
+
+    private static IReadOnlySet<string> Rights(params string[] values) =>
+        new HashSet<string>(values, StringComparer.Ordinal);
 }
