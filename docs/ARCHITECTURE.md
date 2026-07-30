@@ -43,9 +43,10 @@ project.json
 12. A read-store instance is bound to one immutable completed generation and never observes a partially rebuilt generation.
 13. Anonymous public access is represented by a synthetic project member that is forcibly assigned the validated read-only `viewer` role and can never resolve a writable Fog.
 14. Public entity URLs are real server paths. Hash routes remain migration input only and are replaced in browser history.
-15. Public relation sections are derived from one ontology-labelled link stream. Media is detected by an actual `iiss://` attachment, not by a hardcoded domain class such as `photo-doc`.
-16. Timeline virtualization uses the page scroll. Offscreen chunks retain measured placeholders, so no nested scroll container is introduced.
-17. `icon` is an optional derived cassette preview. Its absence falls back to `small` and does not require an RDF, Fog, or identifier migration.
+15. The primary public relation unit is one authorized relation entry. A complex relation node appears once and contains all authorized entity members with ontology role labels. Specialized arrays and the flattened `Links` stream remain compatibility views only.
+16. Relation groups and labels come from ontology terms. Media is detected by an actual `iiss://` attachment, not by a hardcoded domain class such as `photo-doc`.
+17. Timeline virtualization uses the page scroll. Offscreen chunks retain measured placeholders, so no nested scroll container is introduced.
+18. `icon` is an optional derived cassette preview. Its absence falls back to `small` and does not require an RDF, Fog, or identifier migration.
 
 ## Compatibility pipeline
 
@@ -79,18 +80,32 @@ The synthetic resource `cassetterootcollection` is emitted only when no current 
 - ontology-priority property order;
 - stable raw-value fallbacks for unknown ontology terms.
 
+The HTTP presentation applies a separate provenance policy. A viewer receives no source details, an editor of the source cassette receives only its logical id, and an administrator may receive full provenance.
+
 ### Semantic relations and time
 
-`SemanticResourcePageService` keeps the specialized legacy arrays for API compatibility but also publishes one deduplicated `Links` stream. Complex relation nodes contribute their final entity targets rather than appearing as public bridge records. Group keys and labels come from relation types and ontology labels.
+`SemanticResourcePageService` publishes `Entries` as the primary ontology-driven relation contract. `SemanticRelationEntryCollector` creates:
+
+- one entry for each complex relation node;
+- all authorized direct and inverse entity members of that node;
+- the ontology label of each member role;
+- relation type and group metadata;
+- one effective date and optional media attachment.
+
+A relation node is deduplicated by its stable resource id. Relation ids observed while constructing specialized legacy views are retained by `SemanticResourceGraph` and fed back into the entry collector, so indirect collection/media views are not lost.
+
+Ordinary direct or inverse properties become one-member entries. The specialized `Photos`, `Participants`, `Organizations`, `Collections`, `RelatedResources`, and flattened `Links` fields remain available for older clients. They are not the preferred source for new public rendering.
 
 For timeline ordering:
 
 1. `from-date` is used as the beginning of an interval and `to-date` is retained for display;
 2. otherwise the earliest value among ontology properties whose range is `date` is used;
-3. if the relation has no date and its target is media, the target document date, including a shooting-date property, is used;
-4. undated items follow all dated items.
+3. if the relation has no date and one of its members carries media, the earliest media-content date, including a shooting-date property, is used;
+4. undated entries follow all dated entries.
 
 The React page shows the timeline by default. Unchecking `Хронология` renders one block per selected relation group. Each block owns its list, table, or media-grid view. Grouped blocks use previous/next portions; the timeline uses page-scroll chunk virtualization.
+
+The browser prefers `Entries`. For compatibility with a server that exposes older flattened links, missing compatible links are converted to one-member entries without duplicating relation ids already represented by a whole entry.
 
 ### Search
 
@@ -218,106 +233,3 @@ Physical rows intentionally use only CLR types supported automatically by the cu
 - `Guid`;
 - `string`;
 - `bool`.
-
-`DateTimeOffset` is stored as UTC ticks. Nullable language and datatype values use an empty physical string and are restored to `null` in the logical model. The RDF object enum is stored as an integer and validated while reading.
-
-Because a `DbSet` external index addresses one field, exact compound lookups use collision-free length-prefixed synthetic fields:
-
-- `SubjectPredicateKey` for `(subject, predicate)`;
-- `PredicateObjectKey` for `(predicate, object kind, object value)`.
-
-The physical sets are:
-
-```text
-resource-heads
-  primary key: ResourceId
-  external key: SourceCassetteId
-
-triples
-  primary key: TripleId
-  external keys:
-    Subject
-    Predicate
-    ObjectValue
-    SourceCassetteId
-    SubjectPredicateKey
-    PredicateObjectKey
-
-name-search
-  primary key: SearchRowId
-  external keys:
-    SearchKey
-    ResourceId
-    SourceCassetteId
-
-word-search
-  primary key: SearchRowId
-  external keys:
-    Word
-    ResourceId
-    SourceCassetteId
-```
-
-### Atomic generations
-
-A rebuild starts in:
-
-```text
-{indexRoot}/generation-{guid}.building/
-```
-
-`PolarDbTypedIndexGenerationWriter` opens four existing `DbSet<T>` instances in that staging directory. It appends the projected rows and, during commit, forces every declared external index to build before closing the sets.
-
-After all four sets and their indexes are complete, the directory is renamed to:
-
-```text
-{indexRoot}/generation-{guid}/
-```
-
-Only then is the `CURRENT` pointer atomically replaced. Readers continue using the preceding generation until that final switch. An aborted or disposed incomplete generation deletes only its `.building` directory. Previously completed generations remain available for rollback and later cleanup.
-
-`ProjectIndexRebuilder` enforces this sequence through `IProjectIndexGenerationWriter`: write resource heads, triples, name-search rows, and word-search rows; commit after the full stream succeeds; abort on any exception.
-
-### Completed-generation reads
-
-`PolarDbTypedProjectStore.OpenCurrent` resolves `CURRENT`, verifies that the completed generation exists, and opens the same four physical sets read-only by convention. It implements:
-
-- primary-key resource-head lookup;
-- indexed triple lookup by subject, predicate, object value, subject+predicate, and predicate+object;
-- exact name-prefix lookup;
-- name lookup by resource;
-- exact word lookup;
-- cassette filtering before logical rows leave Storage.
-
-The store remains bound to the generation path captured during opening. A later rebuild produces a new store instance rather than mutating readers that may already be serving requests.
-
-## Write transaction
-
-1. Resolve the user's project and cassette permissions.
-2. Select the target cassette and writable Fog.
-3. Build a complete compatible XML definition.
-4. Write a temporary Fog file, flush it, parse it, and atomically replace the original.
-5. Update only affected resources and search rows in the project index.
-6. If the index update fails, mark the index dirty and rebuild it from Fog/XML.
-
-## Delivery order
-
-Completed foundations:
-
-1. project configuration, validation, roles, and cassette access;
-2. compatible Fog scanning, canonicalization, delete/substitute resolution, and revision selection;
-3. logical RDF projection, physical Polar.DB.Typed rows, indexed search, and atomic generations;
-4. ontology-aware portraits, unified semantic links, date-aware timeline/group presentation, and document resolution;
-5. metadata, relation, collection, and document write coordination with per-editor Fog routing;
-6. local authentication, device sessions, editor allow-list reconciliation, and anonymous viewer boundary;
-7. addressable React routes, duplicate warnings, server/browser public metadata with images, legacy URL redirects, bounded result facets, and ontology class search;
-8. page-scroll timeline virtualization and compatible optional icon previews.
-
-Next delivery priorities:
-
-1. complete materialized server-side search facets and efficient large-category pagination before the result limit;
-2. per-fact temporal/provenance/uncertainty editorial models;
-3. duplicate merge, substitution preview, redirects, and reversible editorial operations;
-4. publication states, moderation, audit history, and rollback;
-5. media viewer, identification workflow, rights, embargo, and curated exhibitions;
-6. only after proven compatibility: discussion of a cassette v2 format.
