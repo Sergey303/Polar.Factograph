@@ -109,9 +109,12 @@ export function relationEntryBlock(
         hasDocument(member) && member.documentUri === entry.documentUri) ??
         entry.members.find(hasDocument);
       const previewMember = documentMember ?? entry.members[0];
+      const relationOwnsDocument = documentMember === undefined && entry.documentUri !== null;
       return {
         key: `${key}:${entry.key}`,
-        resourceId: previewMember?.resourceId ?? entry.relationResourceId ?? entry.key,
+        resourceId: relationOwnsDocument
+          ? entry.relationResourceId ?? entry.key
+          : previewMember?.resourceId ?? entry.relationResourceId ?? entry.key,
         title: entry.title,
         members: entry.members.map(member => ({
           resourceId: member.resourceId,
@@ -119,7 +122,7 @@ export function relationEntryBlock(
           documentUri: member.documentUri,
           hasDocument: hasDocument(member)
         })),
-        values: entry.values.map(value => value.value).filter(Boolean),
+        values: (entry.values ?? []).map(value => value.value).filter(Boolean),
         sectionKey: key,
         sectionTitle: title,
         documentUri: documentMember?.documentUri ?? entry.documentUri,
