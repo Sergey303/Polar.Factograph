@@ -169,8 +169,24 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
             date?.Display,
             date?.SortKey,
             relationDocument ?? memberDocument,
-            orderedCandidates.Select(candidate => candidate.Member).ToArray()));
+            orderedCandidates.Select(candidate => candidate.Member).ToArray(),
+            PublicValues(relation)));
     }
+
+    private IReadOnlyList<SemanticRelationValue> PublicValues(ProjectResourcePortrait relation) =>
+        graph.Present(relation).Literals
+            .Where(field => IsPublicRelationValue(field.Predicate, field.Value))
+            .Select(field => new SemanticRelationValue(field.Label, field.DisplayValue.Trim()))
+            .DistinctBy(value => $"{value.Label}\n{value.Value}", StringComparer.Ordinal)
+            .ToArray();
+
+    private bool IsPublicRelationValue(string predicate, string value) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        !value.Trim().StartsWith("iiss://", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(predicate, SemanticBridgeVocabulary.Name, StringComparison.Ordinal) &&
+        !string.Equals(predicate, SemanticBridgeVocabulary.Uri, StringComparison.Ordinal) &&
+        !string.Equals(predicate, SemanticBridgeVocabulary.Role, StringComparison.Ordinal) &&
+        !graph.IsDateProperty(predicate);
 
     private async Task AddOrdinaryAsync(
         IDictionary<string, SemanticRelationEntry> result,
@@ -208,7 +224,8 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
             date?.Display,
             date?.SortKey,
             documentUri,
-            [member]));
+            [member],
+            Array.Empty<SemanticRelationValue>()));
     }
 
     private async Task AddMemberAsync(
