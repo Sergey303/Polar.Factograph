@@ -45,6 +45,7 @@ public static class FactographApiServices
         services.AddSingleton<OntologyWriteSchemaBuilder>();
         services.AddSingleton<OntologyResourceWriteValidator>();
         services.AddSingleton<OntologyObjectTargetValidator>();
+        services.AddSingleton<OntologyValidationService>();
         services.AddSingleton<IFogSourceScanner, FileSystemFogSourceScanner>();
         services.AddSingleton<IFogRecordReader, FileSystemFogRecordReader>();
         services.AddSingleton<IFogResourceWriter, FileSystemFogResourceWriter>();
