@@ -29,4 +29,8 @@ public sealed record PresentedSemanticResourcePage(
     IReadOnlyList<SemanticResourceLink> Participants,
     IReadOnlyList<SemanticResourceLink> Organizations,
     IReadOnlyList<SemanticResourceLink> Collections,
-    IReadOnlyList<SemanticResourceLink> RelatedResources);
+    IReadOnlyList<SemanticResourceLink> RelatedResources)
+{
+    public IReadOnlyList<SemanticResourceLink> Links { get; init; } =
+        Array.Empty<SemanticResourceLink>();
+}
