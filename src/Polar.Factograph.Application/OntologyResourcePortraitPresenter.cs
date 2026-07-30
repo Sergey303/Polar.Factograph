@@ -26,7 +26,7 @@ public sealed record PresentedProjectResourcePortrait(
     IReadOnlyList<PresentedResourceLiteralField> Literals,
     IReadOnlyList<PresentedResourceDirectLink> DirectLinks,
     IReadOnlyList<PresentedResourceInverseLink> InverseLinks,
-    ResourceProvenance Provenance);
+    PresentedResourceProvenance? Provenance);
 
 /// <summary>
 /// Converts a raw RDF portrait into a stable, ontology-labelled view model without changing stored values.
@@ -42,7 +42,8 @@ public sealed class OntologyResourcePortraitPresenter
 
     public PresentedProjectResourcePortrait Present(
         ProjectResourcePortrait portrait,
-        string preferredLanguage = "ru")
+        string preferredLanguage = "ru",
+        ResourceProvenanceDetail provenanceDetail = ResourceProvenanceDetail.None)
     {
         ArgumentNullException.ThrowIfNull(portrait);
         ArgumentException.ThrowIfNullOrWhiteSpace(preferredLanguage);
@@ -100,7 +101,7 @@ public sealed class OntologyResourcePortraitPresenter
             literals,
             directLinks,
             inverseLinks,
-            portrait.Provenance);
+            ResourceProvenancePresentation.Present(portrait.Provenance, provenanceDetail));
     }
 
     private IReadOnlyDictionary<string, int> BuildPropertyOrder(
