@@ -49,6 +49,26 @@ public sealed class DynamicBaseUrlMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_InspectsDottedResourceIdsAndDropsConditionalValidators()
+    {
+        DefaultHttpContext context = CreateContext("");
+        context.Request.Path = "/resource/urn:example:file.xml";
+        context.Features.Get<IHttpRequestFeature>()!.RawTarget =
+            "/resource/urn%3Aexample%3Afile.xml";
+        context.Request.Headers.IfNoneMatch = "\"static-index\"";
+        context.Request.Headers.IfModifiedSince = "Wed, 29 Jul 2026 00:00:00 GMT";
+        DynamicBaseUrlMiddleware middleware = CreateMiddleware(
+            "<!doctype html><html><head><title>Factograph</title></head><body></body></html>");
+
+        await InvokeAsync(middleware, context);
+
+        string html = await ReadResponseAsync(context);
+        Assert.Contains("<base href=\"/\">", html, StringComparison.Ordinal);
+        Assert.False(context.Request.Headers.ContainsKey("If-None-Match"));
+        Assert.False(context.Request.Headers.ContainsKey("If-Modified-Since"));
+    }
+
+    [Fact]
     public void InsertResourceMetadata_ReplacesTitleAndEscapesValues()
     {
         const string source =
