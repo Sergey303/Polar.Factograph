@@ -31,7 +31,11 @@ export function useCollectionMutation(
   }
 
   async function remove(item: CollectionItem): Promise<void> {
-    if (collectionId === null) {
+    if (
+      collectionId === null ||
+      item.membershipResourceId === null ||
+      item.membershipCassetteId === null
+    ) {
       return;
     }
     await run(async () => {
