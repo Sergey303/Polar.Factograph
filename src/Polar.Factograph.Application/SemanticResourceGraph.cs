@@ -28,7 +28,10 @@ internal sealed class SemanticResourceGraph(
     }
 
     public PresentedProjectResourcePortrait Present(ProjectResourcePortrait portrait) =>
-        presenter.Present(portrait, preferredLanguage);
+        presenter.Present(
+            portrait,
+            preferredLanguage,
+            ResourceProvenancePresentation.Resolve(portrait, access));
 
     public bool IsType(ProjectResourcePortrait portrait, string classId)
     {
@@ -100,23 +103,14 @@ internal sealed class SemanticResourceGraph(
                 : new SemanticDateValue($"{from.Display}–{to.Display}", from.SortKey);
         }
 
-        SemanticDateValue? earliest = null;
-        foreach (ResourceLiteralField field in portrait.Literals)
-        {
-            if (!IsDateProperty(field.Predicate))
-            {
-                continue;
-            }
-
-            SemanticDateValue? value = SemanticDateParser.Parse(field.Value);
-            if (value is not null &&
-                (earliest is null || string.CompareOrdinal(value.SortKey, earliest.SortKey) < 0))
-            {
-                earliest = value;
-            }
-        }
-
-        return earliest;
+        return portrait.Literals
+            .Where(field => IsDateProperty(field.Predicate))
+            .Select(field => SemanticDateParser.Parse(field.Value))
+            .Where(value => value is not null)
+            .Cast<SemanticDateValue>()
+            .OrderBy(value => value.SortKey, StringComparer.Ordinal)
+            .ThenBy(value => value.Display, StringComparer.Ordinal)
+            .FirstOrDefault();
     }
 
     public IReadOnlyList<string> DirectTargets(
