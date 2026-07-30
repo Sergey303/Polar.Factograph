@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ResourceSearchResult } from "../api/models";
 import { followAppLink, resourceHref } from "../app/routes";
 
@@ -7,6 +8,7 @@ interface SearchResultListProps {
   results: ResourceSearchResult[];
   totalResults: number;
   typeFiltered: boolean;
+  afterFirst?: ReactNode;
 }
 
 export function SearchResultList({
@@ -14,7 +16,8 @@ export function SearchResultList({
   loading,
   results,
   totalResults,
-  typeFiltered
+  typeFiltered,
+  afterFirst
 }: SearchResultListProps) {
   if (results.length === 0) {
     const filteredEmpty = !loading && typeFiltered && totalResults > 0;
@@ -40,7 +43,7 @@ export function SearchResultList({
 
   return (
     <ol className="result-list">
-      {results.map(result => (
+      {results.map((result, index) => (
         <li key={result.resourceId}>
           <a href={resourceHref(result.resourceId)} onClick={followAppLink}>
             <span className="result-title">{result.displayName}</span>
@@ -53,6 +56,7 @@ export function SearchResultList({
               </span>
             )}
           </a>
+          {index === 0 && afterFirst}
         </li>
       ))}
     </ol>
