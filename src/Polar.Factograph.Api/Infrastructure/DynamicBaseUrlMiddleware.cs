@@ -155,10 +155,9 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
             return html;
         }
 
-        return string.Concat(
-            html.AsSpan(0, start),
-            $"<title>{encodedTitle}</title>",
-            html.AsSpan(close + "</title>".Length));
+        return html[..start] +
+            $"<title>{encodedTitle}</title>" +
+            html[(close + "</title>".Length)..];
     }
 
     private static bool ShouldInspect(HttpRequest request)
