@@ -3,7 +3,9 @@ using Polar.Factograph.Fog;
 
 namespace Polar.Factograph.Api.Authentication;
 
-public sealed class IdentityFogSourceResolver(IdentityJsonStore store)
+public sealed class IdentityFogSourceResolver(
+    IdentityJsonStore store,
+    LocalAuthenticationOptions options)
 {
     public FogSourceDescriptor Resolve(
         ProjectDefinition project,
@@ -15,6 +17,12 @@ public sealed class IdentityFogSourceResolver(IdentityJsonStore store)
         ArgumentNullException.ThrowIfNull(sources);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(cassetteId);
+
+        if (options.IsPublicUser(userId))
+        {
+            throw new InvalidOperationException(
+                "The public viewer has no writable Fog.");
+        }
 
         IdentityUser? user = store.FindUser(userId);
         if (user is null)
