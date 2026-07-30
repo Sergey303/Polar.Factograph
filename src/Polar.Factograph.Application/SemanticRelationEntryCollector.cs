@@ -185,7 +185,6 @@ internal sealed class SemanticRelationEntryCollector(SemanticResourceGraph graph
         !value.Trim().StartsWith("iiss://", StringComparison.OrdinalIgnoreCase) &&
         !string.Equals(predicate, SemanticBridgeVocabulary.Name, StringComparison.Ordinal) &&
         !string.Equals(predicate, SemanticBridgeVocabulary.Uri, StringComparison.Ordinal) &&
-        !string.Equals(predicate, SemanticBridgeVocabulary.Role, StringComparison.Ordinal) &&
         !graph.IsDateProperty(predicate);
 
     private async Task AddOrdinaryAsync(
