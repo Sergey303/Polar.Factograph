@@ -152,7 +152,6 @@ public sealed class DynamicBaseUrlMiddlewareTests
         context.Request.Path = "/resource/iiss://soran/1";
         context.Features.Get<IHttpRequestFeature>()!.RawTarget =
             "/factograph/resource/iiss%3A%2F%2Fsoran%2F1?source=legacy";
-
         string? resourceId = ResourceHtmlMetadataProvider.TryGetPublicResourceId(context.Request);
 
         Assert.Equal("iiss://soran/1", resourceId);
@@ -197,11 +196,7 @@ public sealed class DynamicBaseUrlMiddlewareTests
             literals,
             Array.Empty<PresentedResourceDirectLink>(),
             Array.Empty<PresentedResourceInverseLink>(),
-            new ResourceProvenance(
-                Guid.NewGuid(),
-                "cassette",
-                "source.fog",
-                DateTimeOffset.UnixEpoch)),
+            Provenance: null),
         Array.Empty<SemanticPhotoCard>(),
         Array.Empty<SemanticResourceLink>(),
         Array.Empty<SemanticResourceLink>(),
