@@ -156,5 +156,10 @@ export function SemanticResourceSections({ page }: SemanticResourceSectionsProps
   const blocks = entries.length > 0
     ? relationEntryBlocks(entries)
     : relationBlocks(page);
-  return <SemanticContentBlocks blocks={blocks} />;
+  return (
+    <SemanticContentBlocks
+      blocks={blocks}
+      currentResourceId={page.portrait.resourceId}
+    />
+  );
 }
