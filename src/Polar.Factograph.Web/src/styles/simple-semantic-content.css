@@ -1,3 +1,14 @@
+.home-page-shell {
+  width: 100%;
+  max-width: none;
+}
+
+.home-page-panel {
+  display: grid;
+  gap: 1.2rem;
+  padding: 1.15rem;
+}
+
 .simple-archive-layout {
   display: grid;
   grid-template-columns: minmax(0, 3.2fr) minmax(20rem, 1fr);
@@ -230,6 +241,10 @@
 }
 
 @media (max-width: 760px) {
+  .home-page-panel {
+    padding: 0.8rem;
+  }
+
   .simple-archive-layout,
   .simple-archive-layout.without-photos {
     grid-template-columns: minmax(0, 1fr);
