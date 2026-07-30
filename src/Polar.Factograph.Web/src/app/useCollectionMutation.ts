@@ -31,19 +31,21 @@ export function useCollectionMutation(
   }
 
   async function remove(item: CollectionItem): Promise<void> {
+    const membershipResourceId = item.membershipResourceId;
+    const membershipCassetteId = item.membershipCassetteId;
     if (
       collectionId === null ||
-      item.membershipResourceId === null ||
-      item.membershipCassetteId === null
+      membershipResourceId === null ||
+      membershipCassetteId === null
     ) {
       return;
     }
     await run(async () => {
       const result = await collectionApi.removeItem(
-        item.membershipResourceId,
+        membershipResourceId,
         collectionId,
         item.resourceId,
-        item.membershipCassetteId,
+        membershipCassetteId,
         token
       );
       setMessage(result.indexReady
