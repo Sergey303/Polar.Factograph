@@ -19,9 +19,7 @@ export interface ProjectOverview {
 }
 
 export interface SearchEvidence {
-  predicate: string;
   value: string;
-  language: string | null;
 }
 
 export interface ResourceSearchResult {
