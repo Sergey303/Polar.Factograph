@@ -23,6 +23,10 @@ public sealed record SemanticRelationMember(
     string? DocumentUri = null,
     bool HasDocument = false);
 
+public sealed record SemanticRelationValue(
+    string Label,
+    string Value);
+
 public sealed record SemanticRelationEntry(
     string Key,
     string Title,
@@ -34,7 +38,8 @@ public sealed record SemanticRelationEntry(
     string? DisplayDate,
     string? SortDate,
     string? DocumentUri,
-    IReadOnlyList<SemanticRelationMember> Members);
+    IReadOnlyList<SemanticRelationMember> Members,
+    IReadOnlyList<SemanticRelationValue> Values);
 
 public sealed record SemanticPhotoCard(
     string ResourceId,
