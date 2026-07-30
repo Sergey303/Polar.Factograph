@@ -1,21 +1,26 @@
-.timeline-load-more {
-  display: flex;
-  min-height: 4rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 0.8rem 0 0.2rem;
-  color: var(--text-muted);
+.page-virtualized-chunks {
+  display: grid;
+  min-width: 0;
 }
 
-.timeline-load-more span {
-  font-size: 0.76rem;
-  font-variant-numeric: tabular-nums;
+.page-virtualized-chunk {
+  min-width: 0;
 }
 
-@media (max-width: 460px) {
-  .timeline-load-more {
-    flex-direction: column;
-    gap: 0.35rem;
-  }
+.page-virtualized-chunk.active {
+  contain: layout style;
+}
+
+.page-virtualized-chunk.placeholder {
+  overflow: hidden;
+  contain: strict;
+  pointer-events: none;
+}
+
+.page-virtualized-chunk:not(:last-child) .semantic-content-list-item:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.page-virtualized-chunk + .page-virtualized-chunk .semantic-table-wrap {
+  margin-top: -1px;
 }
