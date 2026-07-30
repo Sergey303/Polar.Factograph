@@ -14,7 +14,10 @@ public sealed record ProjectOverview(
     string Name,
     bool CanAdmin,
     IReadOnlyList<ProjectCassetteOverview> Cassettes,
-    string? DefaultWriteCassetteId);
+    string? DefaultWriteCassetteId)
+{
+    public IReadOnlyList<string> HomeResourceIds { get; init; } = Array.Empty<string>();
+}
 
 public static class ProjectOverviewPresentation
 {
@@ -50,13 +53,21 @@ public static class ProjectOverviewPresentation
             exposedIds.Contains(defaultId)
             ? defaultId
             : null;
+        string[] homeResourceIds = project.HomeResourceIds
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
 
         return new ProjectOverview(
             project.ProjectId,
             project.Name,
             canAdmin,
             cassettes,
-            defaultWriteCassetteId);
+            defaultWriteCassetteId)
+        {
+            HomeResourceIds = homeResourceIds
+        };
     }
 
     private static bool ShouldExpose(
