@@ -41,7 +41,8 @@ function PageVirtualizedChunk({ definition }: {
     const measure = () => {
       const next = element.getBoundingClientRect().height;
       if (next > 0) {
-        setMeasuredHeight(current => Math.abs((current ?? 0) - next) < 1 ? current : next);
+        setMeasuredHeight(current =>
+          current !== null && Math.abs(current - next) < 1 ? current : next);
       }
     };
     measure();
