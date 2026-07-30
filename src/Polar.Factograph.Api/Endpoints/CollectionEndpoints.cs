@@ -1,3 +1,4 @@
+using Polar.Factograph.Api.Collections;
 using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Application;
 
@@ -33,6 +34,6 @@ public static class CollectionEndpoints
             ? Results.NotFound(new ApiError(
                 "collection_not_found",
                 $"Collection was not found: {id}"))
-            : Results.Ok(contents);
+            : Results.Ok(CollectionContentsPresentation.Present(contents, context.Access));
     }
 }
