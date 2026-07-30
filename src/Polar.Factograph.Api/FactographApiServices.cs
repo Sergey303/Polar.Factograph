@@ -66,6 +66,7 @@ public static class FactographApiServices
         services.AddSingleton<ProjectIndexRuntimeStatusReader>();
         services.AddSingleton<ProjectStoreProvider>();
         services.AddSingleton<OntologyCatalogProvider>();
+        services.AddSingleton<OntologyClassSearchServiceProvider>();
         services.AddSingleton<ProjectRequestContextFactory>();
         services.AddSingleton<ResourceHtmlMetadataProvider>();
         services.AddSingleton<ProjectIndexCoordinator>();
