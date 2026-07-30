@@ -7,7 +7,7 @@ namespace Polar.Factograph.Application.Tests;
 public sealed class OntologyResourcePortraitPresenterTests
 {
     [Fact]
-    public async Task Present_LabelsTranslatesAndOrdersPortraitFields()
+    public async Task Present_LabelsTranslatesOrdersAndIncludesRequestedProvenance()
     {
         await using TemporaryOntology ontology = await TemporaryOntology.CreateAsync(OntologyXml);
         OntologyCatalog catalog = await new XmlOntologyCatalogLoader().LoadAsync(ontology.Path);
@@ -35,7 +35,10 @@ public sealed class OntologyResourcePortraitPresenterTests
             ],
             provenance);
 
-        PresentedProjectResourcePortrait result = presenter.Present(portrait, "ru");
+        PresentedProjectResourcePortrait result = presenter.Present(
+            portrait,
+            "ru",
+            ResourceProvenanceDetail.Full);
 
         Assert.Equal("Ребёнок", result.TypeLabel);
         Assert.Equal(new[] { "name", "status", "unknown" }, result.Literals.Select(field => field.Predicate));
@@ -49,7 +52,34 @@ public sealed class OntologyResourcePortraitPresenterTests
         Assert.Equal("Наставник", result.DirectLinks[0].Label);
         Assert.Equal(new[] { "mentor", "unknown-inverse" }, result.InverseLinks.Select(link => link.Predicate));
         Assert.Equal("Ученики", result.InverseLinks[0].Label);
-        Assert.Same(provenance, result.Provenance);
+        Assert.NotNull(result.Provenance);
+        Assert.Equal(provenance.SourceCassetteId, result.Provenance.SourceCassetteId);
+        Assert.Equal(provenance.SourceRecordId, result.Provenance.SourceRecordId);
+        Assert.Equal(provenance.SourceFogPath, result.Provenance.SourceFogPath);
+        Assert.Equal(provenance.ModifiedAt, result.Provenance.ModifiedAt);
+    }
+
+    [Fact]
+    public async Task Present_HidesProvenanceByDefault()
+    {
+        await using TemporaryOntology ontology = await TemporaryOntology.CreateAsync(OntologyXml);
+        OntologyCatalog catalog = await new XmlOntologyCatalogLoader().LoadAsync(ontology.Path);
+        OntologyResourcePortraitPresenter presenter = new(catalog);
+        ProjectResourcePortrait portrait = new(
+            "resource-1",
+            "child",
+            [],
+            [],
+            [],
+            new ResourceProvenance(
+                Guid.NewGuid(),
+                "cassette-a",
+                "meta/current.fog",
+                DateTimeOffset.UtcNow));
+
+        PresentedProjectResourcePortrait result = presenter.Present(portrait, "ru");
+
+        Assert.Null(result.Provenance);
     }
 
     [Fact]
@@ -76,6 +106,7 @@ public sealed class OntologyResourcePortraitPresenterTests
         PresentedResourceLiteralField field = Assert.Single(result.Literals);
         Assert.Equal("unknown-property", field.Label);
         Assert.Equal("raw", field.DisplayValue);
+        Assert.Null(result.Provenance);
     }
 
     private const string OntologyXml = """
