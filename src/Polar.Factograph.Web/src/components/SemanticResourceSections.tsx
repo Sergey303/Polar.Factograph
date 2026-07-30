@@ -102,15 +102,33 @@ function completeEntries(page: SemanticResourcePage): SemanticRelationEntry[] {
   });
 }
 
+function publicGroupTitle(entry: SemanticRelationEntry): string {
+  return entry.relationTypeLabel?.trim() ||
+    entry.groupLabel.trim() ||
+    entry.title.trim() ||
+    "Связи";
+}
+
 function blocksFromEntries(entries: SemanticRelationEntry[]): SemanticContentBlockDefinition[] {
   const media = entries.filter(entryHasDocument);
-  const links = entries.filter(entry => !entryHasDocument(entry));
+  const plain = entries.filter(entry => !entryHasDocument(entry));
   const blocks: SemanticContentBlockDefinition[] = [];
+
   if (media.length > 0) {
     blocks.push(relationEntryBlock("public:media", "Фотографии", media));
   }
-  if (links.length > 0) {
-    blocks.push(relationEntryBlock("public:links", "Связи", links));
+
+  const groups = new Map<string, { title: string; entries: SemanticRelationEntry[] }>();
+  for (const entry of plain) {
+    const title = publicGroupTitle(entry);
+    const key = entry.relationType?.trim() || entry.groupKey.trim() || title;
+    const existing = groups.get(key);
+    if (existing) existing.entries.push(entry);
+    else groups.set(key, { title, entries: [entry] });
+  }
+
+  for (const [key, group] of groups) {
+    blocks.push(relationEntryBlock(`public:links:${key}`, group.title, group.entries));
   }
   return blocks;
 }
@@ -126,8 +144,23 @@ function blocksFromLinks(page: SemanticResourcePage): SemanticContentBlockDefini
   const media = links.filter(hasDocument);
   const plain = links.filter(link => !hasDocument(link));
   const blocks: SemanticContentBlockDefinition[] = [];
-  if (media.length > 0) blocks.push(linkBlock("public:media", "Фотографии", media));
-  if (plain.length > 0) blocks.push(linkBlock("public:links", "Связи", plain));
+
+  if (media.length > 0) {
+    blocks.push(linkBlock("public:media", "Фотографии", media));
+  }
+
+  const groups = new Map<string, { title: string; links: SemanticResourceLink[] }>();
+  for (const link of plain) {
+    const title = link.groupLabel?.trim() || link.relationLabel.trim() || "Связи";
+    const key = link.groupKey?.trim() || title;
+    const existing = groups.get(key);
+    if (existing) existing.links.push(link);
+    else groups.set(key, { title, links: [link] });
+  }
+
+  for (const [key, group] of groups) {
+    blocks.push(linkBlock(`public:links:${key}`, group.title, group.links));
+  }
   return blocks;
 }
 
