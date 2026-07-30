@@ -1,5 +1,9 @@
 import { documentImageUrl } from "../api/factographApi";
-import type { ProjectOverview, SemanticResourcePage } from "../api/models";
+import type {
+  PresentedLiteral,
+  ProjectOverview,
+  SemanticResourcePage
+} from "../api/models";
 import {
   resourceDocumentUris,
   singleResourceDocumentUri
@@ -19,11 +23,26 @@ interface ResourcePortraitViewProps {
   project: ProjectOverview | null;
 }
 
-function titleOf(page: SemanticResourcePage): string {
-  const named = page.portrait.literals.find(field =>
-    /(^|[/#])(name|alias)$/i.test(field.predicate)
-  );
+function isNamePredicate(predicate: string): boolean {
+  return /(^|[/#])(name|alias)$/i.test(predicate);
+}
+
+function titleOf(page: SemanticResourcePage, documentBacked: boolean): string {
+  if (documentBacked) {
+    return page.portrait.typeLabel ?? page.portrait.type ?? "Документ";
+  }
+
+  const named = page.portrait.literals.find(field => isNamePredicate(field.predicate));
   return named?.displayValue || page.portrait.resourceId;
+}
+
+function publicFields(
+  fields: PresentedLiteral[],
+  documentBacked: boolean
+): PresentedLiteral[] {
+  return documentBacked
+    ? fields.filter(field => !isNamePredicate(field.predicate))
+    : fields;
 }
 
 function descriptionOf(page: SemanticResourcePage): string {
@@ -55,8 +74,10 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const page = props.page;
   const portrait = page.portrait;
   const documents = resourceDocumentUris(portrait);
+  const documentBacked = documents.length > 0;
   const primaryDocument = singleResourceDocumentUri(portrait);
-  const title = titleOf(page);
+  const title = titleOf(page, documentBacked);
+  const fields = publicFields(portrait.literals, documentBacked);
   const siteName = props.project?.name ?? "Polar.Factograph";
   const metadataImageUrl = primaryDocument === null
     ? null
@@ -92,7 +113,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
           title={null}
           previewPolicy="largest-preview"
         />
-        <LiteralFields fields={portrait.literals} />
+        <LiteralFields fields={fields} />
         <SemanticResourceSections page={page} />
         <TechnicalResourceDetails portrait={portrait} />
       </article>
