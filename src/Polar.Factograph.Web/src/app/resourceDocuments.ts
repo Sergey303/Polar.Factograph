@@ -9,3 +9,10 @@ export function resourceDocumentUris(portrait: ResourcePortrait): string[] {
     left.localeCompare(right, "ru")
   );
 }
+
+export function singleResourceDocumentUri(
+  portrait: ResourcePortrait
+): string | null {
+  const values = resourceDocumentUris(portrait);
+  return values.length === 1 ? values[0] ?? null : null;
+}
