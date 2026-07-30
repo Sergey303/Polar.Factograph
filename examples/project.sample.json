@@ -9,6 +9,10 @@
     "path": "./project-data/index",
     "rebuildMode": "whenSourcesChanged"
   },
+  "homeResourceIds": [
+    "featured-collection-1",
+    "featured-photo-1"
+  ],
   "cassettes": [
     {
       "id": "archive-history",
