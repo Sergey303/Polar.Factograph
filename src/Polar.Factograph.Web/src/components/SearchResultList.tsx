@@ -5,18 +5,31 @@ interface SearchResultListProps {
   query: string;
   loading: boolean;
   results: ResourceSearchResult[];
+  totalResults: number;
+  typeFiltered: boolean;
 }
 
-export function SearchResultList({ query, loading, results }: SearchResultListProps) {
+export function SearchResultList({
+  query,
+  loading,
+  results,
+  totalResults,
+  typeFiltered
+}: SearchResultListProps) {
   if (results.length === 0) {
+    const filteredEmpty = !loading && typeFiltered && totalResults > 0;
     const title = loading
       ? "Идёт поиск…"
+      : filteredEmpty
+        ? "В выбранном типе результатов нет"
+        : query.length > 0
+          ? "Подходящие сущности не найдены"
+          : "Введите поисковый запрос";
+    const description = filteredEmpty
+      ? "Выберите другой тип или вернитесь ко всем результатам."
       : query.length > 0
-        ? "Подходящие сущности не найдены"
-        : "Введите поисковый запрос";
-    const description = query.length > 0
-      ? "Попробуйте другое имя, название или слова из описания."
-      : "Искомая строка сохранится в адресе страницы, поэтому результат можно открыть повторно или отправить ссылкой.";
+        ? "Попробуйте другое имя, название или слова из описания."
+        : "Искомая строка сохранится в адресе страницы, поэтому результат можно открыть повторно или отправить ссылкой.";
     return (
       <div className="empty-state">
         <strong>{title}</strong>
