@@ -127,6 +127,9 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         string pageTitle = HtmlEncoder.Default.Encode(metadata.Title);
         string siteName = HtmlEncoder.Default.Encode(metadata.SiteName);
         string canonical = HtmlEncoder.Default.Encode(metadata.CanonicalUrl);
+        string? image = string.IsNullOrWhiteSpace(metadata.ImageUrl)
+            ? null
+            : HtmlEncoder.Default.Encode(metadata.ImageUrl);
         string rewritten = ReplaceTitle(html, title);
         head = rewritten.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
 
@@ -137,9 +140,21 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         tags.Append("<meta property=\"og:type\" content=\"website\">");
         tags.Append($"<meta property=\"og:url\" content=\"{canonical}\">");
         tags.Append($"<meta property=\"og:site_name\" content=\"{siteName}\">");
-        tags.Append("<meta name=\"twitter:card\" content=\"summary\">");
+        if (image is not null)
+        {
+            tags.Append($"<meta property=\"og:image\" content=\"{image}\">");
+            tags.Append($"<meta property=\"og:image:alt\" content=\"{pageTitle}\">");
+        }
+        tags.Append(image is null
+            ? "<meta name=\"twitter:card\" content=\"summary\">"
+            : "<meta name=\"twitter:card\" content=\"summary_large_image\">");
         tags.Append($"<meta name=\"twitter:title\" content=\"{pageTitle}\">");
         tags.Append($"<meta name=\"twitter:description\" content=\"{description}\">");
+        if (image is not null)
+        {
+            tags.Append($"<meta name=\"twitter:image\" content=\"{image}\">");
+            tags.Append($"<meta name=\"twitter:image:alt\" content=\"{pageTitle}\">");
+        }
         tags.Append($"<link rel=\"canonical\" href=\"{canonical}\">");
         return rewritten.Insert(head + "<head>".Length, tags.ToString());
     }
