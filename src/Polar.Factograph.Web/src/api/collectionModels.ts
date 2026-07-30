@@ -1,11 +1,10 @@
 export interface CollectionItem {
-  membershipResourceId: string;
   resourceId: string;
   displayName: string;
   type: string | null;
   typeLabel: string | null;
-  membershipCassetteId: string;
-  resourceCassetteId: string;
+  membershipResourceId: string | null;
+  membershipCassetteId: string | null;
 }
 
 export interface CollectionContents {
