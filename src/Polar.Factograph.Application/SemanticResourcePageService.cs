@@ -64,6 +64,10 @@ public sealed class SemanticResourcePageService(
             organizations,
             collections,
             unifiedRelated);
+        IReadOnlyList<SemanticRelationEntry> entries =
+            await new SemanticRelationEntryCollector(graph).CollectAsync(
+                root,
+                cancellationToken);
 
         return new PresentedSemanticResourcePage(
             resourceId,
@@ -74,7 +78,8 @@ public sealed class SemanticResourcePageService(
             collections,
             related)
         {
-            Links = links
+            Links = links,
+            Entries = entries
         };
     }
 
