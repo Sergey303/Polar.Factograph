@@ -12,6 +12,7 @@ export interface SemanticContentMember {
   displayName: string;
   roleLabel: string | null;
   documentUri: string | null;
+  hideDisplayName: boolean;
 }
 
 export interface SemanticContentItem {
@@ -25,6 +26,7 @@ export interface SemanticContentItem {
   sectionKey: string;
   sectionTitle: string;
   documentUri: string | null;
+  hideDisplayName: boolean;
   displayDate: string | null;
   sortDate: string | null;
 }
@@ -34,6 +36,13 @@ export interface SemanticContentBlockDefinition {
   title: string;
   kind: BlockKind;
   items: SemanticContentItem[];
+}
+
+function hasDocument(value: {
+  documentUri?: string | null;
+  hasDocument?: boolean;
+}): boolean {
+  return value.hasDocument === true || value.documentUri != null;
 }
 
 export function photoBlock(
@@ -56,6 +65,7 @@ export function photoBlock(
       sectionKey: key,
       sectionTitle: title,
       documentUri: photo.documentUri,
+      hideDisplayName: hasDocument(photo),
       displayDate: photo.displayDate ?? null,
       sortDate: photo.sortDate ?? null
     }))
@@ -70,7 +80,7 @@ export function linkBlock(
   return {
     key,
     title,
-    kind: links.some(link => link.documentUri != null) ? "media" : "text",
+    kind: links.some(hasDocument) ? "media" : "text",
     items: links.map(link => ({
       key: `${key}:${link.relationResourceId ?? link.resourceId}:${link.resourceId}:${link.relationLabel}`,
       resourceId: link.resourceId,
@@ -82,6 +92,7 @@ export function linkBlock(
       sectionKey: key,
       sectionTitle: title,
       documentUri: link.documentUri ?? null,
+      hideDisplayName: hasDocument(link),
       displayDate: link.displayDate ?? null,
       sortDate: link.sortDate ?? null
     }))
@@ -97,7 +108,7 @@ export function relationEntryBlock(
     key,
     title,
     kind: entries.some(entry =>
-      entry.documentUri !== null || entry.members.some(member => member.documentUri !== null))
+      entry.documentUri !== null || entry.members.some(hasDocument))
       ? "media"
       : "text",
     items: entries.map(entry => {
@@ -119,11 +130,13 @@ export function relationEntryBlock(
           resourceId: member.resourceId,
           displayName: member.displayName,
           roleLabel: member.roleLabel,
-          documentUri: member.documentUri
+          documentUri: member.documentUri,
+          hideDisplayName: hasDocument(member)
         })),
         sectionKey: key,
         sectionTitle: title,
         documentUri: previewMember?.documentUri ?? entry.documentUri,
+        hideDisplayName: previewMember === undefined ? false : hasDocument(previewMember),
         displayDate: entry.displayDate,
         sortDate: entry.sortDate
       };
