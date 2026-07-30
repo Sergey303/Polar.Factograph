@@ -14,6 +14,14 @@ function closeMenu(menu: HTMLDetailsElement, restoreFocus: boolean): void {
   }
 }
 
+function activeOpenMenu(menus: HTMLDetailsElement[]): HTMLDetailsElement | undefined {
+  for (let index = menus.length - 1; index >= 0; index -= 1) {
+    const menu = menus[index];
+    if (menu?.contains(document.activeElement)) return menu;
+  }
+  return menus[menus.length - 1];
+}
+
 document.addEventListener("pointerdown", event => {
   const target = event.target;
   if (!(target instanceof Node)) return;
@@ -26,9 +34,7 @@ document.addEventListener("pointerdown", event => {
 document.addEventListener("keydown", event => {
   if (event.key !== "Escape") return;
 
-  const menus = openMenus();
-  const activeMenu = menus.findLast(menu => menu.contains(document.activeElement)) ??
-    menus.at(-1);
+  const activeMenu = activeOpenMenu(openMenus());
   if (activeMenu === undefined) return;
 
   event.preventDefault();
