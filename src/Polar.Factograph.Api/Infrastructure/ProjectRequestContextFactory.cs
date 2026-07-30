@@ -12,7 +12,8 @@ public sealed class ProjectRequestContextFactory(
     IdentityProjectMemberOverlay memberOverlay,
     ProjectAccessService accessService,
     ProjectStoreProvider storeProvider,
-    OntologyCatalogProvider ontologyProvider)
+    OntologyCatalogProvider ontologyProvider,
+    OntologyClassSearchServiceProvider typeSearchProvider)
 {
     public async Task<ProjectAccessContext> CreateAccessAsync(
         HttpContext httpContext,
@@ -44,7 +45,7 @@ public sealed class ProjectRequestContextFactory(
         ProjectPotentialDuplicateService potentialDuplicates = new(store, reads, ontology);
         AuthorizedProjectCollectionService collections = new(
             new ProjectCollectionService(store, store, ontology));
-        OntologyClassSearchService typeSearch = new(store, store, ontology);
+        OntologyClassSearchService typeSearch = typeSearchProvider.Get(store, ontology);
 
         return new ProjectReadContext(
             context.Project,
