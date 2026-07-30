@@ -137,6 +137,8 @@ function BlockLayoutMenu(props: {
 
 function previewVariant(layout: BlockLayout): DocumentVariant {
   switch (layout) {
+    case "table":
+      return "icon";
     case "medium":
       return "medium";
     case "large":
@@ -206,7 +208,7 @@ function BlockItems(props: {
               <tr key={item.key}>
                 <td className="semantic-media-column">
                   <a href={resourceHref(item.resourceId)} onClick={followAppLink} tabIndex={-1}>
-                    <SemanticThumbnail item={item} layout="small" />
+                    <SemanticThumbnail item={item} layout="table" />
                   </a>
                 </td>
                 <td><ItemName item={item} showSection={props.showSection} /></td>
