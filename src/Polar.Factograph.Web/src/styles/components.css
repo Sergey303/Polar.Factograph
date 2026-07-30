@@ -104,6 +104,55 @@
   border-radius: 0.65rem;
 }
 
+.search-type-facets {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+}
+
+.search-type-facets button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: #40535f;
+  background: var(--surface);
+}
+
+.search-type-facets button:hover,
+.search-type-facets button:focus-visible {
+  border-color: #aebcc7;
+}
+
+.search-type-facets button.active {
+  border-color: var(--accent);
+  color: #155c64;
+  background: var(--accent-soft);
+}
+
+.search-type-facets strong {
+  min-width: 1.25rem;
+  padding: 0.08rem 0.32rem;
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: #e9eef1;
+  font-size: 0.68rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.search-type-facets button.active strong {
+  color: #155c64;
+  background: var(--surface);
+}
+
 .result-list li {
   border-bottom: 1px solid var(--border);
 }
@@ -162,5 +211,9 @@
 
   .search-form input {
     grid-column: 1 / -1;
+  }
+
+  .search-type-facets {
+    padding-inline: 0.75rem;
   }
 }
