@@ -30,6 +30,7 @@ The current compatibility increment contains:
 - ordinary entity search plus separate ontology class suggestions and indexed class-instance paging;
 - safe `iiss://` resolution plus authorized metadata, original/preview content, optional `icon` fallback, and a stable best-image endpoint;
 - authorized project overview, portrait, search, diagnostics, and index rebuild routes;
+- capability-shaped public response DTOs that hide raw project rights, cassette provenance, search predicate metadata, and document slot internals unless an effective edit or administration capability requires them;
 - local application-cookie authentication with reloadable JSON users and devices;
 - one numbered writable cassette Fog assigned to each registered user;
 - atomic append-only resource, delete, substitute, and collection membership mutations;
