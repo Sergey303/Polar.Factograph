@@ -223,13 +223,22 @@ public sealed class OntologyValidationService
 
         if (term.Ranges.Count == 0)
         {
-            AddWarning(
-                issues,
-                "missing_range",
-                term.Id,
-                resourceProperty
-                    ? "Ссылочное свойство не имеет range; пикер не сможет предложить допустимые типы сущностей."
-                    : "Литеральное свойство не имеет range и будет редактироваться как обычный текст.");
+            if (resourceProperty)
+            {
+                AddError(
+                    issues,
+                    "missing_range",
+                    term.Id,
+                    "Ссылочное свойство не имеет range; универсальный пикер не сможет найти или создать допустимую сущность.");
+            }
+            else
+            {
+                AddWarning(
+                    issues,
+                    "missing_range",
+                    term.Id,
+                    "Литеральное свойство не имеет range и будет редактироваться как обычный текст.");
+            }
             return;
         }
 
