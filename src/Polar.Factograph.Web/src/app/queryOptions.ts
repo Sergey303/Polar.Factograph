@@ -11,6 +11,10 @@ export const queryKeys = {
     query === undefined
       ? ["search", token] as const
       : ["search", token, query] as const,
+  searchClasses: (token: string, query: string) =>
+    ["search-classes", token, query] as const,
+  searchByType: (token: string, classId: string, offset: number) =>
+    ["search-by-type", token, classId, offset] as const,
   resourcePage: (token: string, resourceId: string) =>
     ["semantic-resource-page", token, resourceId] as const,
   portrait: (token: string, resourceId: string) =>
@@ -42,6 +46,25 @@ export function searchQueryOptions(query: string, token: string) {
   return queryOptions({
     queryKey: queryKeys.search(token, query),
     queryFn: ({ signal }) => factographApi.search(query, token, signal)
+  });
+}
+
+export function searchClassesQueryOptions(query: string, token: string) {
+  return queryOptions({
+    queryKey: queryKeys.searchClasses(token, query),
+    queryFn: ({ signal }) => factographApi.searchClasses(query, token, signal),
+    staleTime: 5 * 60 * 1000
+  });
+}
+
+export function searchByTypeQueryOptions(
+  classId: string,
+  offset: number,
+  token: string
+) {
+  return queryOptions({
+    queryKey: queryKeys.searchByType(token, classId, offset),
+    queryFn: ({ signal }) => factographApi.searchByType(classId, offset, token, signal)
   });
 }
 
