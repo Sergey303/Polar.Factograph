@@ -11,7 +11,10 @@ public sealed record CassetteDocumentLocation(
     string? OriginalPath,
     string? SmallPreviewPath,
     string? MediumPreviewPath,
-    string? NormalPreviewPath);
+    string? NormalPreviewPath)
+{
+    public string? IconPreviewPath { get; init; }
+}
 
 public sealed class CassetteDocumentPathResolver
 {
@@ -61,6 +64,11 @@ public sealed class CassetteDocumentPathResolver
             documentNumber,
             documentUri,
             "original");
+        string iconPreviewPath = FindSingleDocumentFile(
+            Path.Combine(cassettePath, "documents", "icon", folderName),
+            documentNumber,
+            documentUri,
+            "icon preview");
         string smallPreviewPath = FindSingleDocumentFile(
             Path.Combine(cassettePath, "documents", "small", folderName),
             documentNumber,
@@ -87,7 +95,10 @@ public sealed class CassetteDocumentPathResolver
             original,
             CurrentPreviewOrNull(smallPreviewPath, original),
             CurrentPreviewOrNull(mediumPreviewPath, original),
-            CurrentPreviewOrNull(normalPreviewPath, original));
+            CurrentPreviewOrNull(normalPreviewPath, original))
+        {
+            IconPreviewPath = CurrentPreviewOrNull(iconPreviewPath, original)
+        };
     }
 
     private static void ValidatePathPart(
