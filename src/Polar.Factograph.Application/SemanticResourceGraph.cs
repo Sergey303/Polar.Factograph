@@ -81,17 +81,15 @@ internal sealed class SemanticResourceGraph(
     public string InversePropertyLabel(string predicate) =>
         ontology.InverseLabelOf(predicate, preferredLanguage) ?? PropertyLabel(predicate);
 
-    public string? DocumentUri(ProjectResourcePortrait portrait) =>
-        portrait.Literals
-            .Where(field => string.Equals(
-                field.Predicate,
-                SemanticBridgeVocabulary.Uri,
-                StringComparison.Ordinal))
+    public string? DocumentUri(ProjectResourcePortrait portrait)
+    {
+        string[] values = portrait.Literals
             .Select(field => field.Value.Trim())
-            .FirstOrDefault(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
-        ?? portrait.Literals
-            .Select(field => field.Value.Trim())
-            .FirstOrDefault(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase));
+            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        return values.Length == 1 ? values[0] : null;
+    }
 
     public SemanticDateValue? DateValue(ProjectResourcePortrait portrait)
     {
