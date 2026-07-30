@@ -73,7 +73,8 @@ public static class ProjectOverviewPresentation
         }
 
         return canAdmin ||
-            cassette.AllowWrite && snapshot.Rights.Any(WriteRights.Contains);
+            EffectiveAllowWrite(cassette, snapshot) &&
+            snapshot.Rights.Any(WriteRights.Contains);
     }
 
     private static ProjectCassetteOverview PresentCassette(
@@ -89,7 +90,12 @@ public static class ProjectOverviewPresentation
         return new ProjectCassetteOverview(
             cassette.Id,
             cassette.Name,
-            cassette.AllowWrite,
+            EffectiveAllowWrite(cassette, snapshot),
             rights);
     }
+
+    private static bool EffectiveAllowWrite(
+        CassetteDefinition cassette,
+        CassetteAccessSnapshot snapshot) =>
+        cassette.AllowWrite && snapshot.AllowWrite;
 }
