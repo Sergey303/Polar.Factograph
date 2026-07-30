@@ -46,7 +46,7 @@ The ontology write-schema route returns localized classes and their inherited wr
 
 Collection browsing follows the legacy membership-resource join and is documented in [COLLECTIONS.md](COLLECTIONS.md).
 
-Document variants are `original`, `small`, `medium`, and `normal`. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests.
+Document variants are `original`, `icon`, `small`, `medium`, and `normal`. `icon` is optional and falls back to `small` when a cassette has no dedicated icon file. The metadata route returns availability flags and never exposes local filesystem paths. The content route supports HTTP range requests.
 
 `/api/project` returns a safe overview: project identity, effective project rights, readable cassettes, and the default write cassette. It does not expose project members, role definitions, or filesystem paths.
 
@@ -166,12 +166,15 @@ Mutation responses never expose local Fog paths.
 ```text
 GET  /api/admin/project/sources
 GET  /api/admin/project/materialization-summary
+GET  /api/admin/project/ontology-validation
 GET  /api/admin/index/status
 POST /api/admin/index/rebuild
 GET  /api/admin/previews/status
 ```
 
 All administrative routes above require `rebuildIndex`.
+
+The ontology-validation response contains term, error, and warning counts plus ordered issues with stable codes and ontology term identifiers. Validation parses raw terms before constructing the strict runtime catalog, so missing parents and inheritance cycles can be reported even though normal ontology loading rejects them. A missing, unreadable, or malformed ontology document is returned as one fatal report issue rather than an unhandled exception. Details are documented in [ONTOLOGY_VALIDATION.md](ONTOLOGY_VALIDATION.md).
 
 The index status response does not expose filesystem paths. It reports `ready`, `dirty`, `missing`, or `invalid`, the `DIRTY` timestamp when parseable, the current generation id and availability, and counts of completed and `.building` generations. An invalid or missing `CURRENT` pointer is returned as diagnostic state instead of causing an unhandled error.
 
