@@ -75,6 +75,7 @@ export function useAuthentication() {
   return {
     token: authenticated ? session.user!.id : "",
     authenticated,
+    publicReadEnabled: session?.publicReadEnabled ?? false,
     registrationEnabled: session?.registrationEnabled ?? false,
     user: session?.user ?? null,
     devices: session?.devices ?? [],
