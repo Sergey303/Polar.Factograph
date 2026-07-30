@@ -14,18 +14,6 @@ interface SemanticResourceSectionsProps {
   page: SemanticResourcePage;
 }
 
-interface RelationGroup {
-  key: string;
-  title: string;
-  links: SemanticResourceLink[];
-}
-
-interface RelationEntryGroup {
-  key: string;
-  title: string;
-  entries: SemanticRelationEntry[];
-}
-
 function linkIdentity(link: SemanticResourceLink): string {
   return [
     link.relationResourceId ?? "",
@@ -48,28 +36,15 @@ function availableLinks(page: SemanticResourcePage): SemanticResourceLink[] {
   return page.links ?? legacyLinks(page);
 }
 
-function relationBlocks(page: SemanticResourcePage): SemanticContentBlockDefinition[] {
-  const groups = new Map<string, RelationGroup>();
-  const seen = new Set<string>();
+function hasDocument(value: {
+  documentUri?: string | null;
+  hasDocument?: boolean;
+}): boolean {
+  return value.hasDocument === true || value.documentUri != null;
+}
 
-  for (const link of availableLinks(page)) {
-    const identity = linkIdentity(link);
-    if (seen.has(identity)) continue;
-    seen.add(identity);
-
-    const key = link.groupKey?.trim() || link.relationLabel;
-    const title = link.groupLabel?.trim() || link.relationLabel;
-    const existing = groups.get(key);
-    if (existing) {
-      existing.links.push(link);
-    } else {
-      groups.set(key, { key, title, links: [link] });
-    }
-  }
-
-  return [...groups.values()]
-    .sort((left, right) => left.title.localeCompare(right.title, "ru"))
-    .map(group => linkBlock(`relation:${group.key}`, group.title, group.links));
+function entryHasDocument(entry: SemanticRelationEntry): boolean {
+  return entry.documentUri !== null || entry.members.some(hasDocument);
 }
 
 function entryRepresentsLink(
@@ -82,24 +57,22 @@ function entryRepresentsLink(
 
   return entry.relationResourceId === null &&
     entry.members.length === 1 &&
-    entry.members[0]?.resourceId === link.resourceId &&
-    (entry.title === link.relationLabel || entry.groupLabel === link.relationLabel);
+    entry.members[0]?.resourceId === link.resourceId;
 }
 
 function entryFromLink(link: SemanticResourceLink): SemanticRelationEntry {
-  const groupKey = link.groupKey?.trim() || link.relationLabel;
-  const groupLabel = link.groupLabel?.trim() || link.relationLabel;
   return {
     key: `compat:${linkIdentity(link)}`,
     title: link.relationLabel,
     relationResourceId: link.relationResourceId ?? null,
     relationType: null,
     relationTypeLabel: null,
-    groupKey,
-    groupLabel,
+    groupKey: link.groupKey?.trim() || link.relationLabel,
+    groupLabel: link.groupLabel?.trim() || link.relationLabel,
     displayDate: link.displayDate ?? null,
     sortDate: link.sortDate ?? null,
     documentUri: link.documentUri ?? null,
+    values: [],
     members: [
       {
         resourceId: link.resourceId,
@@ -121,42 +94,48 @@ function completeEntries(page: SemanticResourcePage): SemanticRelationEntry[] {
   const missing = availableLinks(page)
     .filter(link => !entries.some(entry => entryRepresentsLink(entry, link)))
     .map(entryFromLink);
-  return [...entries, ...missing];
+  const seen = new Set<string>();
+  return [...entries, ...missing].filter(entry => {
+    if (seen.has(entry.key)) return false;
+    seen.add(entry.key);
+    return true;
+  });
 }
 
-function relationEntryBlocks(
-  entries: SemanticRelationEntry[]
-): SemanticContentBlockDefinition[] {
-  const groups = new Map<string, RelationEntryGroup>();
-  const seen = new Set<string>();
-
-  for (const entry of entries) {
-    if (seen.has(entry.key)) continue;
-    seen.add(entry.key);
-
-    const key = entry.groupKey.trim() || entry.key;
-    const title = entry.groupLabel.trim() || entry.title;
-    const existing = groups.get(key);
-    if (existing) {
-      existing.entries.push(entry);
-    } else {
-      groups.set(key, { key, title, entries: [entry] });
-    }
+function blocksFromEntries(entries: SemanticRelationEntry[]): SemanticContentBlockDefinition[] {
+  const media = entries.filter(entryHasDocument);
+  const links = entries.filter(entry => !entryHasDocument(entry));
+  const blocks: SemanticContentBlockDefinition[] = [];
+  if (media.length > 0) {
+    blocks.push(relationEntryBlock("public:media", "Фотографии", media));
   }
+  if (links.length > 0) {
+    blocks.push(relationEntryBlock("public:links", "Связи", links));
+  }
+  return blocks;
+}
 
-  return [...groups.values()]
-    .sort((left, right) => left.title.localeCompare(right.title, "ru"))
-    .map(group => relationEntryBlock(
-      `relation:${group.key}`,
-      group.title,
-      group.entries));
+function blocksFromLinks(page: SemanticResourcePage): SemanticContentBlockDefinition[] {
+  const seen = new Set<string>();
+  const links = availableLinks(page).filter(link => {
+    const identity = linkIdentity(link);
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
+  const media = links.filter(hasDocument);
+  const plain = links.filter(link => !hasDocument(link));
+  const blocks: SemanticContentBlockDefinition[] = [];
+  if (media.length > 0) blocks.push(linkBlock("public:media", "Фотографии", media));
+  if (plain.length > 0) blocks.push(linkBlock("public:links", "Связи", plain));
+  return blocks;
 }
 
 export function SemanticResourceSections({ page }: SemanticResourceSectionsProps) {
   const entries = completeEntries(page);
   const blocks = entries.length > 0
-    ? relationEntryBlocks(entries)
-    : relationBlocks(page);
+    ? blocksFromEntries(entries)
+    : blocksFromLinks(page);
   return (
     <SemanticContentBlocks
       blocks={blocks}
