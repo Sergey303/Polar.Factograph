@@ -5,7 +5,6 @@ interface OntologyClassResultsProps {
   page: ResourceTypeSearchPage | null;
   loading: boolean;
   error: string | null;
-  query: string;
   onBack: () => void;
   onOffsetChange: (offset: number) => void;
 }
@@ -34,7 +33,7 @@ export function OntologyClassResults(props: OntologyClassResultsProps) {
         <div>
           <span className="eyebrow">Категория</span>
           <h1>{page.label}</h1>
-          <span className="muted">{page.total} сущностей</span>
+          <span className="muted">Всего: {page.total}</span>
         </div>
         <button className="button ghost compact" type="button" onClick={props.onBack}>
           К результатам запроса
