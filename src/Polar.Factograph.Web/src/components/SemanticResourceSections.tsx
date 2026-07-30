@@ -107,7 +107,8 @@ function entryFromLink(link: SemanticResourceLink): SemanticRelationEntry {
         type: link.type,
         typeLabel: link.typeLabel,
         roleLabel: null,
-        documentUri: link.documentUri ?? null
+        documentUri: link.documentUri ?? null,
+        hasDocument: link.hasDocument
       }
     ]
   };
