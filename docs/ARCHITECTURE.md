@@ -138,7 +138,9 @@ Legacy SORAN1957-style links are preserved by a server redirect:
 
 A request without `id` is redirected temporarily to `/search`. The redirect preserves `PathBase`, so the application may be hosted below the domain root.
 
-Client-side resource metadata updates the document title, canonical URL, description, and Open Graph fields after the portrait loads. Server-generated metadata for non-JavaScript crawlers and social preview bots remains a separate delivery step.
+For an exact public resource route, `DynamicBaseUrlMiddleware` buffers the SPA HTML, reads the authorized semantic page, resolves the canonical resource identifier, and injects the title, description, canonical link, Open Graph fields, and Twitter summary fields before the response leaves the server. This supports crawlers and social preview bots that do not execute React. The dynamic response removes static-file ETag and Last-Modified validators and uses `private, no-store`, so metadata cannot become stale or leak between access contexts. A metadata read failure is logged and falls back to the normal generic SPA document instead of breaking the page.
+
+After React loads, `ResourceDocumentMetadata` applies the same title, description, canonical URL, and Open Graph values in the browser. The client layer therefore mirrors rather than replaces the server metadata contract.
 
 ## Layers
 
@@ -146,7 +148,7 @@ Client-side resource metadata updates the document title, canonical URL, descrip
 - `Polar.Factograph.Application` — configuration loading, validation, authorization boundaries, portraits, ontology presentation, search ranking, and write use cases.
 - `Polar.Factograph.Fog` — compatible cassette discovery, streaming Fog reading, canonicalization, revision resolution, writing, and document path resolution.
 - `Polar.Factograph.Storage` — logical RDF/search contracts, physical rows, atomic generation lifecycle, concrete `Polar.DB.Typed.DbSet<T>` writer, and concrete RDF/search store.
-- `Polar.Factograph.Api` — Minimal API host, authentication, public access boundary, compatibility redirects, and runtime coordination.
+- `Polar.Factograph.Api` — Minimal API host, authentication, public access boundary, compatibility redirects, server HTML metadata, and runtime coordination.
 - `Polar.Factograph.Web` — React/TypeScript public catalogue and permission-driven editorial workspace.
 
 ## Polar.DB source dependency
@@ -279,14 +281,13 @@ Completed foundations:
 4. ontology-aware portraits, semantic linked sections, timeline presentation, and document resolution;
 5. metadata, relation, collection, and document write coordination with per-editor Fog routing;
 6. local authentication, device sessions, editor allow-list reconciliation, and anonymous viewer boundary;
-7. addressable React routes, duplicate warnings, public resource metadata, legacy URL redirects, and bounded type facets.
+7. addressable React routes, duplicate warnings, public resource metadata in server and browser HTML, legacy URL redirects, and bounded type facets.
 
 Next delivery priorities:
 
-1. server-generated public resource metadata for crawlers and social previews;
-2. complete server-side search facets and pagination before the result limit;
-3. per-fact temporal/provenance/uncertainty editorial models;
-4. duplicate merge, substitution preview, redirects, and reversible editorial operations;
-5. publication states, moderation, audit history, and rollback;
-6. photo viewer, identification workflow, rights, embargo, and curated exhibitions;
-7. only after proven compatibility: discussion of a cassette v2 format.
+1. complete server-side search facets and pagination before the result limit;
+2. per-fact temporal/provenance/uncertainty editorial models;
+3. duplicate merge, substitution preview, redirects, and reversible editorial operations;
+4. publication states, moderation, audit history, and rollback;
+5. photo viewer, identification workflow, rights, embargo, and curated exhibitions;
+6. only after proven compatibility: discussion of a cassette v2 format.
