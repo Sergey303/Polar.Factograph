@@ -3,7 +3,13 @@ import { type MouseEvent, useEffect, useState } from "react";
 export type ResourceRouteMode = "view" | "edit" | "relations" | "document";
 
 export type AppRoute =
-  | { page: "search"; query: string; typeId: string | null }
+  | {
+      page: "search";
+      query: string;
+      typeId: string | null;
+      classId: string | null;
+      classOffset: number;
+    }
   | { page: "create-entity" }
   | { page: "resource"; resourceId: string; mode: ResourceRouteMode };
 
@@ -60,12 +66,23 @@ function navigate(route: string, replace = false): void {
   window.dispatchEvent(new Event(routeChangedEvent));
 }
 
-function searchRoute(query: string, typeId: string | null = null): string {
+function searchRoute(
+  query: string,
+  typeId: string | null = null,
+  classId: string | null = null,
+  classOffset = 0
+): string {
   const parameters = new URLSearchParams();
   const normalizedQuery = query.trim();
   const normalizedType = typeId?.trim() ?? "";
+  const normalizedClass = classId?.trim() ?? "";
   if (normalizedQuery.length > 0) parameters.set("q", normalizedQuery);
-  if (normalizedType.length > 0) parameters.set("type", normalizedType);
+  if (normalizedClass.length > 0) {
+    parameters.set("class", normalizedClass);
+    if (classOffset > 0) parameters.set("offset", String(classOffset));
+  } else if (normalizedType.length > 0) {
+    parameters.set("type", normalizedType);
+  }
   const encoded = parameters.toString();
   return encoded.length === 0 ? "/search" : `/search?${encoded}`;
 }
@@ -141,6 +158,15 @@ export function navigateToSearchFilter(
   navigate(searchRoute(query, typeId), replace);
 }
 
+export function navigateToSearchClass(
+  query: string,
+  classId: string,
+  offset = 0,
+  replace = false
+): void {
+  navigate(searchRoute(query, null, classId, offset), replace);
+}
+
 export function navigateToCreateEntity(replace = false): void {
   navigate("/entity/new", replace);
 }
@@ -190,20 +216,41 @@ function parseResourceMode(suffix: string): ResourceRouteMode | null {
   }
 }
 
+function nonNegativeInteger(value: string | null): number {
+  if (value === null) return 0;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function emptySearchRoute(): AppRoute {
+  return {
+    page: "search",
+    query: "",
+    typeId: null,
+    classId: null,
+    classOffset: 0
+  };
+}
+
 function currentRoute(): AppRoute {
   migrateLegacyHashRoute();
   const path = applicationPath();
   if (path === null || path === "/") {
     window.history.replaceState(null, "", applicationHref("/search"));
-    return { page: "search", query: "", typeId: null };
+    return emptySearchRoute();
   }
 
   if (path === "/search") {
     const parameters = new URLSearchParams(window.location.search);
+    const classId = parameters.get("class")?.trim() || null;
     return {
       page: "search",
       query: parameters.get("q")?.trim() ?? "",
-      typeId: parameters.get("type")?.trim() || null
+      typeId: classId === null ? parameters.get("type")?.trim() || null : null,
+      classId,
+      classOffset: classId === null
+        ? 0
+        : nonNegativeInteger(parameters.get("offset"))
     };
   }
 
@@ -231,7 +278,7 @@ function currentRoute(): AppRoute {
   }
 
   window.history.replaceState(null, "", applicationHref("/search"));
-  return { page: "search", query: "", typeId: null };
+  return emptySearchRoute();
 }
 
 export function useAppRoute(): AppRoute {
