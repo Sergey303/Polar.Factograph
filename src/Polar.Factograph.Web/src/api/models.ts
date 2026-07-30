@@ -35,6 +35,22 @@ export interface ResourceSearchResult {
   matches: SearchEvidence[];
 }
 
+export interface OntologyClassSearchSuggestion {
+  classId: string;
+  label: string;
+  exactMatch: boolean;
+  isAbstract: boolean;
+}
+
+export interface ResourceTypeSearchPage {
+  classId: string;
+  label: string;
+  total: number;
+  offset: number;
+  limit: number;
+  results: ResourceSearchResult[];
+}
+
 export interface PotentialDuplicateResource {
   resourceId: string;
   displayName: string;
