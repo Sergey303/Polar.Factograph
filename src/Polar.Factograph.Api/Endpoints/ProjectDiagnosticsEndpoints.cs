@@ -76,9 +76,36 @@ public static class ProjectDiagnosticsEndpoints
             context.Access,
             ProjectRights.RebuildIndex);
 
-        IReadOnlyDictionary<string, OntologyTerm> terms = await ontologyLoader.LoadTermsAsync(
-            context.Project.Ontology.Path,
-            cancellationToken);
-        return Results.Ok(validation.Validate(terms.Values));
+        try
+        {
+            IReadOnlyDictionary<string, OntologyTerm> terms = await ontologyLoader.LoadTermsAsync(
+                context.Project.Ontology.Path,
+                cancellationToken);
+            return Results.Ok(validation.Validate(terms.Values));
+        }
+        catch (FileNotFoundException)
+        {
+            return Results.Ok(OntologyValidationReports.Fatal(
+                "ontology_file_not_found",
+                "Файл онтологии не найден."));
+        }
+        catch (InvalidDataException)
+        {
+            return Results.Ok(OntologyValidationReports.Fatal(
+                "ontology_document_invalid",
+                "Файл онтологии не удалось разобрать как согласованный XML-документ."));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Results.Ok(OntologyValidationReports.Fatal(
+                "ontology_file_unreadable",
+                "Сервис не имеет доступа к файлу онтологии."));
+        }
+        catch (IOException)
+        {
+            return Results.Ok(OntologyValidationReports.Fatal(
+                "ontology_file_unreadable",
+                "Файл онтологии временно недоступен для чтения."));
+        }
     }
 }
