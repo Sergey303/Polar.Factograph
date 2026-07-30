@@ -113,7 +113,7 @@ public sealed class OntologyClassSearchService(
                 summary.DisplayName,
                 summary.Type,
                 summary.TypeLabel,
-                Score: 0,
+                0,
                 summary.SourceCassetteId,
                 Array.Empty<ProjectSearchEvidence>()))
             .ToArray();
