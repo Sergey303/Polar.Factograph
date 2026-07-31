@@ -20,6 +20,11 @@ interface AdminIndexCardProps {
 export function AdminIndexCard(props: AdminIndexCardProps) {
   const statusItems = props.status === null ? [] : [
     { label: "Состояние", value: indexStateLabel(props.status.state) },
+    { label: "Активное поколение", value: props.status.currentGenerationId ?? "—" },
+    {
+      label: "Активное поколение доступно",
+      value: props.status.currentGenerationAvailable ? "да" : "нет"
+    },
     { label: "DIRTY с", value: formatAdminDate(props.status.dirtySinceUtc) },
     { label: "Завершённых поколений", value: props.status.completedGenerationCount },
     { label: "Строящихся поколений", value: props.status.buildingGenerationCount }
