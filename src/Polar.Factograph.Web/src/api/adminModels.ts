@@ -16,9 +16,22 @@ export interface ProjectIndexBuildStatistics {
   wordSearchRows: number;
 }
 
+export interface EditorFogValidationStatistics {
+  configuredEditors: number;
+  registeredEditors: number;
+  unregisteredEditors: number;
+  editorsWithFog: number;
+  validEditorFogs: number;
+  invalidEditorFogs: number;
+  unassignedWritableFogs: number;
+}
+
 export interface ProjectIndexRebuildResult {
   generationId: string;
+  enabledCassettes: number;
+  scannedCassettes: number;
   sourceFiles: number;
+  editors: EditorFogValidationStatistics;
   statistics: ProjectIndexBuildStatistics;
 }
 
