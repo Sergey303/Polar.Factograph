@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { documentContentUrl } from "../../api/factographApi";
 import { followAppLink, resourceHref } from "../../app/routes";
 import "../../styles/simple-semantic-content.css";
@@ -41,8 +41,8 @@ function storedPhotoSize(): PhotoSize {
 }
 
 function textPageSize(): number {
-  const available = typeof window === "undefined" ? 720 : window.innerHeight - 300;
-  return Math.max(8, Math.min(24, Math.floor(available / 38)));
+  const available = typeof window === "undefined" ? 720 : window.innerHeight - 320;
+  return Math.max(6, Math.min(24, Math.floor(available / 44)));
 }
 
 function prepareBlocks(
@@ -194,6 +194,7 @@ function PhotoColumn({ items }: { items: SemanticContentItem[] }) {
 }
 
 function TextColumn({ rows }: { rows: TextRow[] }) {
+  const groupsRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(textPageSize);
   const fingerprint = rows.map(row => row.key).join("\n");
@@ -221,9 +222,21 @@ function TextColumn({ rows }: { rows: TextRow[] }) {
     return groups;
   }, [visible]);
 
+  useLayoutEffect(() => {
+    const element = groupsRef.current;
+    if (element === null || pageSize <= 1) return;
+
+    const overflow = element.scrollHeight - element.clientHeight;
+    if (overflow <= 1) return;
+
+    const averageRowHeight = element.scrollHeight / Math.max(1, visible.length);
+    const decrease = Math.max(1, Math.ceil(overflow / Math.max(1, averageRowHeight)));
+    setPageSize(value => Math.max(1, value - decrease));
+  }, [grouped, pageSize, visible.length]);
+
   return (
     <aside className="simple-archive-links">
-      <div className="simple-link-groups">
+      <div className="simple-link-groups" ref={groupsRef}>
         {grouped.map(group => (
           <section className="simple-link-group" key={`${group.key}:${currentPage}`}>
             <h2>{group.title}</h2>
@@ -279,8 +292,12 @@ export function SemanticContentBlocks({
 
   if (photos.length === 0 && rows.length === 0) return null;
 
+  const layoutClasses = ["simple-archive-layout"];
+  if (photos.length === 0) layoutClasses.push("without-photos");
+  if (rows.length === 0) layoutClasses.push("without-links");
+
   return (
-    <div className={`simple-archive-layout ${photos.length === 0 ? "without-photos" : ""}`}>
+    <div className={layoutClasses.join(" ")}>
       {photos.length > 0 && <PhotoColumn items={photos} />}
       {rows.length > 0 && <TextColumn rows={rows} />}
     </div>
