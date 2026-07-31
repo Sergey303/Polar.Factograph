@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Polar.Factograph.Application;
+using Polar.Factograph.Domain;
 using Polar.Factograph.Storage;
 using Xunit;
 
