@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "projectId": "polar-factograph-iis",
   "name": "Polar.Factograph IIS",
+  "homeResourceIds": [],
   "ontology": {
     "path": "./ontology.xml"
   },
@@ -9,23 +10,334 @@
     "path": "./project-data/index",
     "rebuildMode": "whenSourcesChanged"
   },
-  "homeResourceIds": [],
   "cassettes": [
     {
-      "id": "syp-cassette-full",
-      "name": "SypCassete",
-      "path": "./cassetes/SypCassete",
-      "enabled": false,
+      "id": "Syp_2012_1",
+      "name": "Syp_2012_1",
+      "path": "D:/projects/iis/cassettes/Syp_2012_1",
+      "enabled": true,
       "defaultAccess": "read",
       "allowWrite": false
     },
     {
-      "id": "syp-cassette-small",
+      "id": "Syp_2012_mag",
+      "name": "Syp_2012_mag",
+      "path": "D:/projects/iis/cassettes/Syp_2012_mag",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp_2012_Tikhonova",
+      "name": "Syp_2012_Tikhonova",
+      "path": "D:/projects/iis/cassettes/Syp_2012_Tikhonova",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp_2013",
+      "name": "Syp_2013",
+      "path": "D:/projects/iis/cassettes/Syp_2013",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp_2024",
+      "name": "Syp_2024",
+      "path": "D:/projects/iis/cassettes/Syp_2024",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp_2024u",
+      "name": "Syp_2024u",
+      "path": "D:/projects/iis/cassettes/Syp_2024u",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2011",
+      "name": "Syp2011",
+      "path": "D:/projects/iis/cassettes/Syp2011",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2011video",
+      "name": "Syp2011video",
+      "path": "D:/projects/iis/cassettes/Syp2011video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "syp2013Users",
+      "name": "syp2013Users",
+      "path": "D:/projects/iis/cassettes/syp2013Users",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "syp2013video",
+      "name": "syp2013video",
+      "path": "D:/projects/iis/cassettes/syp2013video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2014",
+      "name": "Syp2014",
+      "path": "D:/projects/iis/cassettes/Syp2014",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2014conf_video",
+      "name": "Syp2014conf_video",
+      "path": "D:/projects/iis/cassettes/Syp2014conf_video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2014Users",
+      "name": "Syp2014Users",
+      "path": "D:/projects/iis/cassettes/Syp2014Users",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2014video",
+      "name": "Syp2014video",
+      "path": "D:/projects/iis/cassettes/Syp2014video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2015",
+      "name": "Syp2015",
+      "path": "D:/projects/iis/cassettes/Syp2015",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2015Bratus",
+      "name": "Syp2015Bratus",
+      "path": "D:/projects/iis/cassettes/Syp2015Bratus",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2015conf_video",
+      "name": "Syp2015conf_video",
+      "path": "D:/projects/iis/cassettes/Syp2015conf_video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2015Users",
+      "name": "Syp2015Users",
+      "path": "D:/projects/iis/cassettes/Syp2015Users",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2015video",
+      "name": "Syp2015video",
+      "path": "D:/projects/iis/cassettes/Syp2015video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2016",
+      "name": "Syp2016",
+      "path": "D:/projects/iis/cassettes/Syp2016",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2016Users",
+      "name": "Syp2016Users",
+      "path": "D:/projects/iis/cassettes/Syp2016Users",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2016video",
+      "name": "Syp2016video",
+      "path": "D:/projects/iis/cassettes/Syp2016video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2016video2",
+      "name": "Syp2016video2",
+      "path": "D:/projects/iis/cassettes/Syp2016video2",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2017",
+      "name": "Syp2017",
+      "path": "D:/projects/iis/cassettes/Syp2017",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2017Users",
+      "name": "Syp2017Users",
+      "path": "D:/projects/iis/cassettes/Syp2017Users",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2017video",
+      "name": "Syp2017video",
+      "path": "D:/projects/iis/cassettes/Syp2017video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2018",
+      "name": "Syp2018",
+      "path": "D:/projects/iis/cassettes/Syp2018",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2018Users",
+      "name": "Syp2018Users",
+      "path": "D:/projects/iis/cassettes/Syp2018Users",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "syp2018video",
+      "name": "syp2018video",
+      "path": "D:/projects/iis/cassettes/syp2018video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2019",
+      "name": "Syp2019",
+      "path": "D:/projects/iis/cassettes/Syp2019",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2019photos",
+      "name": "Syp2019photos",
+      "path": "D:/projects/iis/cassettes/Syp2019photos",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2022",
+      "name": "Syp2022",
+      "path": "D:/projects/iis/cassettes/Syp2022",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "syp2022vkt",
+      "name": "syp2022vkt",
+      "path": "D:/projects/iis/cassettes/syp2022vkt",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2023",
+      "name": "Syp2023",
+      "path": "D:/projects/iis/cassettes/Syp2023",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2023a",
+      "name": "Syp2023a",
+      "path": "D:/projects/iis/cassettes/Syp2023a",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2024Users",
+      "name": "Syp2024Users",
+      "path": "D:/projects/iis/cassettes/Syp2024Users",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2025",
+      "name": "Syp2025",
+      "path": "D:/projects/iis/cassettes/Syp2025",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2025u",
+      "name": "Syp2025u",
+      "path": "D:/projects/iis/cassettes/Syp2025u",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "Syp2025video",
+      "name": "Syp2025video",
+      "path": "D:/projects/iis/cassettes/Syp2025video",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
+    },
+    {
+      "id": "SypCassete",
       "name": "SypCassete",
-      "path": "./cassetes/SypCassete _small",
+      "path": "D:/projects/iis/cassettes/SypCassete",
       "enabled": true,
       "defaultAccess": "read",
       "allowWrite": true
+    },
+    {
+      "id": "SypUsers",
+      "name": "SypUsers",
+      "path": "D:/projects/iis/cassettes/SypUsers",
+      "enabled": true,
+      "defaultAccess": "read",
+      "allowWrite": false
     }
   ],
   "roles": {
@@ -34,14 +346,7 @@
         "read",
         "search"
       ],
-      "cassetteRights": {
-        "syp-cassette-full": [
-          "read"
-        ],
-        "syp-cassette-small": [
-          "read"
-        ]
-      }
+      "cassetteRights": {}
     },
     "editor": {
       "projectRights": [
@@ -49,10 +354,7 @@
         "search"
       ],
       "cassetteRights": {
-        "syp-cassette-full": [
-          "read"
-        ],
-        "syp-cassette-small": [
+        "SypCassete": [
           "read",
           "writeMetadata",
           "addDocuments",
@@ -93,8 +395,8 @@
   ],
   "writeRouting": {
     "defaultCassetteByRole": {
-      "editor": "syp-cassette-small",
-      "administrator": "syp-cassette-small"
+      "editor": "SypCassete",
+      "administrator": "SypCassete"
     }
   }
 }
