@@ -109,7 +109,7 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
             : html.Insert(head + "<head>".Length, tags.ToString());
     }
 
-    internal static string InsertResourceMetadata(
+    public static string InsertResourceMetadata(
         string html,
         ResourceHtmlMetadata metadata)
     {
@@ -159,7 +159,7 @@ public sealed class DynamicBaseUrlMiddleware(RequestDelegate next)
         return rewritten.Insert(head + "<head>".Length, tags.ToString());
     }
 
-    internal static void DisableStaticFileCaching(HttpResponse response)
+    public static void DisableStaticFileCaching(HttpResponse response)
     {
         ArgumentNullException.ThrowIfNull(response);
         response.Headers.Remove("ETag");

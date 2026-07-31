@@ -63,7 +63,7 @@ public sealed class ResourceHtmlMetadataProvider(
             imageUrl);
     }
 
-    internal static string? TryGetPublicResourceId(HttpRequest request)
+    public static string? TryGetPublicResourceId(HttpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         string rawTarget = request.HttpContext.Features
@@ -104,7 +104,7 @@ public sealed class ResourceHtmlMetadataProvider(
         }
     }
 
-    internal static string TitleOf(PresentedSemanticResourcePage page)
+    public static string TitleOf(PresentedSemanticResourcePage page)
     {
         ArgumentNullException.ThrowIfNull(page);
         if (DocumentUris(page.Portrait).Any())
@@ -122,7 +122,7 @@ public sealed class ResourceHtmlMetadataProvider(
             : named.DisplayValue;
     }
 
-    internal static string DescriptionOf(PresentedSemanticResourcePage page)
+    public static string DescriptionOf(PresentedSemanticResourcePage page)
     {
         ArgumentNullException.ThrowIfNull(page);
         PresentedResourceLiteralField? descriptive = page.Portrait.Literals.FirstOrDefault(field =>
@@ -138,7 +138,7 @@ public sealed class ResourceHtmlMetadataProvider(
             : $"{value[..(DescriptionLimit - 3)].TrimEnd()}…";
     }
 
-    internal static string CanonicalUrl(HttpRequest request, string resourceId)
+    public static string CanonicalUrl(HttpRequest request, string resourceId)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceId);
@@ -148,7 +148,7 @@ public sealed class ResourceHtmlMetadataProvider(
         return $"{request.Scheme}://{request.Host}{pathBase}/resource/{Uri.EscapeDataString(resourceId)}";
     }
 
-    internal static string? ImageUrl(
+    public static string? ImageUrl(
         HttpRequest request,
         PresentedSemanticResourcePage page,
         ProjectDefinition project,

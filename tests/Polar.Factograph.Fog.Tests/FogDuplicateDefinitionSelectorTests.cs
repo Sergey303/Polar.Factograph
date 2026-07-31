@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Polar.Factograph.Fog;
+using Xunit;
 
 namespace Polar.Factograph.Fog.Tests;
 

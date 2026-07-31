@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Polar.Factograph.Api.Endpoints;
 
 namespace Polar.Factograph.Api.Tests;
