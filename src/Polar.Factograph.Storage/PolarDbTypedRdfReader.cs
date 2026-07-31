@@ -3,9 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Polar.Factograph.Storage;
 
-internal sealed class PolarDbTypedRdfReader(
-    PolarDbTypedStoreSets sets,
-    PolarDbReadMode readMode)
+internal sealed class PolarDbTypedRdfReader(PolarDbTypedStoreSets sets)
 {
     public ValueTask<ResourceHead?> GetResourceHeadAsync(
         string resourceId,
@@ -32,13 +30,7 @@ internal sealed class PolarDbTypedRdfReader(
         ArgumentNullException.ThrowIfNull(pattern);
         ArgumentNullException.ThrowIfNull(allowedCassetteIds);
 
-        IReadOnlyList<PolarDbTripleRow> candidates = readMode switch
-        {
-            PolarDbReadMode.FullScan => sets.Triples.All(),
-            PolarDbReadMode.ExternalIndexes => FindIndexedCandidates(pattern),
-            _ => throw new InvalidOperationException(
-                $"Unsupported Polar.DB read mode: {readMode}.")
-        };
+        IReadOnlyList<PolarDbTripleRow> candidates = FindCandidates(pattern);
         await Task.Yield();
 
         foreach (PolarDbTripleRow row in candidates)
@@ -51,7 +43,7 @@ internal sealed class PolarDbTypedRdfReader(
         }
     }
 
-    private IReadOnlyList<PolarDbTripleRow> FindIndexedCandidates(TriplePattern pattern)
+    private IReadOnlyList<PolarDbTripleRow> FindCandidates(TriplePattern pattern)
     {
         if (pattern.Subject is not null && pattern.Predicate is not null)
         {
