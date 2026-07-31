@@ -10,6 +10,7 @@ public static class IndexEndpoints
     {
         endpoints.MapGet("/api/admin/index/status", GetStatusAsync);
         endpoints.MapPost("/api/admin/index/rebuild", RebuildAsync);
+        endpoints.MapPost("/api/admin/index/verify", VerifyAsync);
         return endpoints;
     }
 
@@ -37,6 +38,22 @@ public static class IndexEndpoints
             contextFactory,
             cancellationToken);
         ProjectFullRefreshResult result = await coordinator.RefreshAsync(
+            context.Project,
+            cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> VerifyAsync(
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        ProjectIndexVerificationCoordinator coordinator,
+        CancellationToken cancellationToken)
+    {
+        ProjectAccessContext context = await RequireAdminAsync(
+            httpContext,
+            contextFactory,
+            cancellationToken);
+        ProjectIndexVerificationReport result = await coordinator.VerifyAsync(
             context.Project,
             cancellationToken);
         return Results.Ok(result);
