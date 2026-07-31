@@ -1,19 +1,30 @@
+using Microsoft.Extensions.Options;
 using Polar.Factograph.Storage;
 
 namespace Polar.Factograph.Api.Infrastructure;
 
-public sealed class ProjectStoreProvider(ProjectIndexDirtyMarker dirtyMarker) : IDisposable
+public sealed class ProjectStoreProvider : IDisposable
 {
+    private readonly ProjectIndexDirtyMarker _dirtyMarker;
+    private readonly PolarDbReadMode _readMode;
     private readonly object _sync = new();
     private readonly List<PolarDbTypedProjectStore> _retired = new();
     private PolarDbTypedProjectStore? _current;
     private string? _indexRoot;
 
+    public ProjectStoreProvider(
+        ProjectIndexDirtyMarker dirtyMarker,
+        IOptions<PolarDbReadOptions> options)
+    {
+        _dirtyMarker = dirtyMarker;
+        _readMode = options.Value.ReadMode;
+    }
+
     public PolarDbTypedProjectStore GetCurrent(string indexRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(indexRoot);
         string fullRoot = Path.GetFullPath(indexRoot);
-        if (dirtyMarker.Exists(fullRoot))
+        if (_dirtyMarker.Exists(fullRoot))
         {
             throw new ProjectRuntimeUnavailableException(
                 "The project index is waiting for a successful rebuild.");
@@ -27,7 +38,8 @@ public sealed class ProjectStoreProvider(ProjectIndexDirtyMarker dirtyMarker) : 
 
             if (_current is not null &&
                 string.Equals(_indexRoot, fullRoot, StringComparison.Ordinal) &&
-                string.Equals(_current.GenerationPath, generationPath, StringComparison.Ordinal))
+                string.Equals(_current.GenerationPath, generationPath, StringComparison.Ordinal) &&
+                _current.ReadMode == _readMode)
             {
                 return _current;
             }
@@ -35,7 +47,7 @@ public sealed class ProjectStoreProvider(ProjectIndexDirtyMarker dirtyMarker) : 
             PolarDbTypedProjectStore opened;
             try
             {
-                opened = PolarDbTypedProjectStore.OpenCurrent(fullRoot);
+                opened = PolarDbTypedProjectStore.OpenCurrent(fullRoot, _readMode);
             }
             catch (Exception exception) when (exception is IOException or InvalidDataException)
             {
