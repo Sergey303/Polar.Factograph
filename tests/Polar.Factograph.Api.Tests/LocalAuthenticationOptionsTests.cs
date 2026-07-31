@@ -1,4 +1,5 @@
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using Polar.Factograph.Api.Authentication;
 
 namespace Polar.Factograph.Api.Tests;
@@ -6,13 +7,14 @@ namespace Polar.Factograph.Api.Tests;
 public sealed class LocalAuthenticationOptionsTests
 {
     [Fact]
-    public void Read_normalizes_editor_logins()
+    public void Read_normalizes_editor_and_admin_logins()
     {
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Authentication:Local:EditorLogins:0"] = "  Сергей  ",
-                ["Authentication:Local:EditorLogins:1"] = "Editor.Two"
+                ["Authentication:Local:EditorLogins:1"] = "Editor.Two",
+                ["Authentication:Local:AdminLogins:0"] = "  ADMIN  "
             })
             .Build();
 
@@ -24,16 +26,41 @@ public sealed class LocalAuthenticationOptionsTests
         Assert.True(options.IsEditor(LocalLoginName.Normalize("сергей")));
         Assert.True(options.IsEditor(LocalLoginName.Normalize("EDITOR.TWO")));
         Assert.False(options.IsEditor(LocalLoginName.Normalize("reader")));
+        Assert.Single(options.AdminLogins);
+        Assert.True(options.IsAdministrator(LocalLoginName.Normalize("admin")));
+        Assert.False(options.IsAdministrator(LocalLoginName.Normalize("reader")));
     }
 
     [Fact]
-    public void Read_rejects_duplicate_editor_logins_after_normalization()
+    public void Read_allows_the_same_login_in_editor_and_admin_lists()
     {
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Authentication:Local:EditorLogins:0"] = "Sergey",
-                ["Authentication:Local:EditorLogins:1"] = "sergey"
+                ["Authentication:Local:EditorLogins:0"] = "admin",
+                ["Authentication:Local:AdminLogins:0"] = "ADMIN"
+            })
+            .Build();
+
+        LocalAuthenticationOptions options = LocalAuthenticationOptions.Read(
+            configuration,
+            new TestHostEnvironment());
+
+        string login = LocalLoginName.Normalize("admin");
+        Assert.True(options.IsEditor(login));
+        Assert.True(options.IsAdministrator(login));
+    }
+
+    [Theory]
+    [InlineData("EditorLogins")]
+    [InlineData("AdminLogins")]
+    public void Read_rejects_duplicate_logins_after_normalization(string settingName)
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"Authentication:Local:{settingName}:0"] = "Sergey",
+                [$"Authentication:Local:{settingName}:1"] = "sergey"
             })
             .Build();
 
@@ -44,7 +71,7 @@ public sealed class LocalAuthenticationOptionsTests
     }
 
     [Fact]
-    public void Read_treats_absent_editor_list_as_empty()
+    public void Read_treats_absent_role_lists_as_empty()
     {
         IConfiguration configuration = new ConfigurationBuilder().Build();
 
@@ -53,7 +80,9 @@ public sealed class LocalAuthenticationOptionsTests
             new TestHostEnvironment());
 
         Assert.Empty(options.EditorLogins);
+        Assert.Empty(options.AdminLogins);
         Assert.False(options.IsEditor(LocalLoginName.Normalize("reader")));
+        Assert.False(options.IsAdministrator(LocalLoginName.Normalize("reader")));
     }
 
     [Fact]
