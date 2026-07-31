@@ -28,6 +28,7 @@ public sealed class ProjectFullRefreshCoordinator(
     LocalAuthenticationOptions authenticationOptions,
     IFogSourceScanner sourceScanner,
     ProjectIndexCoordinator indexCoordinator,
+    ProjectOperationGate operationGate,
     ILogger<ProjectFullRefreshCoordinator> logger)
 {
     public async Task<ProjectFullRefreshResult> RefreshAsync(
@@ -41,6 +42,10 @@ public sealed class ProjectFullRefreshCoordinator(
             "Starting full project refresh for {ProjectId}: {CassetteCount} enabled cassettes.",
             project.ProjectId,
             enabledCassettes);
+
+        await using IAsyncDisposable lease = await operationGate.AcquireAsync(
+            project.Index.Path,
+            cancellationToken);
 
         try
         {
@@ -78,10 +83,11 @@ public sealed class ProjectFullRefreshCoordinator(
                 editors.ValidEditorFogs,
                 editors.UnassignedWritableFogs);
 
-            ProjectIndexRebuildResult rebuild = await indexCoordinator.RebuildFromSourcesAsync(
-                project,
-                sources,
-                cancellationToken);
+            ProjectIndexRebuildResult rebuild = await indexCoordinator
+                .RebuildFromSourcesUnderLeaseAsync(
+                    project,
+                    sources,
+                    cancellationToken);
 
             logger.LogInformation(
                 "Full project refresh completed. Generation {GenerationId}; resources: {ResourceCount}; " +
