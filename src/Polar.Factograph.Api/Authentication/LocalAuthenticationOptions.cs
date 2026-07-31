@@ -19,6 +19,9 @@ public sealed record LocalAuthenticationOptions(
 
     public string PublicUserId { get; init; } = DefaultPublicUserId;
 
+    public IReadOnlySet<string> AdminLogins { get; init; } =
+        new HashSet<string>(StringComparer.Ordinal);
+
     public static LocalAuthenticationOptions Read(
         IConfiguration configuration,
         IHostEnvironment environment)
@@ -38,20 +41,8 @@ public sealed record LocalAuthenticationOptions(
         bool publicReadEnabled = configuration.GetValue($"{Section}:PublicReadEnabled", false);
         string publicUserId = configuration[$"{Section}:PublicUserId"]?.Trim()
             ?? DefaultPublicUserId;
-        string[] editorValues = configuration
-            .GetSection($"{Section}:EditorLogins")
-            .Get<string[]>()
-            ?? Array.Empty<string>();
-        HashSet<string> editorLogins = new(StringComparer.Ordinal);
-        foreach (string value in editorValues)
-        {
-            string normalized = LocalLoginName.Normalize(value);
-            if (!editorLogins.Add(normalized))
-            {
-                throw new InvalidOperationException(
-                    $"{Section}:EditorLogins contains duplicate login '{value}'.");
-            }
-        }
+        HashSet<string> editorLogins = ReadLoginSet(configuration, "EditorLogins");
+        HashSet<string> adminLogins = ReadLoginSet(configuration, "AdminLogins");
 
         if (sessionDays <= 0)
         {
@@ -80,14 +71,39 @@ public sealed record LocalAuthenticationOptions(
             editorLogins)
         {
             PublicReadEnabled = publicReadEnabled,
-            PublicUserId = publicUserId
+            PublicUserId = publicUserId,
+            AdminLogins = adminLogins
         };
     }
 
     public bool IsEditor(string normalizedLogin) => EditorLogins.Contains(normalizedLogin);
 
+    public bool IsAdministrator(string normalizedLogin) => AdminLogins.Contains(normalizedLogin);
+
     public bool IsPublicUser(string userId) =>
         PublicReadEnabled && string.Equals(PublicUserId, userId, StringComparison.Ordinal);
+
+    private static HashSet<string> ReadLoginSet(
+        IConfiguration configuration,
+        string settingName)
+    {
+        string[] values = configuration
+            .GetSection($"{Section}:{settingName}")
+            .Get<string[]>()
+            ?? Array.Empty<string>();
+        HashSet<string> normalizedLogins = new(StringComparer.Ordinal);
+        foreach (string value in values)
+        {
+            string normalized = LocalLoginName.Normalize(value);
+            if (!normalizedLogins.Add(normalized))
+            {
+                throw new InvalidOperationException(
+                    $"{Section}:{settingName} contains duplicate login '{value}'.");
+            }
+        }
+
+        return normalizedLogins;
+    }
 
     private static string ResolvePath(string path, string contentRootPath) =>
         Path.IsPathRooted(path)
