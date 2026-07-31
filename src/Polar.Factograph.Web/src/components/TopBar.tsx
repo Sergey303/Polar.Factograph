@@ -68,7 +68,7 @@ export function TopBar(props: TopBarProps) {
           onClick={props.onReload}
           disabled={props.loading}
         >
-          Обновить
+          Обновить страницу
         </button>
         <button
           className="button primary"
