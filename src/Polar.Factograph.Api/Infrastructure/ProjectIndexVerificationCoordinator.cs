@@ -132,13 +132,12 @@ public sealed class ProjectIndexVerificationCoordinator(
             Path.GetFullPath(project.Index.Path),
             "verification");
         Directory.CreateDirectory(reportDirectory);
-        string reportName = string.Create(
-            CultureInfo.InvariantCulture,
-            $"index-verification-{completedAtUtc:yyyyMMddTHHmmssfffZ}-{generationId}.json");
+        string reportName =
+            $"index-verification-{completedAtUtc:yyyyMMddTHHmmssfff'Z'}-{generationId}.json";
         string reportPath = Path.Combine(reportDirectory, reportName);
 
         ProjectIndexVerificationReport report = new(
-            SchemaVersion: 1,
+            1,
             project.ProjectId,
             generationId,
             startedAtUtc,
@@ -215,10 +214,22 @@ public sealed class ProjectIndexVerificationCoordinator(
         }
         finally
         {
-            if (File.Exists(temporaryPath))
+            TryDelete(temporaryPath);
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
             {
-                File.Delete(temporaryPath);
+                File.Delete(path);
             }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // A stale temporary report does not invalidate a report that was already published.
         }
     }
 }
