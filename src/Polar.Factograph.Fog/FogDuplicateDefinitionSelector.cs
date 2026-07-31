@@ -16,18 +16,24 @@ internal static class FogDuplicateDefinitionSelector
             return new Dictionary<string, FogRecordKey>(StringComparer.Ordinal);
         }
 
+        long sequence = 0;
         await foreach (FogSourceRecord record in openRecords(cancellationToken)
                            .WithCancellation(cancellationToken))
         {
+            long currentSequence = sequence++;
             if (record.Kind != FogRecordKind.Resource || !duplicateIds.Contains(record.ResourceId))
             {
                 continue;
             }
 
             if (!winners.TryGetValue(record.ResourceId, out DefinitionWinner winner) ||
-                record.ModifiedAt > winner.ModifiedAt)
+                record.ModifiedAt > winner.ModifiedAt ||
+                record.ModifiedAt == winner.ModifiedAt && currentSequence > winner.Sequence)
             {
-                winners[record.ResourceId] = new DefinitionWinner(record.ModifiedAt, record.Key);
+                winners[record.ResourceId] = new DefinitionWinner(
+                    record.ModifiedAt,
+                    currentSequence,
+                    record.Key);
             }
         }
 
@@ -37,5 +43,8 @@ internal static class FogDuplicateDefinitionSelector
             StringComparer.Ordinal);
     }
 
-    private readonly record struct DefinitionWinner(DateTime ModifiedAt, FogRecordKey Key);
+    private readonly record struct DefinitionWinner(
+        DateTime ModifiedAt,
+        long Sequence,
+        FogRecordKey Key);
 }
