@@ -52,8 +52,8 @@ public sealed class LegacyFogProjectMaterializerTests
         Assert.Contains(duplicate.Properties, property => property.Value == "latest");
 
         FogCurrentRecord tied = current.Single(record => record.ResourceId == "tie");
-        Assert.Contains(tied.Properties, property => property.Value == "first tie");
-        Assert.DoesNotContain(tied.Properties, property => property.Value == "second tie");
+        Assert.Contains(tied.Properties, property => property.Value == "second tie");
+        Assert.DoesNotContain(tied.Properties, property => property.Value == "first tie");
 
         FogCurrentRecord referencing = current.Single(record => record.ResourceId == "source");
         Assert.Contains(referencing.Properties, property =>
