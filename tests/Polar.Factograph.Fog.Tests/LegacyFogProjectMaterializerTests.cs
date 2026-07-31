@@ -1,6 +1,4 @@
 using System.Text;
-using Polar.Factograph.Application;
-using Polar.Factograph.Domain;
 using Xunit;
 
 namespace Polar.Factograph.Fog.Tests;
@@ -101,30 +99,51 @@ public sealed class LegacyFogProjectMaterializerTests
     }
 
     [Fact]
-    public async Task Materializer_ProcessesRealSypCassette()
+    public async Task Materializer_ProcessesLargeSyntheticCassette()
     {
-        string configurationPath = Path.Combine(
-            AppContext.BaseDirectory,
-            "Fixtures",
-            "syp.project.json");
-
-        ProjectConfigurationLoader loader = new();
-        ProjectDefinition project = await loader.LoadAsync(configurationPath);
-        FileSystemFogSourceScanner scanner = new();
-        IReadOnlyList<FogSourceDescriptor> sources = await scanner.ScanAsync(project);
+        const int resourceCount = 1_200;
+        await using TemporaryFog fog = await TemporaryFog.CreateAsync(
+            BuildLargeSyntheticFogXml(resourceCount));
         FileSystemFogRecordReader reader = new();
         FogProjectRecordSource source = new(reader);
         LegacyFogProjectMaterializer materializer = new();
+        IReadOnlyList<FogSourceDescriptor> sources = new[] { fog.Source };
 
         IAsyncEnumerable<FogSourceRecord> Open(CancellationToken token) => source.ReadAsync(sources, token);
 
         FogMaterializationStatistics summary = await materializer.SummarizeAsync(sources.Count, Open);
 
         Assert.Equal(1, summary.SourceFiles);
-        Assert.True(summary.SourceRecords > 1_000);
-        Assert.True(summary.ResourceDefinitions > 1_000);
-        Assert.True(summary.CurrentSourceResources > 1_000);
-        Assert.True(summary.CurrentProperties > summary.CurrentSourceResources);
+        Assert.Equal(resourceCount, summary.SourceRecords);
+        Assert.Equal(resourceCount, summary.ResourceDefinitions);
+        Assert.Equal(resourceCount, summary.CurrentSourceResources);
+        Assert.Equal(1, summary.SyntheticResources);
+        Assert.True(summary.CurrentProperties >= resourceCount * 2);
+    }
+
+    private static string BuildLargeSyntheticFogXml(int resourceCount)
+    {
+        StringBuilder xml = new();
+        xml.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        xml.AppendLine("<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">");
+
+        for (int index = 0; index < resourceCount; index++)
+        {
+            int next = (index + 1) % resourceCount;
+            xml.Append("  <person rdf:about=\"person-")
+                .Append(index)
+                .AppendLine("\" mT=\"2026-01-01T00:00:00Z\">");
+            xml.Append("    <name>Person ")
+                .Append(index)
+                .AppendLine("</name>");
+            xml.Append("    <friend rdf:resource=\"person-")
+                .Append(next)
+                .AppendLine("\" />");
+            xml.AppendLine("  </person>");
+        }
+
+        xml.AppendLine("</rdf:RDF>");
+        return xml.ToString();
     }
 
     private static async Task<List<T>> ReadAllAsync<T>(IAsyncEnumerable<T> source)
