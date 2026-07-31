@@ -71,6 +71,7 @@ public static class FactographApiServices
         services.AddSingleton<ProjectRequestContextFactory>();
         services.AddSingleton<ResourceHtmlMetadataProvider>();
         services.AddSingleton<ProjectIndexCoordinator>();
+        services.AddSingleton<ProjectFullRefreshCoordinator>();
         services.AddSingleton<ProjectWriteIndexRefresher>();
         services.AddSingleton<ProjectFogMutationRunner>();
         services.AddSingleton<ProjectResourceWriteValidationService>();
