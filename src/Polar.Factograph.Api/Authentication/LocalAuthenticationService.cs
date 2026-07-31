@@ -19,6 +19,7 @@ public sealed class LocalAuthenticationService(
 {
     private const string ViewerRole = "viewer";
     private const string EditorRole = "editor";
+    private const string AdministratorRole = "administrator";
     private readonly SemaphoreSlim _registrationLock = new(1, 1);
 
     public async Task<LocalAuthenticationSession> RegisterAsync(
@@ -46,10 +47,13 @@ public sealed class LocalAuthenticationService(
 
             string projectPath = projectPathResolver.GetRequiredPath();
             ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
-            bool editor = options.IsEditor(normalizedLogin);
-            string role = editor ? EditorRole : ViewerRole;
-            RequireProjectRole(project, role);
+            string[] roles = ResolveRoles(normalizedLogin);
+            foreach (string role in roles)
+            {
+                RequireProjectRole(project, role);
+            }
 
+            bool editor = roles.Contains(EditorRole, StringComparer.Ordinal);
             string userId = $"u_{Guid.NewGuid():N}";
             CassetteDefinition? cassette = null;
             IdentityFogReference? fog = null;
@@ -73,7 +77,7 @@ public sealed class LocalAuthenticationService(
                     ? canonicalLogin
                     : displayName.Trim(),
                 PasswordHash = string.Empty,
-                Roles = [role],
+                Roles = roles,
                 Fog = fog,
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now
@@ -119,19 +123,26 @@ public sealed class LocalAuthenticationService(
             HashSet<string> registeredLogins = users
                 .Select(user => user.NormalizedLogin)
                 .ToHashSet(StringComparer.Ordinal);
-            LogUnregisteredEditors(registeredLogins);
+            LogUnregisteredAssignedLogins(registeredLogins);
 
             if (users.Length == 0)
             {
                 logger.LogInformation(
-                    "No registered local users require editor reconciliation.");
+                    "No registered local users require role reconciliation.");
                 return;
             }
 
             string projectPath = projectPathResolver.GetRequiredPath();
             ProjectDefinition project = await projectLoader.LoadAsync(projectPath, cancellationToken);
             RequireProjectRole(project, ViewerRole);
-            RequireProjectRole(project, EditorRole);
+            if (options.EditorLogins.Count > 0)
+            {
+                RequireProjectRole(project, EditorRole);
+            }
+            if (options.AdminLogins.Count > 0)
+            {
+                RequireProjectRole(project, AdministratorRole);
+            }
 
             Dictionary<string, IdentityUser> replacements = new(StringComparer.Ordinal);
             List<IdentityFogReference> createdFogs = [];
@@ -139,8 +150,8 @@ public sealed class LocalAuthenticationService(
 
             foreach (IdentityUser user in users)
             {
-                bool editor = options.IsEditor(user.NormalizedLogin);
-                string[] desiredRoles = [editor ? EditorRole : ViewerRole];
+                string[] desiredRoles = ResolveRoles(user.NormalizedLogin);
+                bool editor = desiredRoles.Contains(EditorRole, StringComparer.Ordinal);
                 IdentityFogReference? desiredFog = editor ? user.Fog : null;
 
                 if (editor)
@@ -196,8 +207,10 @@ public sealed class LocalAuthenticationService(
             }
 
             logger.LogInformation(
-                "Reconciled local users with the editor login list. Editors: {EditorCount}; updated users: {UpdatedCount}.",
+                "Reconciled local users with configured roles. Editors: {EditorCount}; " +
+                "administrators: {AdministratorCount}; updated users: {UpdatedCount}.",
                 options.EditorLogins.Count,
+                options.AdminLogins.Count,
                 replacements.Count);
         }
         finally
@@ -305,15 +318,54 @@ public sealed class LocalAuthenticationService(
         .OrderByDescending(device => device.LastSeenAtUtc)
         .ToArray();
 
-    private void LogUnregisteredEditors(IReadOnlySet<string> registeredLogins)
+    private string[] ResolveRoles(string normalizedLogin)
     {
-        foreach (string normalizedLogin in options.EditorLogins)
+        List<string> roles = [];
+        if (options.IsEditor(normalizedLogin))
+        {
+            roles.Add(EditorRole);
+        }
+        if (options.IsAdministrator(normalizedLogin))
+        {
+            roles.Add(AdministratorRole);
+        }
+        if (roles.Count == 0)
+        {
+            roles.Add(ViewerRole);
+        }
+
+        return roles.ToArray();
+    }
+
+    private void LogUnregisteredAssignedLogins(IReadOnlySet<string> registeredLogins)
+    {
+        LogUnregisteredLogins(
+            options.EditorLogins,
+            registeredLogins,
+            "editor",
+            "its Fog will be created during registration");
+        LogUnregisteredLogins(
+            options.AdminLogins,
+            registeredLogins,
+            "administrator",
+            "its administrator role will be assigned during registration");
+    }
+
+    private void LogUnregisteredLogins(
+        IEnumerable<string> configuredLogins,
+        IReadOnlySet<string> registeredLogins,
+        string role,
+        string action)
+    {
+        foreach (string normalizedLogin in configuredLogins)
         {
             if (!registeredLogins.Contains(normalizedLogin))
             {
                 logger.LogWarning(
-                    "Configured editor login '{EditorLogin}' is not registered yet; its Fog will be created during registration.",
-                    normalizedLogin);
+                    "Configured {Role} login '{Login}' is not registered yet; {Action}.",
+                    role,
+                    normalizedLogin,
+                    action);
             }
         }
     }
