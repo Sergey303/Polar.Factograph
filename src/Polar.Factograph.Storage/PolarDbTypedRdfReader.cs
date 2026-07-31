@@ -1,8 +1,11 @@
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace Polar.Factograph.Storage;
 
-internal sealed class PolarDbTypedRdfReader(PolarDbTypedStoreSets sets)
+internal sealed class PolarDbTypedRdfReader(
+    PolarDbTypedStoreSets sets,
+    PolarDbReadMode readMode)
 {
     public ValueTask<ResourceHead?> GetResourceHeadAsync(
         string resourceId,
@@ -29,12 +32,13 @@ internal sealed class PolarDbTypedRdfReader(PolarDbTypedStoreSets sets)
         ArgumentNullException.ThrowIfNull(pattern);
         ArgumentNullException.ThrowIfNull(allowedCassetteIds);
 
-        // Compatibility path for the current Polar.DB.Typed external-key format.
-        // The active generation can be enumerated and verified successfully, while
-        // an external-key lookup may return an invalid record offset for a table
-        // whose primary key is Guid. Until that index format is fixed and versioned,
-        // prefer the authoritative table rows over a secondary acceleration structure.
-        IReadOnlyList<PolarDbTripleRow> candidates = sets.Triples.All();
+        IReadOnlyList<PolarDbTripleRow> candidates = readMode switch
+        {
+            PolarDbReadMode.FullScan => sets.Triples.All(),
+            PolarDbReadMode.ExternalIndexes => FindIndexedCandidates(pattern),
+            _ => throw new InvalidOperationException(
+                $"Unsupported Polar.DB read mode: {readMode}.")
+        };
         await Task.Yield();
 
         foreach (PolarDbTripleRow row in candidates)
@@ -45,6 +49,43 @@ internal sealed class PolarDbTypedRdfReader(PolarDbTypedStoreSets sets)
                 yield return PolarDbRowMapper.ToLogical(row);
             }
         }
+    }
+
+    private IReadOnlyList<PolarDbTripleRow> FindIndexedCandidates(TriplePattern pattern)
+    {
+        if (pattern.Subject is not null && pattern.Predicate is not null)
+        {
+            string key = PolarDbCompositeKey.Create(pattern.Subject, pattern.Predicate);
+            return sets.Triples.Find(row => row.SubjectPredicateKey, key);
+        }
+
+        if (pattern.Predicate is not null &&
+            pattern.ObjectKind is not null &&
+            pattern.ObjectValue is not null)
+        {
+            string key = PolarDbCompositeKey.Create(
+                pattern.Predicate,
+                ((int)pattern.ObjectKind.Value).ToString(CultureInfo.InvariantCulture),
+                pattern.ObjectValue);
+            return sets.Triples.Find(row => row.PredicateObjectKey, key);
+        }
+
+        if (pattern.Subject is not null)
+        {
+            return sets.Triples.Find(row => row.Subject, pattern.Subject);
+        }
+
+        if (pattern.Predicate is not null)
+        {
+            return sets.Triples.Find(row => row.Predicate, pattern.Predicate);
+        }
+
+        if (pattern.ObjectValue is not null)
+        {
+            return sets.Triples.Find(row => row.ObjectValue, pattern.ObjectValue);
+        }
+
+        return sets.Triples.All();
     }
 
     private static bool Matches(PolarDbTripleRow row, TriplePattern pattern) =>
