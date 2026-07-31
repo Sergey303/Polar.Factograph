@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "polar-factograph-iis",
   "name": "Polar.Factograph IIS",
-  "homeResourceIds": [],
+  "homeResourceIds": ["PA_Users_furs_634395045531406250_2577", "w20070417_3_7246", "w20071113_9_8252", "w20071113_9_11681"],
   "ontology": {
     "path": "./ontology.xml"
   },
