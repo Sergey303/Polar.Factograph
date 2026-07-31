@@ -57,7 +57,7 @@ public sealed class ProjectIndexCoordinator(
             cancellationToken);
     }
 
-    private async Task<ProjectIndexRebuildResult> RebuildFromSourcesUnderLeaseAsync(
+    internal async Task<ProjectIndexRebuildResult> RebuildFromSourcesUnderLeaseAsync(
         ProjectDefinition project,
         IReadOnlyList<FogSourceDescriptor> sources,
         CancellationToken cancellationToken)
