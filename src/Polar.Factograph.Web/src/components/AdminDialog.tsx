@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useAdminStatus } from "../app/useAdminStatus";
 import { useIndexRebuild } from "../app/useIndexRebuild";
+import { useIndexVerification } from "../app/useIndexVerification";
 import { useMaterializationSummary } from "../app/useMaterializationSummary";
 import { useOntologyValidation } from "../app/useOntologyValidation";
 import { AdminIndexCard } from "./AdminIndexCard";
@@ -18,15 +19,17 @@ export function AdminDialog({ token, onClose }: AdminDialogProps) {
   const materialization = useMaterializationSummary(token);
   const ontology = useOntologyValidation(token);
   const rebuild = useIndexRebuild(token, status.reload);
+  const verification = useIndexVerification(token);
+  const indexBusy = rebuild.busy || verification.busy;
   const refreshing = status.loading || ontology.loading;
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent): void {
-      if (event.key === "Escape" && !rebuild.busy) onClose();
+      if (event.key === "Escape" && !indexBusy) onClose();
     }
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [onClose, rebuild.busy]);
+  }, [onClose, indexBusy]);
 
   function reload(): void {
     status.reload();
@@ -45,7 +48,7 @@ export function AdminDialog({ token, onClose }: AdminDialogProps) {
             <button className="button ghost" disabled={refreshing} onClick={reload}>
               {refreshing ? "Обновление…" : "Обновить"}
             </button>
-            <button className="button" disabled={rebuild.busy} onClick={onClose}>Закрыть</button>
+            <button className="button" disabled={indexBusy} onClick={onClose}>Закрыть</button>
           </div>
         </header>
 
@@ -53,10 +56,14 @@ export function AdminDialog({ token, onClose }: AdminDialogProps) {
         <div className="admin-card-list">
           <AdminIndexCard
             status={status.index}
-            result={rebuild.result}
-            busy={rebuild.busy}
-            error={rebuild.error}
+            rebuildResult={rebuild.result}
+            rebuildBusy={rebuild.busy}
+            rebuildError={rebuild.error}
+            verificationResult={verification.result}
+            verificationBusy={verification.busy}
+            verificationError={verification.error}
             onRebuild={() => void rebuild.rebuild()}
+            onVerify={() => void verification.verify()}
           />
           <OntologyValidationCard
             report={ontology.report}
