@@ -130,17 +130,25 @@ public sealed class IdentityJsonStore : IDisposable
     {
         for (int attempt = 1; ; attempt++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 File.Move(temporaryPath, targetPath, overwrite: true);
                 return;
             }
-            catch (IOException) when (attempt < PublishAttempts)
+            catch (Exception exception) when (
+                IsRetryablePublishFailure(exception) &&
+                attempt < PublishAttempts)
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(25 * attempt), cancellationToken);
+                await Task.Delay(
+                    TimeSpan.FromMilliseconds(25 * attempt),
+                    cancellationToken);
             }
         }
     }
+
+    private static bool IsRetryablePublishFailure(Exception exception) =>
+        exception is IOException or UnauthorizedAccessException;
 
     private static void TryDelete(string path)
     {
