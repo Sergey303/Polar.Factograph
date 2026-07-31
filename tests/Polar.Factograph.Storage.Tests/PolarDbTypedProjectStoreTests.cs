@@ -33,6 +33,8 @@ public sealed class PolarDbTypedProjectStoreTests
         HashSet<string> allowed = new(StringComparer.Ordinal) { "cassette-a" };
         using (PolarDbTypedProjectStore store = PolarDbTypedProjectStore.OpenCurrent(directory.Path))
         {
+            Assert.Equal(PolarDbReadMode.FullScan, store.ReadMode);
+
             ResourceHead? head = await store.GetResourceHeadAsync("person-1");
             Assert.NotNull(head);
             Assert.Equal("cassette-a", head.SourceCassetteId);
@@ -71,8 +73,11 @@ public sealed class PolarDbTypedProjectStoreTests
         Assert.Equal("person-1", reopenedHead.ResourceId);
     }
 
-    [Fact]
-    public async Task Queries_ApplyCassetteVisibilityAndCompositePatterns()
+    [Theory]
+    [InlineData(PolarDbReadMode.FullScan)]
+    [InlineData(PolarDbReadMode.ExternalIndexes)]
+    public async Task Queries_ApplyCassetteVisibilityAndCompositePatterns(
+        PolarDbReadMode readMode)
     {
         await using TemporaryDirectory directory = TemporaryDirectory.Create();
         await using PolarDbTypedIndexGenerationWriter writer =
@@ -85,7 +90,10 @@ public sealed class PolarDbTypedProjectStoreTests
                 CreateRecord("person-2", "cassette-b")),
             writer);
 
-        using PolarDbTypedProjectStore store = PolarDbTypedProjectStore.OpenCurrent(directory.Path);
+        using PolarDbTypedProjectStore store = PolarDbTypedProjectStore.OpenCurrent(
+            directory.Path,
+            readMode);
+        Assert.Equal(readMode, store.ReadMode);
         HashSet<string> allowed = new(StringComparer.Ordinal) { "cassette-a" };
 
         TripleRow[] visible = await ReadAllAsync(store.FindAsync(
