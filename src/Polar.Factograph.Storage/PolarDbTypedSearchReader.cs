@@ -1,6 +1,8 @@
 namespace Polar.Factograph.Storage;
 
-internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
+internal sealed class PolarDbTypedSearchReader(
+    PolarDbTypedStoreSets sets,
+    PolarDbReadMode readMode)
 {
     public Task<IReadOnlyList<NameSearchHit>> FindNamesByKeyAsync(
         string normalizedSearchKey,
@@ -12,8 +14,14 @@ internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
         ArgumentNullException.ThrowIfNull(allowedCassetteIds);
         cancellationToken.ThrowIfCancellationRequested();
 
-        IReadOnlyList<NameSearchHit> result = sets.NameSearch
-            .All()
+        IReadOnlyList<PolarDbNameSearchRow> candidates = readMode switch
+        {
+            PolarDbReadMode.FullScan => sets.NameSearch.All(),
+            PolarDbReadMode.ExternalIndexes =>
+                sets.NameSearch.Find(row => row.SearchKey, normalizedSearchKey),
+            _ => throw UnsupportedMode()
+        };
+        IReadOnlyList<NameSearchHit> result = candidates
             .Where(row =>
                 string.Equals(row.SearchKey, normalizedSearchKey, StringComparison.Ordinal) &&
                 allowedCassetteIds.Contains(row.SourceCassetteId))
@@ -32,8 +40,14 @@ internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
         ArgumentNullException.ThrowIfNull(allowedCassetteIds);
         cancellationToken.ThrowIfCancellationRequested();
 
-        IReadOnlyList<NameSearchHit> result = sets.NameSearch
-            .All()
+        IReadOnlyList<PolarDbNameSearchRow> candidates = readMode switch
+        {
+            PolarDbReadMode.FullScan => sets.NameSearch.All(),
+            PolarDbReadMode.ExternalIndexes =>
+                sets.NameSearch.Find(row => row.ResourceId, resourceId),
+            _ => throw UnsupportedMode()
+        };
+        IReadOnlyList<NameSearchHit> result = candidates
             .Where(row =>
                 string.Equals(row.ResourceId, resourceId, StringComparison.Ordinal) &&
                 allowedCassetteIds.Contains(row.SourceCassetteId))
@@ -53,8 +67,14 @@ internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
         ArgumentNullException.ThrowIfNull(allowedCassetteIds);
         cancellationToken.ThrowIfCancellationRequested();
 
-        IReadOnlyList<WordSearchHit> result = sets.WordSearch
-            .All()
+        IReadOnlyList<PolarDbWordSearchRow> candidates = readMode switch
+        {
+            PolarDbReadMode.FullScan => sets.WordSearch.All(),
+            PolarDbReadMode.ExternalIndexes =>
+                sets.WordSearch.Find(row => row.Word, normalizedWord),
+            _ => throw UnsupportedMode()
+        };
+        IReadOnlyList<WordSearchHit> result = candidates
             .Where(row =>
                 string.Equals(row.Word, normalizedWord, StringComparison.Ordinal) &&
                 allowedCassetteIds.Contains(row.SourceCassetteId))
@@ -62,6 +82,9 @@ internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
             .ToArray();
         return Task.FromResult(result);
     }
+
+    private InvalidOperationException UnsupportedMode() => new(
+        $"Unsupported Polar.DB read mode: {readMode}.");
 
     private static NameSearchHit ToNameSearchHit(PolarDbNameSearchRow row) => new(
         row.ResourceId,
