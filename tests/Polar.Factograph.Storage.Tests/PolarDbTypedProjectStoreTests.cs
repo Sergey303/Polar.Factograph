@@ -37,6 +37,10 @@ public sealed class PolarDbTypedProjectStoreTests
             Assert.NotNull(head);
             Assert.Equal("cassette-a", head.SourceCassetteId);
 
+            ResourceHead storedHead = Assert.Single(store.ReadAllResourceHeads());
+            Assert.Equal("person-1", storedHead.ResourceId);
+            Assert.Equal(4, store.ReadAllTriples().Count);
+
             TripleRow[] outgoing = await ReadAllAsync(store.FindAsync(
                 new TriplePattern(Subject: "person-1"),
                 allowed));
