@@ -65,10 +65,11 @@ export function TopBar(props: TopBarProps) {
             <button
               className="button ghost"
               type="button"
+              title="Повторно получить проект и данные текущей страницы с сервера"
               onClick={props.onReload}
               disabled={props.loading}
             >
-              Обновить страницу
+              Обновить данные
             </button>
           </>
         )}
