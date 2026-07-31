@@ -22,10 +22,26 @@ public sealed class ProjectIndexCoordinator(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
+        IReadOnlyList<FogSourceDescriptor> sources = await sourceScanner.ScanAsync(
+            project,
+            cancellationToken);
+        return await RebuildFromSourcesAsync(project, sources, cancellationToken);
+    }
+
+    public async Task<ProjectIndexRebuildResult> RebuildFromSourcesAsync(
+        ProjectDefinition project,
+        IReadOnlyList<FogSourceDescriptor> sources,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(sources);
         await using IAsyncDisposable lease = await operationGate.AcquireAsync(
             project.Index.Path,
             cancellationToken);
-        return await RebuildUnderLeaseAsync(project, cancellationToken);
+        return await RebuildFromSourcesUnderLeaseAsync(
+            project,
+            sources,
+            cancellationToken);
     }
 
     internal async Task<ProjectIndexRebuildResult> RebuildUnderLeaseAsync(
@@ -35,6 +51,17 @@ public sealed class ProjectIndexCoordinator(
         IReadOnlyList<FogSourceDescriptor> sources = await sourceScanner.ScanAsync(
             project,
             cancellationToken);
+        return await RebuildFromSourcesUnderLeaseAsync(
+            project,
+            sources,
+            cancellationToken);
+    }
+
+    private async Task<ProjectIndexRebuildResult> RebuildFromSourcesUnderLeaseAsync(
+        ProjectDefinition project,
+        IReadOnlyList<FogSourceDescriptor> sources,
+        CancellationToken cancellationToken)
+    {
         FogRecordStreamFactory openRecords = token => recordSource.ReadAsync(sources, token);
         FogMaterializationPlan plan = await materializer.BuildPlanAsync(
             openRecords,
