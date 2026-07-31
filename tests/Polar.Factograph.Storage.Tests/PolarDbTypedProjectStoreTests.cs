@@ -33,8 +33,6 @@ public sealed class PolarDbTypedProjectStoreTests
         HashSet<string> allowed = new(StringComparer.Ordinal) { "cassette-a" };
         using (PolarDbTypedProjectStore store = PolarDbTypedProjectStore.OpenCurrent(directory.Path))
         {
-            Assert.Equal(PolarDbReadMode.FullScan, store.ReadMode);
-
             ResourceHead? head = await store.GetResourceHeadAsync("person-1");
             Assert.NotNull(head);
             Assert.Equal("cassette-a", head.SourceCassetteId);
@@ -71,13 +69,17 @@ public sealed class PolarDbTypedProjectStoreTests
         ResourceHead? reopenedHead = await reopened.GetResourceHeadAsync("person-1");
         Assert.NotNull(reopenedHead);
         Assert.Equal("person-1", reopenedHead.ResourceId);
+
+        TripleRow[] reopenedOutgoing = await ReadAllAsync(reopened.FindAsync(
+            new TriplePattern(Subject: "person-1"),
+            allowed));
+        Assert.Equal(4, reopenedOutgoing.Length);
+        Assert.Single(await reopened.FindNamesByKeyAsync("ANN", allowed));
+        Assert.Single(await reopened.FindWordAsync("HISTORICAL", allowed));
     }
 
-    [Theory]
-    [InlineData(PolarDbReadMode.FullScan)]
-    [InlineData(PolarDbReadMode.ExternalIndexes)]
-    public async Task Queries_ApplyCassetteVisibilityAndCompositePatterns(
-        PolarDbReadMode readMode)
+    [Fact]
+    public async Task Queries_ApplyCassetteVisibilityAndCompositePatterns()
     {
         await using TemporaryDirectory directory = TemporaryDirectory.Create();
         await using PolarDbTypedIndexGenerationWriter writer =
@@ -90,10 +92,7 @@ public sealed class PolarDbTypedProjectStoreTests
                 CreateRecord("person-2", "cassette-b")),
             writer);
 
-        using PolarDbTypedProjectStore store = PolarDbTypedProjectStore.OpenCurrent(
-            directory.Path,
-            readMode);
-        Assert.Equal(readMode, store.ReadMode);
+        using PolarDbTypedProjectStore store = PolarDbTypedProjectStore.OpenCurrent(directory.Path);
         HashSet<string> allowed = new(StringComparer.Ordinal) { "cassette-a" };
 
         TripleRow[] visible = await ReadAllAsync(store.FindAsync(
