@@ -18,16 +18,4 @@
     <ProjectReference Include="../../src/Polar.Factograph.Domain/Polar.Factograph.Domain.csproj" />
     <ProjectReference Include="../../src/Polar.Factograph.Fog/Polar.Factograph.Fog.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Include="../../examples/syp.project.json"
-          Link="Fixtures/syp.project.json"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../cassetes/SypCassete/cassette.finfo"
-          Link="cassetes/SypCassete/cassette.finfo"
-          CopyToOutputDirectory="PreserveNewest" />
-    <None Include="../../cassetes/SypCassete/meta/*.fog"
-          Link="cassetes/SypCassete/meta/%(Filename)%(Extension)"
-          CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
 </Project>
