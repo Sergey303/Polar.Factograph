@@ -13,20 +13,30 @@ public sealed class PolarDbTypedProjectStore : IProjectRdfStore, IProjectSearchS
 
     private PolarDbTypedProjectStore(
         PolarDbTypedStoreSets sets,
+        PolarDbReadMode readMode,
         Func<CancellationToken, Task>? rebuild)
     {
         _sets = sets;
-        _rdf = new PolarDbTypedRdfReader(sets);
-        _search = new PolarDbTypedSearchReader(sets);
+        ReadMode = readMode;
+        _rdf = new PolarDbTypedRdfReader(sets, readMode);
+        _search = new PolarDbTypedSearchReader(sets, readMode);
         _rebuild = rebuild;
     }
 
     public string GenerationPath => _sets.GenerationPath;
 
+    public PolarDbReadMode ReadMode { get; }
+
     public static PolarDbTypedProjectStore OpenCurrent(
         string indexRoot,
         Func<CancellationToken, Task>? rebuild = null) =>
-        new(PolarDbTypedStoreSets.OpenCurrent(indexRoot), rebuild);
+        OpenCurrent(indexRoot, PolarDbReadMode.FullScan, rebuild);
+
+    public static PolarDbTypedProjectStore OpenCurrent(
+        string indexRoot,
+        PolarDbReadMode readMode,
+        Func<CancellationToken, Task>? rebuild = null) =>
+        new(PolarDbTypedStoreSets.OpenCurrent(indexRoot), readMode, rebuild);
 
     public ValueTask<ResourceHead?> GetResourceHeadAsync(
         string resourceId,
