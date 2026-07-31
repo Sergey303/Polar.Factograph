@@ -17,13 +17,14 @@ export function useIndexRebuild(token: string, onCompleted: () => void) {
 
     setBusy(true);
     setError(null);
+    setResult(null);
     try {
       const next = await adminApi.rebuildIndex(token);
       setResult(next);
-      onCompleted();
     } catch (reason) {
       setError(errorText(reason));
     } finally {
+      onCompleted();
       setBusy(false);
     }
   }
