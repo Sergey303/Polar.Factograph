@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Polar.Factograph.Api.Endpoints;
 
 namespace Polar.Factograph.Api.Tests;
@@ -8,7 +9,11 @@ public sealed class LegacyPageEndpointsTests
     [Fact]
     public async Task RedirectLegacyDefault_preserves_path_base_and_encodes_resource_id()
     {
-        DefaultHttpContext context = new();
+        using ServiceProvider services = CreateRequestServices();
+        DefaultHttpContext context = new()
+        {
+            RequestServices = services
+        };
         context.Request.PathBase = "/factograph";
         IResult result = LegacyPageEndpoints.RedirectLegacyDefault(
             context,
@@ -25,7 +30,11 @@ public sealed class LegacyPageEndpointsTests
     [Fact]
     public async Task RedirectLegacyDefault_sends_missing_id_to_search_temporarily()
     {
-        DefaultHttpContext context = new();
+        using ServiceProvider services = CreateRequestServices();
+        DefaultHttpContext context = new()
+        {
+            RequestServices = services
+        };
         context.Request.PathBase = "/catalog/";
         IResult result = LegacyPageEndpoints.RedirectLegacyDefault(context, "   ");
 
@@ -48,4 +57,9 @@ public sealed class LegacyPageEndpointsTests
 
         Assert.Equal(expected, result);
     }
+
+    private static ServiceProvider CreateRequestServices() =>
+        new ServiceCollection()
+            .AddLogging()
+            .BuildServiceProvider();
 }
