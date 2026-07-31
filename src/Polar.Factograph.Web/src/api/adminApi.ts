@@ -4,7 +4,8 @@ import type {
   OntologyValidationReport,
   PreviewSubsystemStatus,
   ProjectIndexRebuildResult,
-  ProjectIndexRuntimeStatus
+  ProjectIndexRuntimeStatus,
+  ProjectIndexVerificationReport
 } from "./adminModels";
 
 export const adminApi = {
@@ -49,6 +50,15 @@ export const adminApi = {
   rebuildIndex(token: string): Promise<ProjectIndexRebuildResult> {
     return requestJsonBody<ProjectIndexRebuildResult>(
       "api/admin/index/rebuild",
+      "POST",
+      {},
+      token
+    );
+  },
+
+  verifyIndex(token: string): Promise<ProjectIndexVerificationReport> {
+    return requestJsonBody<ProjectIndexVerificationReport>(
+      "api/admin/index/verify",
       "POST",
       {},
       token
