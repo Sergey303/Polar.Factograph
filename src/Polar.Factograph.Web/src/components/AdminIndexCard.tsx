@@ -79,7 +79,8 @@ export function AdminIndexCard(props: AdminIndexCardProps) {
       </div>
       <p className="muted">
         Обновление перечитывает конфигурацию кассет и создаёт новое поколение Polar.DB.
-        Проверка отдельно сравнивает текущие FOG с активным поколением в памяти и сохраняет JSON-отчёт.
+        Проверка сравнивает с FOG основные таблицы ресурсов и троек и сохраняет JSON-отчёт.
+        Вторичные ускоряющие индексы этой проверкой пока не проверяются.
       </p>
       {props.status && <AdminMetricGrid items={statusItems} />}
       {!props.status && <p className="muted">Состояние индекса пока не загружено.</p>}
@@ -96,8 +97,8 @@ export function AdminIndexCard(props: AdminIndexCardProps) {
           <div className={`notice ${props.verificationResult.isMatch ? "success" : "error"}`}>
             <strong>
               {props.verificationResult.isMatch
-                ? "Проверка пройдена: расхождений нет"
-                : "Проверка обнаружила расхождения"}
+                ? "Ресурсы и тройки совпадают с FOG"
+                : "В ресурсах или тройках обнаружены расхождения"}
             </strong>
           </div>
           <AdminMetricGrid items={verificationItems} />
