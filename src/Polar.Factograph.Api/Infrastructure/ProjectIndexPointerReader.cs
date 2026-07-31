@@ -1,23 +1,31 @@
-using System.Text;
+using Polar.Factograph.Storage;
 
 namespace Polar.Factograph.Api.Infrastructure;
 
 internal static class ProjectIndexPointerReader
 {
-    private const string CurrentFileName = "CURRENT";
     private const string GenerationPrefix = "generation-";
 
     public static ProjectIndexPointerSnapshot Read(string indexRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(indexRoot);
         string root = Path.GetFullPath(indexRoot);
-        string currentPath = Path.Combine(root, CurrentFileName);
-        if (!File.Exists(currentPath))
+
+        string? name;
+        try
+        {
+            name = FileSystemIndexGeneration.GetCurrentGenerationName(root);
+        }
+        catch (InvalidDataException)
+        {
+            return new ProjectIndexPointerSnapshot("invalid", null, false);
+        }
+
+        if (name is null)
         {
             return new ProjectIndexPointerSnapshot("missing", null, false);
         }
 
-        string name = File.ReadAllText(currentPath, Encoding.UTF8).Trim();
         if (!TryParseGenerationId(name, out Guid generationId))
         {
             return new ProjectIndexPointerSnapshot("invalid", null, false);
