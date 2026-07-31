@@ -58,18 +58,20 @@ export function TopBar(props: TopBarProps) {
           Поиск
         </a>
         {props.canAdmin && (
-          <button className="button" type="button" onClick={props.onAdmin}>
-            Администрирование
-          </button>
+          <>
+            <button className="button" type="button" onClick={props.onAdmin}>
+              Администрирование
+            </button>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={props.onReload}
+              disabled={props.loading}
+            >
+              Обновить страницу
+            </button>
+          </>
         )}
-        <button
-          className="button ghost"
-          type="button"
-          onClick={props.onReload}
-          disabled={props.loading}
-        >
-          Обновить страницу
-        </button>
         <button
           className="button primary"
           type="button"
