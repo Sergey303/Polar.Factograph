@@ -29,7 +29,7 @@ function homeBlocks(pages: SemanticResourcePage[]): SemanticContentBlockDefiniti
 
   for (const page of pages) {
     const documents = resourceDocumentUris(page.portrait);
-    const item = {
+    const item: SemanticContentBlockDefinition["items"][number] = {
       key: `home:${page.portrait.resourceId}`,
       resourceId: page.portrait.resourceId,
       title: titleOf(page),
@@ -37,7 +37,7 @@ function homeBlocks(pages: SemanticResourcePage[]): SemanticContentBlockDefiniti
       values: [],
       sectionKey: "home",
       sectionTitle: "Коллекции сайта",
-      documentUri: documents.length === 1 ? documents[0] : null,
+      documentUri: documents.length === 1 ? documents[0] ?? null : null,
       hasDocument: documents.length > 0,
       displayDate: null,
       sortDate: null
