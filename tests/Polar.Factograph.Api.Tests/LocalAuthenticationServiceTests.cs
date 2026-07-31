@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Polar.Factograph.Api.Authentication;
@@ -8,6 +9,7 @@ using Polar.Factograph.Api.Infrastructure;
 using Polar.Factograph.Application;
 using Polar.Factograph.Domain;
 using Polar.Factograph.Fog;
+using LocalIdentityUser = Polar.Factograph.Api.Authentication.IdentityUser;
 
 namespace Polar.Factograph.Api.Tests;
 
@@ -43,10 +45,30 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Register_assigns_editor_and_administrator_roles_independently()
+    {
+        TestContext context = await CreateContextAsync(
+            editorLogins: ["admin"],
+            adminLogins: ["ADMIN"]);
+        using (context.Store)
+        {
+            LocalAuthenticationSession admin = await context.Service.RegisterAsync(
+                "admin",
+                "administrator-password",
+                displayName: null,
+                deviceName: null);
+
+            Assert.Equal(["editor", "administrator"], admin.User.Roles);
+            Assert.NotNull(admin.User.Fog);
+            Assert.Equal(1, context.Writer.WriteCount);
+        }
+    }
+
+    [Fact]
     public async Task ProvisionConfiguredEditors_creates_missing_fog_and_demotes_other_users()
     {
-        IdentityUser editor = CreateUser("u-editor", "editor-one", ["viewer"], fog: null);
-        IdentityUser formerEditor = CreateUser(
+        LocalIdentityUser editor = CreateUser("u-editor", "editor-one", ["viewer"], fog: null);
+        LocalIdentityUser formerEditor = CreateUser(
             "u-former",
             "former-editor",
             ["editor"],
@@ -58,13 +80,13 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
             });
         TestContext context = await CreateContextAsync(
             ["editor-one"],
-            new IdentityData { Users = [editor, formerEditor] });
+            identity: new IdentityData { Users = [editor, formerEditor] });
         using (context.Store)
         {
             await context.Service.ProvisionConfiguredEditorsAsync();
 
-            IdentityUser updatedEditor = context.Store.FindUser(editor.Id)!;
-            IdentityUser updatedFormer = context.Store.FindUser(formerEditor.Id)!;
+            LocalIdentityUser updatedEditor = context.Store.FindUser(editor.Id)!;
+            LocalIdentityUser updatedFormer = context.Store.FindUser(formerEditor.Id)!;
             Assert.Equal(["editor"], updatedEditor.Roles);
             Assert.NotNull(updatedEditor.Fog);
             Assert.True(File.Exists(Path.Combine(
@@ -73,6 +95,24 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
             Assert.Equal(["viewer"], updatedFormer.Roles);
             Assert.Null(updatedFormer.Fog);
             Assert.Equal(1, context.Writer.WriteCount);
+        }
+    }
+
+    [Fact]
+    public async Task ProvisionConfiguredEditors_promotes_existing_admin_login()
+    {
+        LocalIdentityUser user = CreateUser("u-admin", "admin", ["viewer"], fog: null);
+        TestContext context = await CreateContextAsync(
+            editorLogins: ["admin"],
+            adminLogins: ["admin"],
+            identity: new IdentityData { Users = [user] });
+        using (context.Store)
+        {
+            await context.Service.ProvisionConfiguredEditorsAsync();
+
+            LocalIdentityUser updated = context.Store.FindUser(user.Id)!;
+            Assert.Equal(["editor", "administrator"], updated.Roles);
+            Assert.NotNull(updated.Fog);
         }
     }
 
@@ -86,6 +126,7 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
 
     private async Task<TestContext> CreateContextAsync(
         string[] editorLogins,
+        string[]? adminLogins = null,
         IdentityData? identity = null)
     {
         Directory.CreateDirectory(_root);
@@ -104,6 +145,9 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
         HashSet<string> normalizedEditors = editorLogins
             .Select(LocalLoginName.Normalize)
             .ToHashSet(StringComparer.Ordinal);
+        HashSet<string> normalizedAdmins = (adminLogins ?? Array.Empty<string>())
+            .Select(LocalLoginName.Normalize)
+            .ToHashSet(StringComparer.Ordinal);
         LocalAuthenticationOptions options = new(
             Path.Combine(_root, "identity.json"),
             Path.Combine(_root, "keys"),
@@ -112,7 +156,10 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
             RegistrationEnabled: true,
             SessionDays: 30,
             MaxFogBytes: 1024 * 1024,
-            EditorLogins: normalizedEditors);
+            EditorLogins: normalizedEditors)
+        {
+            AdminLogins = normalizedAdmins
+        };
         TestOptionsMonitor<IdentityData> monitor = new(identity ?? new IdentityData());
         IdentityJsonStore store = new(
             monitor,
@@ -121,7 +168,7 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
         TestNamedFogWriter writer = new(cassettePath);
         LocalAuthenticationService service = new(
             store,
-            new PasswordHasher<IdentityUser>(),
+            new PasswordHasher<LocalIdentityUser>(),
             options,
             new ProjectPathResolver(configuration, environment),
             new ProjectConfigurationLoader(),
@@ -130,7 +177,7 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
         return new TestContext(store, service, writer, cassettePath);
     }
 
-    private static IdentityUser CreateUser(
+    private static LocalIdentityUser CreateUser(
         string id,
         string login,
         string[] roles,
@@ -177,11 +224,35 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
               "cassetteRights": {
                 "main": ["read", "writeMetadata", "addDocuments", "replaceDocuments"]
               }
+            },
+            "administrator": {
+              "projectRights": [
+                "read",
+                "search",
+                "export",
+                "manageUsers",
+                "manageCassettes",
+                "rebuildIndex"
+              ],
+              "cassetteRights": {
+                "main": [
+                  "read",
+                  "writeMetadata",
+                  "addDocuments",
+                  "replaceDocuments",
+                  "delete",
+                  "substitute",
+                  "manage"
+                ]
+              }
             }
           },
           "members": [],
           "writeRouting": {
-            "defaultCassetteByRole": { "editor": "main" }
+            "defaultCassetteByRole": {
+              "editor": "main",
+              "administrator": "main"
+            }
           }
         }
         """;
