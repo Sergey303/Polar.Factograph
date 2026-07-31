@@ -29,14 +29,14 @@ public static class IndexEndpoints
     private static async Task<IResult> RebuildAsync(
         HttpContext httpContext,
         ProjectRequestContextFactory contextFactory,
-        ProjectIndexCoordinator coordinator,
+        ProjectFullRefreshCoordinator coordinator,
         CancellationToken cancellationToken)
     {
         ProjectAccessContext context = await RequireAdminAsync(
             httpContext,
             contextFactory,
             cancellationToken);
-        ProjectIndexRebuildResult result = await coordinator.RebuildAsync(
+        ProjectFullRefreshResult result = await coordinator.RefreshAsync(
             context.Project,
             cancellationToken);
         return Results.Ok(result);
