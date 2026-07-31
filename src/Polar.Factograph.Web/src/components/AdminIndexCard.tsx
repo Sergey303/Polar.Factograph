@@ -79,8 +79,7 @@ export function AdminIndexCard(props: AdminIndexCardProps) {
       </div>
       <p className="muted">
         Обновление перечитывает конфигурацию кассет и создаёт новое поколение Polar.DB.
-        Проверка сравнивает с FOG основные таблицы ресурсов и троек и сохраняет JSON-отчёт.
-        Вторичные ускоряющие индексы этой проверкой пока не проверяются.
+        Проверка сравнивает с FOG таблицы ресурсов и троек и сохраняет JSON-отчёт.
       </p>
       {props.status && <AdminMetricGrid items={statusItems} />}
       {!props.status && <p className="muted">Состояние индекса пока не загружено.</p>}
