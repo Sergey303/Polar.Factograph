@@ -12,6 +12,11 @@ public sealed class ProjectStoreProvider : IDisposable
     private PolarDbTypedProjectStore? _current;
     private string? _indexRoot;
 
+    public ProjectStoreProvider(ProjectIndexDirtyMarker dirtyMarker)
+        : this(dirtyMarker, Options.Create(new PolarDbReadOptions()))
+    {
+    }
+
     public ProjectStoreProvider(
         ProjectIndexDirtyMarker dirtyMarker,
         IOptions<PolarDbReadOptions> options)
