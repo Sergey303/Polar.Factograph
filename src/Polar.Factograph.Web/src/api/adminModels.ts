@@ -35,6 +35,31 @@ export interface ProjectIndexRebuildResult {
   statistics: ProjectIndexBuildStatistics;
 }
 
+export interface ProjectIndexVerificationReport {
+  schemaVersion: number;
+  projectId: string;
+  generationId: string;
+  startedAtUtc: string;
+  completedAtUtc: string;
+  sourceFiles: number;
+  expectedResources: number;
+  storedResources: number;
+  missingResources: number;
+  extraResources: number;
+  missingResourceExamples: string[];
+  extraResourceExamples: string[];
+  expectedTriples: number;
+  storedTriples: number;
+  missingTriples: number;
+  extraTriples: number;
+  missingTripleExamples: string[];
+  extraTripleExamples: string[];
+  differenceSampleLimit: number;
+  differenceSamplesTruncated: boolean;
+  isMatch: boolean;
+  reportPath: string;
+}
+
 export interface CassettePreviewQueueStatus {
   cassetteId: string;
   cassetteName: string;
