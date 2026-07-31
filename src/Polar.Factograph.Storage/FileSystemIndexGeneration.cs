@@ -9,6 +9,7 @@ namespace Polar.Factograph.Storage;
 public sealed class FileSystemIndexGeneration : IAsyncDisposable
 {
     private const string CurrentFileName = "CURRENT";
+    private const int PointerPublishAttempts = 20;
     private readonly string _indexRoot;
     private bool _committed;
     private bool _aborted;
@@ -80,23 +81,20 @@ public sealed class FileSystemIndexGeneration : IAsyncDisposable
                 stream.Flush(flushToDisk: true);
             }
 
-            if (File.Exists(currentPath))
-            {
-                File.Replace(temporaryPath, currentPath, destinationBackupFileName: null, ignoreMetadataErrors: true);
-            }
-            else
-            {
-                File.Move(temporaryPath, currentPath);
-            }
-
+            await PublishCurrentPointerAsync(
+                temporaryPath,
+                currentPath,
+                cancellationToken);
             _committed = true;
+        }
+        catch
+        {
+            TryDeleteDirectory(FinalPath);
+            throw;
         }
         finally
         {
-            if (File.Exists(temporaryPath))
-            {
-                File.Delete(temporaryPath);
-            }
+            TryDeleteFile(temporaryPath);
         }
     }
 
@@ -118,7 +116,7 @@ public sealed class FileSystemIndexGeneration : IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    public static string? GetCurrentGenerationPath(string indexRoot)
+    public static string? GetCurrentGenerationName(string indexRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(indexRoot);
 
@@ -129,7 +127,7 @@ public sealed class FileSystemIndexGeneration : IAsyncDisposable
             return null;
         }
 
-        string generationName = File.ReadAllText(currentPath, Encoding.UTF8).Trim();
+        string generationName = ReadAllTextShared(currentPath).Trim();
         if (string.IsNullOrWhiteSpace(generationName) ||
             !generationName.StartsWith("generation-", StringComparison.Ordinal) ||
             generationName.Contains(Path.DirectorySeparatorChar) ||
@@ -138,7 +136,18 @@ public sealed class FileSystemIndexGeneration : IAsyncDisposable
             throw new InvalidDataException($"Invalid index CURRENT pointer: {currentPath}");
         }
 
-        return Path.Combine(fullRoot, generationName);
+        return generationName;
+    }
+
+    public static string? GetCurrentGenerationPath(string indexRoot)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(indexRoot);
+
+        string fullRoot = Path.GetFullPath(indexRoot);
+        string? generationName = GetCurrentGenerationName(fullRoot);
+        return generationName is null
+            ? null
+            : Path.Combine(fullRoot, generationName);
     }
 
     public async ValueTask DisposeAsync()
@@ -146,6 +155,91 @@ public sealed class FileSystemIndexGeneration : IAsyncDisposable
         if (!_committed && !_aborted)
         {
             await AbortAsync(CancellationToken.None);
+        }
+    }
+
+    private static async Task PublishCurrentPointerAsync(
+        string temporaryPath,
+        string currentPath,
+        CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                if (File.Exists(currentPath))
+                {
+                    File.Replace(
+                        temporaryPath,
+                        currentPath,
+                        destinationBackupFileName: null,
+                        ignoreMetadataErrors: true);
+                }
+                else
+                {
+                    File.Move(temporaryPath, currentPath);
+                }
+
+                return;
+            }
+            catch (IOException) when (attempt < PointerPublishAttempts)
+            {
+                await DelayBeforeRetryAsync(attempt, cancellationToken);
+            }
+            catch (UnauthorizedAccessException) when (attempt < PointerPublishAttempts)
+            {
+                await DelayBeforeRetryAsync(attempt, cancellationToken);
+            }
+        }
+    }
+
+    private static Task DelayBeforeRetryAsync(
+        int attempt,
+        CancellationToken cancellationToken) =>
+        Task.Delay(TimeSpan.FromMilliseconds(Math.Min(500, 25 * attempt)), cancellationToken);
+
+    private static string ReadAllTextShared(string path)
+    {
+        using FileStream stream = new(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete);
+        using StreamReader reader = new(
+            stream,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Preserve the original publication failure.
+        }
+    }
+
+    private static void TryDeleteDirectory(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+        catch
+        {
+            // Preserve the original publication failure. An orphan generation is not CURRENT.
         }
     }
 
