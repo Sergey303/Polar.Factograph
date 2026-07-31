@@ -25,9 +25,18 @@ export function AdminIndexCard(props: AdminIndexCardProps) {
     { label: "Строящихся поколений", value: props.status.buildingGenerationCount }
   ];
   const resultItems = props.result === null ? [] : [
-    { label: "Файлов-источников", value: formatAdminNumber(props.result.sourceFiles) },
+    { label: "Кассет в конфигурации", value: formatAdminNumber(props.result.enabledCassettes) },
+    { label: "Просканировано кассет", value: formatAdminNumber(props.result.scannedCassettes) },
+    { label: "FOG-файлов", value: formatAdminNumber(props.result.sourceFiles) },
+    { label: "Редакторов в настройках", value: formatAdminNumber(props.result.editors.configuredEditors) },
+    { label: "Зарегистрировано редакторов", value: formatAdminNumber(props.result.editors.registeredEditors) },
+    { label: "Редакторов без регистрации", value: formatAdminNumber(props.result.editors.unregisteredEditors) },
+    { label: "Проверено FOG редакторов", value: formatAdminNumber(props.result.editors.validEditorFogs) },
+    { label: "Неназначенных записываемых FOG", value: formatAdminNumber(props.result.editors.unassignedWritableFogs) },
     { label: "Ресурсов", value: formatAdminNumber(props.result.statistics.resources) },
     { label: "Троек", value: formatAdminNumber(props.result.statistics.triples) },
+    { label: "Строк поиска по имени", value: formatAdminNumber(props.result.statistics.nameSearchRows) },
+    { label: "Строк полнотекстового поиска", value: formatAdminNumber(props.result.statistics.wordSearchRows) },
     { label: "Поколение", value: props.result.generationId }
   ];
 
@@ -36,15 +45,19 @@ export function AdminIndexCard(props: AdminIndexCardProps) {
       <div className="admin-card-heading">
         <div><span className="eyebrow">Polar.DB</span><h2>Индекс проекта</h2></div>
         <button className="button danger" disabled={props.busy} onClick={props.onRebuild}>
-          {props.busy ? "Перестроение…" : "Перестроить"}
+          {props.busy ? "Обновление…" : "Обновить индекс"}
         </button>
       </div>
+      <p className="muted">
+        Перечитывает конфигурацию кассет, проверяет FOG редакторов и создаёт новое полное
+        поколение опорной последовательности и поисковых индексов Polar.DB.
+      </p>
       {props.status && <AdminMetricGrid items={statusItems} />}
       {!props.status && <p className="muted">Состояние индекса пока не загружено.</p>}
       {props.error && <div className="notice error">{props.error}</div>}
       {props.result && (
         <div className="admin-result">
-          <strong>Перестроение завершено</strong>
+          <strong>Индекс проекта обновлён</strong>
           <AdminMetricGrid items={resultItems} />
         </div>
       )}
