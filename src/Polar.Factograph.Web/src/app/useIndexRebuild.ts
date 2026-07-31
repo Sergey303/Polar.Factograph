@@ -10,7 +10,8 @@ export function useIndexRebuild(token: string, onCompleted: () => void) {
 
   async function rebuild(): Promise<void> {
     const confirmed = window.confirm(
-      "Полностью перестроить индекс проекта? Чтение может быть временно недоступно."
+      "Перечитать список кассет, проверить FOG редакторов и полностью пересоздать " +
+      "опорную последовательность и поисковые индексы Polar.DB?"
     );
     if (!confirmed) return;
 
