@@ -33,12 +33,6 @@ public static class FactographApiServices
                 options => options.IsValid(),
                 "Previews configuration is invalid.")
             .ValidateOnStart();
-        services.AddOptions<PolarDbReadOptions>()
-            .Bind(configuration.GetSection(PolarDbReadOptions.SectionName))
-            .Validate(
-                options => Enum.IsDefined(options.ReadMode),
-                "PolarDb:ReadMode must be FullScan or ExternalIndexes.")
-            .ValidateOnStart();
         services.AddSingleton<IdentityJsonStore>();
         services.AddSingleton<LocalAuthenticationService>();
         services.AddSingleton<IdentityProjectMemberOverlay>();
