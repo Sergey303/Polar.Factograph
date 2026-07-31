@@ -57,6 +57,13 @@
   margin: 0;
 }
 
+.admin-report-path,
+.admin-report-path code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 @media (max-width: 720px) {
   .admin-overlay {
     padding: 0;
