@@ -22,10 +22,10 @@ public sealed class ProjectIndexCoordinator(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
-        IReadOnlyList<FogSourceDescriptor> sources = await sourceScanner.ScanAsync(
-            project,
+        await using IAsyncDisposable lease = await operationGate.AcquireAsync(
+            project.Index.Path,
             cancellationToken);
-        return await RebuildFromSourcesAsync(project, sources, cancellationToken);
+        return await RebuildUnderLeaseAsync(project, cancellationToken);
     }
 
     public async Task<ProjectIndexRebuildResult> RebuildFromSourcesAsync(
