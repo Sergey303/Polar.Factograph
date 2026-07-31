@@ -57,6 +57,32 @@ public sealed class PolarDbTypedProjectStore : IProjectRdfStore, IProjectSearchS
         CancellationToken cancellationToken = default) =>
         _search.FindWordAsync(normalizedWord, allowedCassetteIds, cancellationToken);
 
+    /// <summary>
+    /// Loads every resource head from the generation bound to this store.
+    /// Intended for explicit administrative verification, not regular request processing.
+    /// </summary>
+    public IReadOnlyList<ResourceHead> ReadAllResourceHeads()
+    {
+        _sets.ThrowIfDisposed();
+        return _sets.ResourceHeads
+            .All()
+            .Select(PolarDbRowMapper.ToLogical)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Loads every RDF triple from the generation bound to this store.
+    /// Intended for explicit administrative verification, not regular request processing.
+    /// </summary>
+    public IReadOnlyList<TripleRow> ReadAllTriples()
+    {
+        _sets.ThrowIfDisposed();
+        return _sets.Triples
+            .All()
+            .Select(PolarDbRowMapper.ToLogical)
+            .ToArray();
+    }
+
     public Task RebuildAsync(CancellationToken cancellationToken = default)
     {
         _sets.ThrowIfDisposed();
