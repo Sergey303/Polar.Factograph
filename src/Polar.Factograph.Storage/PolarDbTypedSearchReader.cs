@@ -13,8 +13,10 @@ internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
         cancellationToken.ThrowIfCancellationRequested();
 
         IReadOnlyList<NameSearchHit> result = sets.NameSearch
-            .Find(row => row.SearchKey, normalizedSearchKey)
-            .Where(row => allowedCassetteIds.Contains(row.SourceCassetteId))
+            .All()
+            .Where(row =>
+                string.Equals(row.SearchKey, normalizedSearchKey, StringComparison.Ordinal) &&
+                allowedCassetteIds.Contains(row.SourceCassetteId))
             .Select(ToNameSearchHit)
             .ToArray();
         return Task.FromResult(result);
@@ -31,8 +33,10 @@ internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
         cancellationToken.ThrowIfCancellationRequested();
 
         IReadOnlyList<NameSearchHit> result = sets.NameSearch
-            .Find(row => row.ResourceId, resourceId)
-            .Where(row => allowedCassetteIds.Contains(row.SourceCassetteId))
+            .All()
+            .Where(row =>
+                string.Equals(row.ResourceId, resourceId, StringComparison.Ordinal) &&
+                allowedCassetteIds.Contains(row.SourceCassetteId))
             .Select(ToNameSearchHit)
             .Distinct()
             .ToArray();
@@ -50,8 +54,10 @@ internal sealed class PolarDbTypedSearchReader(PolarDbTypedStoreSets sets)
         cancellationToken.ThrowIfCancellationRequested();
 
         IReadOnlyList<WordSearchHit> result = sets.WordSearch
-            .Find(row => row.Word, normalizedWord)
-            .Where(row => allowedCassetteIds.Contains(row.SourceCassetteId))
+            .All()
+            .Where(row =>
+                string.Equals(row.Word, normalizedWord, StringComparison.Ordinal) &&
+                allowedCassetteIds.Contains(row.SourceCassetteId))
             .Select(ToWordSearchHit)
             .ToArray();
         return Task.FromResult(result);
