@@ -65,6 +65,39 @@ public sealed class FileSystemIndexGenerationTests
         Assert.Equal(secondPath, FileSystemIndexGeneration.GetCurrentGenerationPath(directory.Path));
     }
 
+    [Fact]
+    public async Task NewCommit_RetriesCurrentPointerWhileAnotherReaderTemporarilyBlocksReplacement()
+    {
+        await using TemporaryDirectory directory = TemporaryDirectory.Create();
+
+        await using (FileSystemIndexGeneration first = FileSystemIndexGeneration.Begin(
+                         directory.Path,
+                         Guid.Parse("44444444-4444-4444-4444-444444444444")))
+        {
+            await first.CommitAsync();
+        }
+
+        string currentPath = Path.Combine(directory.Path, "CURRENT");
+        using FileStream blockingReader = new(
+            currentPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read);
+
+        await using FileSystemIndexGeneration second = FileSystemIndexGeneration.Begin(
+            directory.Path,
+            Guid.Parse("55555555-5555-5555-5555-555555555555"));
+        Task commit = second.CommitAsync();
+
+        await Task.Delay(150);
+        blockingReader.Dispose();
+        await commit;
+
+        Assert.Equal(
+            second.FinalPath,
+            FileSystemIndexGeneration.GetCurrentGenerationPath(directory.Path));
+    }
+
     private sealed class TemporaryDirectory : IAsyncDisposable
     {
         private TemporaryDirectory(string path)
