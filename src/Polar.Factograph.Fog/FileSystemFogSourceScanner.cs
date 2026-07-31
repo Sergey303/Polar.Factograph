@@ -67,8 +67,8 @@ public sealed class FileSystemFogSourceScanner : IFogSourceScanner
         string metadataDirectory = Path.Combine(cassettePath, "meta");
         if (!Directory.Exists(metadataDirectory))
         {
-            throw new DirectoryNotFoundException(
-                $"Cassette metadata directory was not found: {metadataDirectory}");
+            throw new InvalidDataException(
+                $"Cassette '{cassetteName}' has no metadata directory: {metadataDirectory}");
         }
 
         string expectedName = $"{cassetteName}_current.fog";
@@ -78,18 +78,56 @@ public sealed class FileSystemFogSourceScanner : IFogSourceScanner
             return expectedPath;
         }
 
-        string? caseInsensitiveMatch = Directory
+        string[] fogFiles = Directory
             .EnumerateFiles(metadataDirectory, "*", SearchOption.TopDirectoryOnly)
-            .FirstOrDefault(path => string.Equals(
-                Path.GetFileName(path),
-                expectedName,
-                StringComparison.OrdinalIgnoreCase));
+            .Where(path => string.Equals(
+                Path.GetExtension(path),
+                ".fog",
+                StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-        return caseInsensitiveMatch
-            ?? throw new FileNotFoundException(
-                $"Current cassette Fog was not found: {expectedPath}",
-                expectedPath);
+        string? caseInsensitiveExpected = fogFiles.FirstOrDefault(path => string.Equals(
+            Path.GetFileName(path),
+            expectedName,
+            StringComparison.OrdinalIgnoreCase));
+        if (caseInsensitiveExpected is not null)
+        {
+            return caseInsensitiveExpected;
+        }
+
+        string[] currentCandidates = fogFiles
+            .Where(path => Path.GetFileNameWithoutExtension(path)
+                .EndsWith("_current", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (currentCandidates.Length == 1)
+        {
+            return currentCandidates[0];
+        }
+
+        if (currentCandidates.Length > 1)
+        {
+            throw new InvalidDataException(
+                $"Cassette '{cassetteName}' has several *_current.fog files in " +
+                $"'{metadataDirectory}': {FormatFileNames(currentCandidates)}. " +
+                "Rename the actual current file to match the cassette name or leave only one current candidate.");
+        }
+
+        if (fogFiles.Length == 1)
+        {
+            return fogFiles[0];
+        }
+
+        string available = fogFiles.Length == 0
+            ? "no .fog files"
+            : FormatFileNames(fogFiles);
+        throw new InvalidDataException(
+            $"Cassette '{cassetteName}' has no identifiable current metadata Fog in " +
+            $"'{metadataDirectory}'. Expected '{expectedName}'; found {available}.");
     }
+
+    private static string FormatFileNames(IEnumerable<string> paths) =>
+        string.Join(", ", paths.Select(path => $"'{Path.GetFileName(path)}'"));
 
     private async Task<FogSourceDescriptor> DescribeAsync(
         CassetteDefinition cassette,
