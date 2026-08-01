@@ -20,7 +20,7 @@ public sealed class ProjectConfigurationLoaderTests
         Assert.Equal(2, definition.Cassettes.Length);
         Assert.All(definition.Cassettes, cassette => Assert.True(Path.IsPathRooted(cassette.Path)));
         Assert.Equal(new[] { "history", "current" }, definition.Cassettes.Select(value => value.Id));
-        CassetteDefinition writable = Assert.Single(definition.Cassettes.Where(value => value.AllowWrite));
+        CassetteDefinition writable = Assert.Single(definition.Cassettes, value => value.AllowWrite);
         Assert.Equal("current", writable.Id);
         Assert.Equal(writable.Id, writable.Name);
     }
