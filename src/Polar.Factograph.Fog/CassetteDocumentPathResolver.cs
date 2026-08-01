@@ -18,24 +18,8 @@ public sealed record CassetteDocumentLocation(
 
 public sealed class CassetteDocumentPathResolver
 {
-    public static bool IsDocumentUri(string? documentUri)
-    {
-        if (string.IsNullOrWhiteSpace(documentUri) ||
-            !Uri.TryCreate(documentUri, UriKind.Absolute, out Uri? uri) ||
-            !string.Equals(uri.Scheme, "iiss", StringComparison.OrdinalIgnoreCase) ||
-            string.IsNullOrWhiteSpace(Uri.UnescapeDataString(uri.UserInfo)))
-        {
-            return false;
-        }
-
-        string path = uri.GetComponents(UriComponents.Path, UriFormat.Unescaped);
-        string[] segments = path
-            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        return segments.Length >= 2 &&
-               IsSafeFourCharacterPart(segments[^2]) &&
-               IsSafeFourCharacterPart(segments[^1]);
-    }
+    public static bool IsDocumentUri(string? documentUri) =>
+        IissDocumentUri.IsPhysicalDocument(documentUri);
 
     public CassetteDocumentLocation Resolve(
         ProjectDefinition project,
@@ -125,19 +109,12 @@ public sealed class CassetteDocumentPathResolver
         string description,
         string documentUri)
     {
-        if (!IsSafeFourCharacterPart(value))
+        if (!IissDocumentUri.IsSafeFourCharacterPart(value))
         {
             throw new InvalidDataException(
                 $"Document URI {description} must be one safe four-character value: {documentUri}");
         }
     }
-
-    private static bool IsSafeFourCharacterPart(string value) =>
-        value.Length == 4 &&
-        value is not "." and not ".." &&
-        value.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 &&
-        !value.Contains(Path.DirectorySeparatorChar) &&
-        !value.Contains(Path.AltDirectorySeparatorChar);
 
     private static string FindSingleDocumentFile(
         string directory,
