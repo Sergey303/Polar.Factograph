@@ -35,6 +35,7 @@ export function DocumentCard({
   );
   const isImage = imageDocument || asset.contentType.startsWith("image/");
   const showMetadata = allowReplace && asset.location !== null;
+  const hasActions = asset.location?.originalAvailable === true || canReplace;
 
   async function openFile(): Promise<void> {
     try {
@@ -80,20 +81,22 @@ export function DocumentCard({
           </aside>
         )}
       </div>
-      <div className="document-card-actions">
-        {asset.location?.originalAvailable && (
-          <button className="button primary" type="button" onClick={openFile}>
-            <UiIcon name="external-link" />
-            <span>{isImage ? "Открыть изображение" : "Открыть файл"}</span>
-          </button>
-        )}
-        <DocumentReplaceControl
-          uri={uri}
-          token={token}
-          enabled={canReplace}
-          onReplaced={asset.reload}
-        />
-      </div>
+      {hasActions && (
+        <div className="document-card-actions">
+          {asset.location?.originalAvailable && (
+            <button className="button primary" type="button" onClick={openFile}>
+              <UiIcon name="external-link" />
+              <span>{isImage ? "Открыть изображение" : "Открыть файл"}</span>
+            </button>
+          )}
+          <DocumentReplaceControl
+            uri={uri}
+            token={token}
+            enabled={canReplace}
+            onReplaced={asset.reload}
+          />
+        </div>
+      )}
     </article>
   );
 }
