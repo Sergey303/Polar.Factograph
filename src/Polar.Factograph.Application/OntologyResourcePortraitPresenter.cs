@@ -124,13 +124,38 @@ public sealed class OntologyResourcePortraitPresenter
 
     private string DisplayLiteralValue(
         ResourceLiteralField field,
-        string preferredLanguage) =>
-        string.IsNullOrWhiteSpace(field.Value)
-            ? field.Value
-            : _ontology.EnumerationLabel(
-                field.Predicate,
-                field.Value,
-                preferredLanguage) ?? field.Value;
+        string preferredLanguage)
+    {
+        if (string.IsNullOrWhiteSpace(field.Value))
+        {
+            return field.Value;
+        }
+
+        if (IsDateProperty(field.Predicate) &&
+            SemanticDateParser.Parse(field.Value) is { } date)
+        {
+            return date.Display;
+        }
+
+        return _ontology.EnumerationLabel(
+            field.Predicate,
+            field.Value,
+            preferredLanguage) ?? field.Value;
+    }
+
+    private bool IsDateProperty(string predicate)
+    {
+        if (string.Equals(predicate, SemanticBridgeVocabulary.FromDate, StringComparison.Ordinal) ||
+            string.Equals(predicate, SemanticBridgeVocabulary.ToDate, StringComparison.Ordinal) ||
+            string.Equals(predicate, SemanticBridgeVocabulary.Date, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return _ontology.TryGetTerm(predicate, out OntologyTerm? term) &&
+            term is { Kind: OntologyTermKind.DatatypeProperty } &&
+            term.Ranges.Contains(SemanticBridgeVocabulary.DateDataType, StringComparer.Ordinal);
+    }
 
     private string PropertyLabel(string predicate, string preferredLanguage) =>
         _ontology.LabelOf(predicate, preferredLanguage) ?? predicate;
