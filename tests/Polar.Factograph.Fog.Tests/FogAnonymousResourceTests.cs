@@ -1,5 +1,6 @@
 using System.Text;
 using Polar.Factograph.Fog;
+using Xunit;
 
 namespace Polar.Factograph.Fog.Tests;
 
@@ -36,10 +37,9 @@ public sealed class FogAnonymousResourceTests : IDisposable
         {
             Assert.Equal(FogRecordKind.Resource, record.Kind);
             Assert.Equal("http://fogid.net/o/reflection", record.Type);
-            Assert.StartsWith(
+            Assert.True(record.ResourceId.StartsWith(
                 "urn:polar-factograph:anonymous:",
-                record.ResourceId,
-                StringComparison.Ordinal);
+                StringComparison.Ordinal));
         });
         Assert.NotEqual(firstRead[0].ResourceId, firstRead[1].ResourceId);
         Assert.Equal("person-1", Assert.Single(firstRead[0].Properties).Value);
