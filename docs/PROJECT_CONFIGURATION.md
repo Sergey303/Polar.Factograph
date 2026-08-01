@@ -33,6 +33,8 @@
 
 The search page remains available at `/search`. When `homeResourceId` is absent or empty, the application root falls back to the search page.
 
+The former `homeResourceIds` array is no longer supported. A project file that still contains it is rejected with a migration error instead of silently showing an empty home page. Replace the array with one string value in `homeResourceId`.
+
 ## Cassette paths
 
 The `cassettes` section has two fields:
@@ -66,6 +68,7 @@ Configuration loading rejects:
 
 - unsupported schema versions;
 - missing project, ontology, or index values;
+- the removed `homeResourceIds` array;
 - a missing or empty cassette list;
 - relative cassette paths;
 - duplicate cassette paths or duplicate final folder names;
