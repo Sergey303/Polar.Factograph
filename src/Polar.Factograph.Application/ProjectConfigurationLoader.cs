@@ -21,7 +21,6 @@ public sealed class ProjectConfigurationLoader
         IReadOnlySet<string> cassetteIds = ProjectIdentityValidator.Validate(project);
         ProjectRightsValidator.Validate(project, cassetteIds);
         ProjectMemberValidator.Validate(project, cassetteIds);
-        ProjectWriteRoutingValidator.Validate(project);
         return project;
     }
 }
