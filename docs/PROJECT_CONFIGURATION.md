@@ -9,9 +9,7 @@
   "schemaVersion": 1,
   "projectId": "archive",
   "name": "Factographic archive",
-  "homeResourceIds": [
-    "featured-collection"
-  ],
+  "homeResourceId": "featured-collection",
   "ontology": {
     "path": "./ontology.xml"
   },
@@ -28,6 +26,12 @@
   }
 }
 ```
+
+## Home resource
+
+`homeResourceId` is the identifier of the single resource shown at the application root `/`. It is rendered by the same resource page used for `/resource/{id}`; there is no separate home-page gallery or special collection layout.
+
+The search page remains available at `/search`. When `homeResourceId` is absent or empty, the application root falls back to the search page.
 
 ## Cassette paths
 
