@@ -1,3 +1,5 @@
+import { UiIcon } from "./UiIcon";
+
 interface ResourceWorkspaceActionsProps {
   canCreate: boolean;
   canAddDocument: boolean;
@@ -22,22 +24,26 @@ export function ResourceWorkspaceActions(props: ResourceWorkspaceActionsProps) {
       <div className="button-row">
         {props.canCreate && (
           <button className="button primary" type="button" onClick={props.onCreate}>
-            Создать сущность
+            <UiIcon name="plus" />
+            <span>Создать сущность</span>
           </button>
         )}
         {props.canAddDocument && (
           <button className="button subtle" type="button" onClick={props.onAddDocument}>
-            Добавить документ
+            <UiIcon name="file-plus" />
+            <span>Добавить документ</span>
           </button>
         )}
         {props.canAddRelation && (
           <button className="button subtle" type="button" onClick={props.onAddRelation}>
-            Связи
+            <UiIcon name="relations" />
+            <span>Связи</span>
           </button>
         )}
         {props.canEdit && (
           <button className="button subtle" type="button" onClick={props.onEdit}>
-            Редактировать
+            <UiIcon name="edit" />
+            <span>Редактировать</span>
           </button>
         )}
       </div>
