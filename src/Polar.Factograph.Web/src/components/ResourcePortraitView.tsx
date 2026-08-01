@@ -9,10 +9,13 @@ import {
   singleResourceDocumentUri
 } from "../app/resourceDocuments";
 import { CopyResourceLinkButton } from "./CopyResourceLinkButton";
+import { DocumentLiteralSummary } from "./DocumentLiteralSummary";
 import { DocumentSection } from "./DocumentSection";
 import { LiteralFields } from "./LiteralFields";
 import { ResourceDocumentMetadata } from "./ResourceDocumentMetadata";
 import { SemanticResourceSections } from "./SemanticResourceSections";
+
+const photoDocumentType = "http://fogid.net/o/photo-doc";
 
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
@@ -74,6 +77,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const portrait = page.portrait;
   const documents = resourceDocumentUris(portrait);
   const documentBacked = documents.length > 0;
+  const photoDocument = portrait.type === photoDocumentType && documents.length > 0;
   const primaryDocument = singleResourceDocumentUri(portrait);
   const title = titleOf(page, documentBacked);
   const fields = publicFields(portrait.literals, documentBacked);
@@ -91,7 +95,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
         siteName={siteName}
         imageUrl={metadataImageUrl}
       />
-      <article className="portrait">
+      <article className={`portrait${photoDocument ? " photo-document-portrait" : ""}`}>
         <header className="portrait-header public-portrait-header">
           <h1>{title}</h1>
           <CopyResourceLinkButton resourceId={portrait.resourceId} />
@@ -102,15 +106,37 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
             У сущности указано несколько медиавложений. Они показаны ниже, но основное медиа не выбрано автоматически.
           </div>
         )}
-        <DocumentSection
-          uris={documents}
-          token={props.token}
-          project={props.project}
-          title={null}
-          previewPolicy="largest-preview"
-        />
-        <LiteralFields fields={fields} />
-        <SemanticResourceSections page={page} />
+
+        {photoDocument ? (
+          <div className="photo-document-layout">
+            <div className="photo-document-main">
+              <DocumentSection
+                uris={documents}
+                token={props.token}
+                project={props.project}
+                title={null}
+                previewPolicy="largest-preview"
+                imageDocument
+              />
+              <DocumentLiteralSummary fields={fields} />
+            </div>
+            <aside className="photo-document-relations" aria-label="Связи фотографии">
+              <SemanticResourceSections page={page} />
+            </aside>
+          </div>
+        ) : (
+          <>
+            <DocumentSection
+              uris={documents}
+              token={props.token}
+              project={props.project}
+              title={null}
+              previewPolicy="largest-preview"
+            />
+            <LiteralFields fields={fields} />
+            <SemanticResourceSections page={page} />
+          </>
+        )}
       </article>
     </>
   );
