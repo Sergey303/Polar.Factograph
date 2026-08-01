@@ -14,26 +14,5 @@
       "D:/projects/iis/cassettes/SypCassete"
     ],
     "write": "D:/projects/iis/cassettes/SypCassete"
-  },
-  "roles": {
-    "viewer": {
-      "projectRights": ["read", "search"],
-      "cassetteRights": {
-        "SypCassete": ["read"]
-      }
-    },
-    "administrator": {
-      "projectRights": ["read", "search", "export", "manageUsers", "manageCassettes", "rebuildIndex"],
-      "cassetteRights": {
-        "*": ["read", "manage"]
-      }
-    }
-  },
-  "members": [
-    {
-      "userId": "admin",
-      "roles": ["administrator"],
-      "cassetteOverrides": {}
-    }
-  ]
+  }
 }
