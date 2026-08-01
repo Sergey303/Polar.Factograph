@@ -13,7 +13,7 @@ public sealed class ProjectAccessServiceTests
             cassettes:
             [
                 Cassette("history", defaultAccess: "read", allowWrite: false),
-                Cassette("current", defaultAccess: "none", allowWrite: true)
+                Cassette("current", defaultAccess: "read", allowWrite: true)
             ],
             roles: new Dictionary<string, RoleDefinition>(StringComparer.Ordinal)
             {
@@ -38,11 +38,7 @@ public sealed class ProjectAccessServiceTests
                     UserId = "member",
                     Roles = ["viewer", "editor"]
                 }
-            ],
-            defaultCassetteByRole: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["editor"] = "current"
-            });
+            ]);
 
         ProjectAccessSnapshot access = new ProjectAccessService().Evaluate(project, "member");
 
@@ -65,7 +61,7 @@ public sealed class ProjectAccessServiceTests
             cassettes:
             [
                 Cassette("a", defaultAccess: "read", allowWrite: true),
-                Cassette("b", defaultAccess: "read", allowWrite: true)
+                Cassette("b", defaultAccess: "read", allowWrite: false)
             ],
             roles: new Dictionary<string, RoleDefinition>(StringComparer.Ordinal)
             {
@@ -99,15 +95,17 @@ public sealed class ProjectAccessServiceTests
         Assert.False(access.HasCassetteRight("a", CassetteRights.Delete));
         Assert.False(access.HasCassetteRight("b", CassetteRights.Read));
         Assert.Equal(new[] { "a" }, access.ReadableCassetteIds);
+        Assert.Null(access.DefaultWriteCassetteId);
     }
 
     [Fact]
-    public void Evaluate_DisabledCassetteHasNoRightsAndCannotBeDefaultWriteTarget()
+    public void Evaluate_DisabledCassetteHasNoRightsAndCannotBecomeDefaultWriteTarget()
     {
         ProjectDefinition project = CreateProject(
             cassettes:
             [
-                Cassette("disabled", defaultAccess: "read", allowWrite: true, enabled: false)
+                Cassette("disabled", defaultAccess: "read", allowWrite: false, enabled: false),
+                Cassette("current", defaultAccess: "read", allowWrite: true)
             ],
             roles: new Dictionary<string, RoleDefinition>(StringComparer.Ordinal)
             {
@@ -127,15 +125,10 @@ public sealed class ProjectAccessServiceTests
                     UserId = "editor-user",
                     Roles = ["editor"]
                 }
-            ],
-            defaultCassetteByRole: new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["editor"] = "disabled"
-            });
+            ]);
 
         ProjectAccessSnapshot access = new ProjectAccessService().Evaluate(project, "editor-user");
 
-        Assert.Empty(access.ReadableCassetteIds);
         Assert.False(access.HasCassetteRight("disabled", CassetteRights.Read));
         Assert.Null(access.DefaultWriteCassetteId);
     }
@@ -160,8 +153,7 @@ public sealed class ProjectAccessServiceTests
     private static ProjectDefinition CreateProject(
         CassetteDefinition[] cassettes,
         Dictionary<string, RoleDefinition> roles,
-        MemberDefinition[] members,
-        Dictionary<string, string>? defaultCassetteByRole = null) => new()
+        MemberDefinition[] members) => new()
     {
         ProjectId = "project",
         Name = "Project",
@@ -169,12 +161,7 @@ public sealed class ProjectAccessServiceTests
         Index = new IndexDefinition { Path = "index" },
         Cassettes = cassettes,
         Roles = roles,
-        Members = members,
-        WriteRouting = new WriteRoutingDefinition
-        {
-            DefaultCassetteByRole = defaultCassetteByRole
-                ?? new Dictionary<string, string>(StringComparer.Ordinal)
-        }
+        Members = members
     };
 
     private static CassetteDefinition Cassette(
