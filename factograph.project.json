@@ -58,58 +58,5 @@
       "D:/projects/iis/cassettes/SypUsers"
     ],
     "write": "D:/projects/iis/cassettes/SypCassete"
-  },
-  "roles": {
-    "viewer": {
-      "projectRights": [
-        "read",
-        "search"
-      ],
-      "cassetteRights": {}
-    },
-    "editor": {
-      "projectRights": [
-        "read",
-        "search"
-      ],
-      "cassetteRights": {
-        "SypCassete": [
-          "read",
-          "writeMetadata",
-          "addDocuments",
-          "replaceDocuments"
-        ]
-      }
-    },
-    "administrator": {
-      "projectRights": [
-        "read",
-        "search",
-        "export",
-        "manageUsers",
-        "manageCassettes",
-        "rebuildIndex"
-      ],
-      "cassetteRights": {
-        "*": [
-          "read",
-          "writeMetadata",
-          "addDocuments",
-          "replaceDocuments",
-          "delete",
-          "substitute",
-          "manage"
-        ]
-      }
-    }
-  },
-  "members": [
-    {
-      "userId": "admin",
-      "roles": [
-        "administrator"
-      ],
-      "cassetteOverrides": {}
-    }
-  ]
+  }
 }
