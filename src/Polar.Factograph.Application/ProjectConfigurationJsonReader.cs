@@ -5,12 +5,7 @@ namespace Polar.Factograph.Application;
 
 internal static class ProjectConfigurationJsonReader
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
-    {
-        AllowTrailingCommas = true,
-        PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip
-    };
+    private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
     public static async Task<ProjectDefinition> ReadAsync(
         string fullPath,
@@ -31,5 +26,17 @@ internal static class ProjectConfigurationJsonReader
                 $"Project configuration JSON cannot be read: {fullPath}",
                 exception);
         }
+    }
+
+    private static JsonSerializerOptions CreateJsonOptions()
+    {
+        JsonSerializerOptions options = new(JsonSerializerDefaults.Web)
+        {
+            AllowTrailingCommas = true,
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
+        options.Converters.Add(new ProjectCassettesJsonConverter());
+        return options;
     }
 }
