@@ -42,10 +42,31 @@ public sealed class ProjectResourcePortraitService
         _store = store ?? throw new ArgumentNullException(nameof(store));
     }
 
-    public async ValueTask<ProjectResourcePortrait?> GetAsync(
+    public ValueTask<ProjectResourcePortrait?> GetAsync(
         string resourceId,
         IReadOnlySet<string> allowedCassetteIds,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        GetCoreAsync(
+            resourceId,
+            allowedCassetteIds,
+            includeInverseLinks: true,
+            cancellationToken);
+
+    public ValueTask<ProjectResourcePortrait?> GetSummaryAsync(
+        string resourceId,
+        IReadOnlySet<string> allowedCassetteIds,
+        CancellationToken cancellationToken = default) =>
+        GetCoreAsync(
+            resourceId,
+            allowedCassetteIds,
+            includeInverseLinks: false,
+            cancellationToken);
+
+    private async ValueTask<ProjectResourcePortrait?> GetCoreAsync(
+        string resourceId,
+        IReadOnlySet<string> allowedCassetteIds,
+        bool includeInverseLinks,
+        CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceId);
         ArgumentNullException.ThrowIfNull(allowedCassetteIds);
@@ -71,14 +92,16 @@ public sealed class ProjectResourcePortraitService
                 cancellationToken),
             cancellationToken);
 
-        List<TripleRow> incoming = await ReadAllAsync(
-            _store.FindAsync(
-                new TriplePattern(
-                    ObjectKind: TripleObjectKind.Iri,
-                    ObjectValue: resourceId),
-                effectiveCassetteIds,
-                cancellationToken),
-            cancellationToken);
+        List<TripleRow> incoming = includeInverseLinks
+            ? await ReadAllAsync(
+                _store.FindAsync(
+                    new TriplePattern(
+                        ObjectKind: TripleObjectKind.Iri,
+                        ObjectValue: resourceId),
+                    effectiveCassetteIds,
+                    cancellationToken),
+                cancellationToken)
+            : [];
 
         string? type = outgoing
             .Where(triple =>
