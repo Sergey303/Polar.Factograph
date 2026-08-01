@@ -6,6 +6,11 @@ namespace Polar.Factograph.Application;
 internal static class ProjectConfigurationJsonReader
 {
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
+    private static readonly JsonDocumentOptions DocumentOptions = new()
+    {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip
+    };
 
     public static async Task<ProjectDefinition> ReadAsync(
         string fullPath,
@@ -13,11 +18,13 @@ internal static class ProjectConfigurationJsonReader
     {
         try
         {
-            await using FileStream stream = File.OpenRead(fullPath);
-            ProjectDefinition project = await JsonSerializer.DeserializeAsync<ProjectDefinition>(
-                    stream,
-                    JsonOptions,
-                    cancellationToken)
+            byte[] json = await File.ReadAllBytesAsync(fullPath, cancellationToken);
+            using JsonDocument document = JsonDocument.Parse(json, DocumentOptions);
+            RejectRemovedHomeResourceList(document.RootElement);
+
+            ProjectDefinition project = JsonSerializer.Deserialize<ProjectDefinition>(
+                    json,
+                    JsonOptions)
                 ?? throw new InvalidDataException("Project configuration is empty.");
 
             // Access is intentionally fixed by the application. Legacy roles, members,
@@ -29,6 +36,26 @@ internal static class ProjectConfigurationJsonReader
             throw new InvalidDataException(
                 $"Project configuration JSON cannot be read: {fullPath}",
                 exception);
+        }
+    }
+
+    private static void RejectRemovedHomeResourceList(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        bool hasRemovedField = root.EnumerateObject().Any(property =>
+            string.Equals(
+                property.Name,
+                "homeResourceIds",
+                StringComparison.OrdinalIgnoreCase));
+        if (hasRemovedField)
+        {
+            throw new InvalidDataException(
+                "Project configuration field 'homeResourceIds' was removed. " +
+                "Use one string field 'homeResourceId' instead.");
         }
     }
 
