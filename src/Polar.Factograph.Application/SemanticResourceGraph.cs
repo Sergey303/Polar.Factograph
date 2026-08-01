@@ -5,7 +5,8 @@ internal sealed class SemanticResourceGraph(
     OntologyResourcePortraitPresenter presenter,
     OntologyCatalog ontology,
     ProjectAccessSnapshot access,
-    string preferredLanguage)
+    string preferredLanguage,
+    bool summaryOnly = false)
 {
     private readonly Dictionary<string, ProjectResourcePortrait?> _cache =
         new(StringComparer.Ordinal);
@@ -22,10 +23,9 @@ internal sealed class SemanticResourceGraph(
             return cached;
         }
 
-        ProjectResourcePortrait? portrait = await reads.GetPortraitAsync(
-            resourceId,
-            access,
-            cancellationToken);
+        ProjectResourcePortrait? portrait = summaryOnly
+            ? await reads.GetPortraitSummaryAsync(resourceId, access, cancellationToken)
+            : await reads.GetPortraitAsync(resourceId, access, cancellationToken);
         _cache[resourceId] = portrait;
         return portrait;
     }
