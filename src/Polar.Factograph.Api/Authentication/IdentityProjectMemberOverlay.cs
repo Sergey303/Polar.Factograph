@@ -13,64 +13,28 @@ public sealed class IdentityProjectMemberOverlay(
 
         if (options.IsPublicUser(userId))
         {
-            return ApplyPublicViewer(project, userId);
-        }
-
-        if (project.Members.Any(member => string.Equals(
-                member.UserId,
-                userId,
-                StringComparison.Ordinal)))
-        {
-            return project;
+            return WithCurrentMember(project, userId, [LocalAuthenticationOptions.PublicViewerRole]);
         }
 
         IdentityUser? user = store.FindUser(userId);
-        if (user is null || !user.Enabled)
-        {
-            return project;
-        }
-
-        return project with
-        {
-            Members =
-            [
-                .. project.Members,
-                new MemberDefinition
-                {
-                    UserId = user.Id,
-                    Roles = user.Roles,
-                    CassetteOverrides = new Dictionary<string, string[]>(StringComparer.Ordinal)
-                }
-            ]
-        };
+        return user is { Enabled: true }
+            ? WithCurrentMember(project, user.Id, user.Roles)
+            : project;
     }
 
-    private static ProjectDefinition ApplyPublicViewer(
+    private static ProjectDefinition WithCurrentMember(
         ProjectDefinition project,
-        string userId)
+        string userId,
+        string[] roles) => project with
     {
-        if (!project.Roles.ContainsKey(LocalAuthenticationOptions.PublicViewerRole))
-        {
-            throw new InvalidOperationException(
-                $"Public reading requires project role '{LocalAuthenticationOptions.PublicViewerRole}'.");
-        }
-
-        MemberDefinition member = new()
-        {
-            UserId = userId,
-            Roles = [LocalAuthenticationOptions.PublicViewerRole],
-            CassetteOverrides = new Dictionary<string, string[]>(StringComparer.Ordinal)
-        };
-        return project with
-        {
-            Members =
-            [
-                .. project.Members.Where(existing => !string.Equals(
-                    existing.UserId,
-                    userId,
-                    StringComparison.Ordinal)),
-                member
-            ]
-        };
-    }
+        Members =
+        [
+            new MemberDefinition
+            {
+                UserId = userId,
+                Roles = roles,
+                CassetteOverrides = new Dictionary<string, string[]>(StringComparer.Ordinal)
+            }
+        ]
+    };
 }
