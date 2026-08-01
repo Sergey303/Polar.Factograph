@@ -9,21 +9,17 @@
     "path": "../project-data/syp-test/index",
     "rebuildMode": "whenSourcesChanged"
   },
-  "cassettes": [
-    {
-      "id": "syp-cassette",
-      "name": "SypCassete",
-      "path": "../cassetes/SypCassete",
-      "enabled": true,
-      "defaultAccess": "read",
-      "allowWrite": false
-    }
-  ],
+  "cassettes": {
+    "items": [
+      "D:/projects/iis/cassettes/SypCassete"
+    ],
+    "write": "D:/projects/iis/cassettes/SypCassete"
+  },
   "roles": {
     "viewer": {
       "projectRights": ["read", "search"],
       "cassetteRights": {
-        "syp-cassette": ["read"]
+        "SypCassete": ["read"]
       }
     },
     "administrator": {
@@ -39,8 +35,5 @@
       "roles": ["administrator"],
       "cassetteOverrides": {}
     }
-  ],
-  "writeRouting": {
-    "defaultCassetteByRole": {}
-  }
+  ]
 }
