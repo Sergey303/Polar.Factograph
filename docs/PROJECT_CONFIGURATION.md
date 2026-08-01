@@ -48,9 +48,9 @@ Access rules are fixed by the application and are not repeated in the project fi
 |---|---|---|
 | Viewer | Read and search | Read every configured cassette |
 | Editor | Viewer access | Write metadata and add or replace documents in `cassettes.write` |
-| Administrator | Read, search, export and administration | All rights for every configured cassette |
+| Administrator | Read, search, export and administration | Read every cassette and use all write operations in `cassettes.write` |
 
-A registered login absent from both configured login lists is a viewer. `Authentication:Local:EditorLogins` identifies editors and `Authentication:Local:AdminLogins` identifies administrators. Anonymous visitors are viewers when `PublicReadEnabled` is enabled.
+A registered login absent from both configured login lists is a viewer. `Authentication:Local:EditorLogins` identifies editors and `Authentication:Local:AdminLogins` identifies administrators. An administrator is automatically also an editor. Anonymous visitors are viewers when `PublicReadEnabled` is enabled.
 
 The historical `roles`, `members`, and `writeRouting` sections are no longer used. During migration they may still be present in an older file, but the loader replaces them with the built-in rules. They should be removed.
 
