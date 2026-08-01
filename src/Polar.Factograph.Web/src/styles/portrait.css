@@ -42,43 +42,6 @@
   margin-top: -0.2rem;
 }
 
-.field-list {
-  display: grid;
-  gap: 0;
-  margin: 0;
-  border-top: 1px solid var(--border);
-}
-
-.field-list > div {
-  display: grid;
-  grid-template-columns: minmax(9rem, 0.7fr) minmax(0, 1.4fr);
-  gap: 1rem;
-  padding: 0.7rem 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.field-list dt {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.field-list dd {
-  min-width: 0;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.language {
-  display: inline-block;
-  margin-left: 0.4rem;
-  padding: 0.08rem 0.3rem;
-  border-radius: 0.3rem;
-  color: var(--text-muted);
-  background: #edf1f3;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-}
-
 .technical-resource-details {
   min-width: 0;
   padding-top: 0.75rem;
@@ -239,7 +202,6 @@
     text-align: left;
   }
 
-  .field-list > div,
   .relation-row,
   .technical-resource-details dl > div {
     grid-template-columns: 1fr;
