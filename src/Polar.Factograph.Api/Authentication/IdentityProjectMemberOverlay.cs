@@ -25,16 +25,25 @@ public sealed class IdentityProjectMemberOverlay(
     private static ProjectDefinition WithCurrentMember(
         ProjectDefinition project,
         string userId,
-        string[] roles) => project with
+        string[] roles)
     {
-        Members =
-        [
-            new MemberDefinition
-            {
-                UserId = userId,
-                Roles = roles,
-                CassetteOverrides = new Dictionary<string, string[]>(StringComparer.Ordinal)
-            }
-        ]
-    };
+        MemberDefinition current = new()
+        {
+            UserId = userId,
+            Roles = roles,
+            CassetteOverrides = new Dictionary<string, string[]>(StringComparer.Ordinal)
+        };
+
+        return project with
+        {
+            Members =
+            [
+                .. project.Members.Where(member => !string.Equals(
+                    member.UserId,
+                    userId,
+                    StringComparison.Ordinal)),
+                current
+            ]
+        };
+    }
 }
