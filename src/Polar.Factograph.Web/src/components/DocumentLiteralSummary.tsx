@@ -4,8 +4,8 @@ interface DocumentLiteralSummaryProps {
   fields: PresentedLiteral[];
 }
 
-function isDatePredicate(predicate: string): boolean {
-  return /(^|[/#])(date|start-date|begin-date|end-date)$/i.test(predicate);
+function isDateField(field: PresentedLiteral): boolean {
+  return /date/i.test(field.predicate) || /дата/i.test(field.label);
 }
 
 export function DocumentLiteralSummary({ fields }: DocumentLiteralSummaryProps) {
@@ -26,7 +26,7 @@ export function DocumentLiteralSummary({ fields }: DocumentLiteralSummaryProps) 
     <section className="document-literal-summary" aria-label="Сведения о фотографии">
       {visible.map((field, index) => (
         <p
-          className={isDatePredicate(field.predicate)
+          className={isDateField(field)
             ? "document-summary-date"
             : "document-summary-value"}
           key={`${field.predicate}:${index}`}
