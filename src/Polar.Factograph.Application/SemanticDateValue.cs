@@ -95,17 +95,18 @@ internal static partial class SemanticDateParser
     {
         if (month is null)
         {
-            return year.ToString(CultureInfo.InvariantCulture);
+            return $"{year.ToString(CultureInfo.InvariantCulture)} г.";
         }
 
         if (day is null)
         {
             string monthName = RussianCulture.DateTimeFormat.MonthNames[month.Value - 1];
-            return $"{monthName} {year}";
+            string titledMonth = RussianCulture.TextInfo.ToTitleCase(monthName);
+            return $"{titledMonth} {year.ToString(CultureInfo.InvariantCulture)} г.";
         }
 
         string genitiveMonth = RussianCulture.DateTimeFormat.MonthGenitiveNames[month.Value - 1];
-        return $"{day.Value} {genitiveMonth} {year}";
+        return $"{day.Value.ToString(CultureInfo.InvariantCulture)} {genitiveMonth} {year.ToString(CultureInfo.InvariantCulture)} г.";
     }
 
     private static int ParsePart(string value, int fallback) =>
