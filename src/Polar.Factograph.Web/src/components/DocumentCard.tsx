@@ -34,6 +34,7 @@ export function DocumentCard({
     "replaceDocuments"
   );
   const isImage = imageDocument || asset.contentType.startsWith("image/");
+  const isVideo = asset.contentType.startsWith("video/");
   const showMetadata = allowReplace && asset.location !== null;
   const hasActions = asset.location?.originalAvailable === true || canReplace;
 
@@ -63,9 +64,19 @@ export function DocumentCard({
           {asset.objectUrl && asset.contentType === "application/pdf" && (
             <iframe src={asset.objectUrl} title="Предварительный просмотр PDF" />
           )}
+          {asset.objectUrl && isVideo && (
+            <video
+              src={asset.objectUrl}
+              controls
+              preload="metadata"
+              playsInline
+              aria-label="Предварительный просмотр видео"
+            />
+          )}
           {asset.objectUrl &&
             !asset.contentType.startsWith("image/") &&
-            asset.contentType !== "application/pdf" && (
+            asset.contentType !== "application/pdf" &&
+            !isVideo && (
               <span className="file-placeholder">Файл готов к открытию</span>
             )}
         </div>
