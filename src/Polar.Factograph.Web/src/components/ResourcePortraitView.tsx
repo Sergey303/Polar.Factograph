@@ -121,7 +121,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
               <DocumentLiteralSummary fields={fields} />
             </div>
             <aside className="photo-document-relations" aria-label="Связи фотографии">
-              <SemanticResourceSections page={page} />
+              <SemanticResourceSections page={page} textOnly />
             </aside>
           </div>
         ) : (
