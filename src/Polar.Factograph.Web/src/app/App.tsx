@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { AdminDialog } from "../components/AdminDialog";
 import { AuthenticationPage } from "../components/AuthenticationPage";
 import { EntityCreatePage } from "../components/EntityCreatePage";
-import { HomePage } from "../components/HomePage";
 import { ResourcePage } from "../components/ResourcePage";
 import { SearchPage } from "../components/SearchPage";
 import { TopBar } from "../components/TopBar";
@@ -62,26 +61,24 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
     searchClassOffset,
     auth.token
   );
-  const resourceId = route.page === "resource" ? route.resourceId : null;
+  const homeResourceId = project.project?.homeResourceId?.trim() || null;
+  const resourceId = route.page === "resource"
+    ? route.resourceId
+    : route.page === "home"
+      ? homeResourceId
+      : null;
   const resourceMode: ResourceRouteMode = route.page === "resource"
     ? route.mode
     : "view";
   const resource = useResourcePage(resourceId, auth.token);
   const canonicalResourceId = resource.page?.portrait.resourceId ?? null;
   const canAdmin = project.project?.canAdmin ?? false;
-  const homeActive = route.page === "search" &&
-    route.query.length === 0 &&
-    route.typeId === null &&
-    route.classId === null &&
-    (project.project?.homeResourceIds?.length ?? 0) > 0;
   const pageLoading = route.page === "search"
-    ? homeActive
-      ? false
-      : searchClassId === null
-        ? search.loading
-        : classSearch.pageLoading
-    : route.page === "resource"
-      ? resource.refreshing
+    ? searchClassId === null
+      ? search.loading
+      : classSearch.pageLoading
+    : route.page === "resource" || route.page === "home"
+      ? project.loading || resource.refreshing
       : false;
 
   useEffect(() => {
@@ -94,13 +91,13 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
 
   useEffect(() => {
     if (
-      resourceId !== null &&
+      route.page === "resource" &&
       canonicalResourceId !== null &&
-      canonicalResourceId !== resourceId
+      canonicalResourceId !== route.resourceId
     ) {
       navigateToResourceMode(canonicalResourceId, resourceMode, true);
     }
-  }, [resourceId, resourceMode, canonicalResourceId]);
+  }, [route, resourceMode, canonicalResourceId]);
 
   function submitSearch(query: string): void {
     const normalized = query.trim();
@@ -164,19 +161,27 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
             search.reload();
             classSearch.reload();
           }
-          if (route.page === "resource") resource.reload();
+          if (route.page === "resource" || route.page === "home") {
+            resource.reload();
+          }
         }}
         onAdmin={() => setAdminOpen(true)}
       />
 
-      {homeActive && project.project && (
-        <HomePage
-          project={project.project}
-          token={auth.token}
+      {route.page === "home" && homeResourceId === null && !project.loading && (
+        <SearchPage
+          search={search}
+          classSearch={classSearch}
+          selectedTypeId={null}
+          selectedClassId={null}
           onSearch={submitSearch}
+          onTypeChange={() => undefined}
+          onClassSelect={() => undefined}
+          onClassBack={() => undefined}
+          onClassOffsetChange={() => undefined}
         />
       )}
-      {route.page === "search" && !homeActive && (
+      {route.page === "search" && (
         <SearchPage
           search={search}
           classSearch={classSearch}
@@ -192,16 +197,16 @@ function ProjectWorkspace({ auth }: ProjectWorkspaceProps) {
       {route.page === "create-entity" && (
         <EntityCreatePage project={project.project} token={auth.token} />
       )}
-      {route.page === "resource" && (
+      {(route.page === "resource" || route.page === "home") && resourceId !== null && (
         <ResourcePage
           project={project.project}
           token={auth.token}
-          mode={route.mode}
+          mode={resourceMode}
           resource={resource}
           onCreate={navigateToCreateEntity}
           onSelect={selectedId => navigateToResource(selectedId)}
           onModeChange={(mode, replace = false) =>
-            navigateToResourceMode(route.resourceId, mode, replace)}
+            navigateToResourceMode(resourceId, mode, replace)}
         />
       )}
 
