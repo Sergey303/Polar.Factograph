@@ -17,6 +17,8 @@
 }
 
 .photo-document-relations {
+  position: sticky;
+  top: 5.2rem;
   padding-left: 1.1rem;
   border-left: 1px solid var(--border);
 }
@@ -26,8 +28,20 @@
 }
 
 .photo-document-relations .simple-archive-links {
+  position: static;
+  display: block;
+  max-height: none;
+  overflow: visible;
   padding-left: 0;
   border-left: 0;
+}
+
+.photo-document-relations .simple-link-groups {
+  overflow: visible;
+}
+
+.photo-document-relations .simple-link-pagination {
+  margin-top: 0.9rem;
 }
 
 .document-literal-summary {
@@ -63,6 +77,7 @@
   }
 
   .photo-document-relations {
+    position: static;
     padding: 1rem 0 0;
     border-top: 1px solid var(--border);
     border-left: 0;
