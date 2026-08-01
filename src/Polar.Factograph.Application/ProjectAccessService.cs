@@ -25,7 +25,6 @@ public sealed class ProjectAccessService
             ProjectCassetteAccessBuilder.Build(project, member, roles, projectRights);
         string? defaultWriteCassetteId = ProjectDefaultWriteCassetteResolver.Resolve(
             project,
-            member,
             cassetteAccess);
 
         return new ProjectAccessSnapshot(
