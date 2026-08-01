@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -17,11 +18,11 @@ internal static class FogAnonymousResourceIdentifier
 
         string sourceIdentity = GetLogicalSourceIdentity(source.FogPath);
         string value = string.Join(
-            '\n',
+            "\n",
             source.CassetteId.ToUpperInvariant(),
             source.DatabaseId?.Trim() ?? string.Empty,
             sourceIdentity,
-            sourceOrdinal.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            sourceOrdinal.ToString(CultureInfo.InvariantCulture),
             recordType);
         byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(value));
         return Prefix + Convert.ToHexString(hash).ToLowerInvariant();
