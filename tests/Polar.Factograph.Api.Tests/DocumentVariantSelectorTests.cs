@@ -12,7 +12,7 @@ public sealed class DocumentVariantSelectorTests
     [InlineData("SMALL", DocumentVariant.Small, "small.jpg")]
     [InlineData("medium", DocumentVariant.Medium, "medium.jpg")]
     [InlineData("normal", DocumentVariant.Normal, "normal.jpg")]
-    public void ParseAndSelect_ReturnsTheRequestedPath(
+    public void ParseAndSelect_ReturnsTheRequestedPathWhenAvailable(
         string value,
         DocumentVariant expectedVariant,
         string expectedPath)
@@ -25,16 +25,57 @@ public sealed class DocumentVariantSelectorTests
     }
 
     [Fact]
-    public void Select_UsesSmallPreviewWhenIconIsMissing()
+    public void Select_SmallFallsBackToIcon()
     {
         CassetteDocumentLocation location = CreateLocation() with
         {
+            SmallPreviewPath = null
+        };
+
+        Assert.Equal(
+            "icon.jpg",
+            DocumentVariantSelector.Select(location, DocumentVariant.Small));
+    }
+
+    [Fact]
+    public void Select_SmallFallsBackToLargerPreviewWhenSmallAndIconAreMissing()
+    {
+        CassetteDocumentLocation location = CreateLocation() with
+        {
+            SmallPreviewPath = null,
             IconPreviewPath = null
         };
 
         Assert.Equal(
-            "small.jpg",
-            DocumentVariantSelector.Select(location, DocumentVariant.Icon));
+            "medium.jpg",
+            DocumentVariantSelector.Select(location, DocumentVariant.Small));
+    }
+
+    [Fact]
+    public void Select_SmallFallsBackToOriginalWhenNoPreviewExists()
+    {
+        CassetteDocumentLocation location = CreateLocation() with
+        {
+            SmallPreviewPath = null,
+            MediumPreviewPath = null,
+            NormalPreviewPath = null,
+            IconPreviewPath = null
+        };
+
+        Assert.Equal(
+            "original.jpg",
+            DocumentVariantSelector.Select(location, DocumentVariant.Small));
+    }
+
+    [Fact]
+    public void Select_OriginalDoesNotFallBackToPreview()
+    {
+        CassetteDocumentLocation location = CreateLocation() with
+        {
+            OriginalPath = null
+        };
+
+        Assert.Null(DocumentVariantSelector.Select(location, DocumentVariant.Original));
     }
 
     [Fact]
