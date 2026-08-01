@@ -1,0 +1,139 @@
+.portrait-title-block {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.65rem;
+}
+
+.resource-literal-summary {
+  display: flex;
+  min-width: 0;
+  max-width: 72rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.55rem;
+}
+
+.resource-summary-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.resource-summary-value.is-short {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.resource-summary-value.is-date {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  font-weight: 700;
+}
+
+.resource-summary-value.is-long {
+  flex: 1 0 100%;
+  color: var(--text-muted);
+  font-size: 0.93rem;
+  line-height: 1.55;
+}
+
+.resource-loading {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.85rem 1rem;
+  min-height: 12rem;
+  overflow: hidden;
+  padding: 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+}
+
+.resource-loading-spinner {
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 0.24rem solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: resource-loading-spin 0.85s linear infinite;
+}
+
+.resource-loading-copy {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.resource-loading-copy strong {
+  font-size: 1.05rem;
+}
+
+.resource-loading-copy span {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.resource-loading-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 0.24rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+}
+
+.resource-loading-progress span {
+  display: block;
+  width: 38%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  animation: resource-loading-progress 1.45s ease-in-out infinite;
+}
+
+@keyframes resource-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes resource-loading-progress {
+  from { transform: translateX(-115%); }
+  to { transform: translateX(365%); }
+}
+
+@media (max-width: 560px) {
+  .public-portrait-header {
+    align-items: stretch;
+  }
+
+  .resource-loading {
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 9rem;
+    padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resource-loading-spinner,
+  .resource-loading-progress span {
+    animation: none;
+  }
+
+  .resource-loading-spinner {
+    border-color: var(--accent);
+  }
+
+  .resource-loading-progress span {
+    width: 100%;
+  }
+}
