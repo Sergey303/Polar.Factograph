@@ -27,13 +27,41 @@ public static class DocumentVariantSelector
 
     public static string? Select(
         CassetteDocumentLocation location,
-        DocumentVariant variant) => variant switch
+        DocumentVariant variant)
     {
-        DocumentVariant.Original => location.OriginalPath,
-        DocumentVariant.Icon => location.IconPreviewPath ?? location.SmallPreviewPath,
-        DocumentVariant.Small => location.SmallPreviewPath,
-        DocumentVariant.Medium => location.MediumPreviewPath,
-        DocumentVariant.Normal => location.NormalPreviewPath,
-        _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
-    };
+        ArgumentNullException.ThrowIfNull(location);
+
+        return variant switch
+        {
+            DocumentVariant.Original => location.OriginalPath,
+            DocumentVariant.Icon => FirstAvailable(
+                location.IconPreviewPath,
+                location.SmallPreviewPath,
+                location.MediumPreviewPath,
+                location.NormalPreviewPath,
+                location.OriginalPath),
+            DocumentVariant.Small => FirstAvailable(
+                location.SmallPreviewPath,
+                location.IconPreviewPath,
+                location.MediumPreviewPath,
+                location.NormalPreviewPath,
+                location.OriginalPath),
+            DocumentVariant.Medium => FirstAvailable(
+                location.MediumPreviewPath,
+                location.NormalPreviewPath,
+                location.SmallPreviewPath,
+                location.IconPreviewPath,
+                location.OriginalPath),
+            DocumentVariant.Normal => FirstAvailable(
+                location.NormalPreviewPath,
+                location.MediumPreviewPath,
+                location.SmallPreviewPath,
+                location.IconPreviewPath,
+                location.OriginalPath),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, null)
+        };
+    }
+
+    private static string? FirstAvailable(params string?[] paths) =>
+        paths.FirstOrDefault(path => path is not null);
 }
