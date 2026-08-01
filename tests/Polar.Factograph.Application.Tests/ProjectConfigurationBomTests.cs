@@ -1,5 +1,6 @@
 using System.Text;
 using Polar.Factograph.Application;
+using Polar.Factograph.Domain;
 using Xunit;
 
 namespace Polar.Factograph.Application.Tests;
@@ -38,7 +39,7 @@ public sealed class ProjectConfigurationBomTests
                 json,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
 
-            Domain.ProjectDefinition project =
+            ProjectDefinition project =
                 await new ProjectConfigurationLoader().LoadAsync(projectPath);
 
             Assert.Equal("bom-project", project.ProjectId);
