@@ -4,7 +4,9 @@ namespace Polar.Factograph.Fog;
 
 internal static class LegacyFogCanonicalizer
 {
-    public static FogSourceRecord Canonicalize(
+    private static readonly XNamespace Rdf = LegacyFogVocabulary.RdfNamespace;
+
+    public static FogSourceRecord? Canonicalize(
         FogSourceDescriptor source,
         long sourceOrdinal,
         XElement element)
@@ -18,6 +20,15 @@ internal static class LegacyFogCanonicalizer
 
         if (string.Equals(localName, "delete", StringComparison.Ordinal))
         {
+            string? targetId = element.Attribute(Rdf + "about")?.Value
+                ?? element.Attribute("id")?.Value;
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                // Some legacy user Fog files contain an empty <delete/> marker. It has
+                // no target and therefore cannot change the materialized RDF cloud.
+                return null;
+            }
+
             return FogDirectiveCanonicalizer.Delete(
                 source,
                 sourceOrdinal,
