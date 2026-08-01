@@ -25,37 +25,27 @@ public sealed class ProjectConfigurationLoaderTests
         Assert.Equal("current", writable.Id);
         Assert.Equal(writable.Id, writable.Name);
 
-        Assert.Empty(definition.Members);
-        Assert.Equal(
-            new[] { "administrator", "editor", "viewer" },
-            definition.Roles.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal(
-            new[] { ProjectRights.Read, ProjectRights.Search },
-            definition.Roles["viewer"].ProjectRights);
-        Assert.Contains(
-            CassetteRights.WriteMetadata,
-            definition.Roles["editor"].CassetteRights["current"]);
-        Assert.Contains(
-            CassetteRights.Manage,
-            definition.Roles["administrator"].CassetteRights["*"]);
+        AssertBuiltInAccess(definition);
     }
 
-    [Theory]
-    [InlineData("roles", "{}")]
-    [InlineData("members", "[]")]
-    [InlineData("writeRouting", "{}")]
-    public async Task LoadAsync_RejectsRemovedAccessSections(string name, string value)
+    [Fact]
+    public async Task LoadAsync_OverwritesLegacyAccessSections()
     {
-        string json = AddTopLevelSection(ValidJson, name, value);
+        string json = AddTopLevelSection(
+            AddTopLevelSection(
+                AddTopLevelSection(
+                    ValidJson,
+                    "roles",
+                    "{ \"legacy\": { \"projectRights\": [\"read\"] } }"),
+                "members",
+                "[{ \"userId\": \"legacy-user\", \"roles\": [\"legacy\"] }]"),
+            "writeRouting",
+            "{ \"defaultCassetteByRole\": { \"legacy\": \"history\" } }");
         await using TemporaryProject project = await TemporaryProject.CreateAsync(json);
 
-        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
-            () => new ProjectConfigurationLoader().LoadAsync(project.Path));
+        ProjectDefinition definition = await new ProjectConfigurationLoader().LoadAsync(project.Path);
 
-        Assert.Contains(
-            "is no longer supported",
-            exception.InnerException?.Message ?? exception.Message,
-            StringComparison.OrdinalIgnoreCase);
+        AssertBuiltInAccess(definition);
     }
 
     [Theory]
@@ -101,6 +91,23 @@ public sealed class ProjectConfigurationLoaderTests
 
         Assert.Contains("Project configuration JSON cannot be read", exception.Message, StringComparison.Ordinal);
         Assert.IsType<System.Text.Json.JsonException>(exception.InnerException);
+    }
+
+    private static void AssertBuiltInAccess(ProjectDefinition definition)
+    {
+        Assert.Empty(definition.Members);
+        Assert.Equal(
+            new[] { "administrator", "editor", "viewer" },
+            definition.Roles.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(
+            new[] { ProjectRights.Read, ProjectRights.Search },
+            definition.Roles["viewer"].ProjectRights);
+        Assert.Contains(
+            CassetteRights.WriteMetadata,
+            definition.Roles["editor"].CassetteRights["current"]);
+        Assert.Contains(
+            CassetteRights.Manage,
+            definition.Roles["administrator"].CassetteRights["*"]);
     }
 
     private static string AddTopLevelSection(string json, string name, string value)
