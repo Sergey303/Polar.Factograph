@@ -50,7 +50,7 @@ public sealed class ProjectResourcePortraitService
             resourceId,
             allowedCassetteIds,
             includeInverseLinks: true,
-            cancellationToken);
+            cancellationToken: cancellationToken);
 
     public ValueTask<ProjectResourcePortrait?> GetSummaryAsync(
         string resourceId,
@@ -60,7 +60,7 @@ public sealed class ProjectResourcePortraitService
             resourceId,
             allowedCassetteIds,
             includeInverseLinks: false,
-            cancellationToken);
+            cancellationToken: cancellationToken);
 
     private async ValueTask<ProjectResourcePortrait?> GetCoreAsync(
         string resourceId,
@@ -101,7 +101,7 @@ public sealed class ProjectResourcePortraitService
                     effectiveCassetteIds,
                     cancellationToken),
                 cancellationToken)
-            : [];
+            : new List<TripleRow>();
 
         string? type = outgoing
             .Where(triple =>
