@@ -5,36 +5,68 @@ public sealed class SemanticResourcePageService(
     OntologyResourcePortraitPresenter presenter,
     OntologyCatalog ontology)
 {
+    public async ValueTask<PresentedSemanticResourcePage?> GetCompactAsync(
+        string resourceId,
+        ProjectAccessSnapshot access,
+        string preferredLanguage = "ru",
+        CancellationToken cancellationToken = default)
+    {
+        (SemanticResourceGraph Graph, ProjectResourcePortrait Root)? resolved =
+            await ResolveAsync(
+                resourceId,
+                access,
+                preferredLanguage,
+                cancellationToken);
+        if (resolved is null)
+        {
+            return null;
+        }
+
+        SemanticResourceGraph graph = resolved.Value.Graph;
+        ProjectResourcePortrait root = resolved.Value.Root;
+        IReadOnlyList<SemanticRelationEntry> entries =
+            await new SemanticRelationEntryCollector(graph).CollectAsync(
+                root,
+                cancellationToken);
+        PresentedProjectResourcePortrait portrait = graph.Present(root) with
+        {
+            DirectLinks = Array.Empty<PresentedResourceDirectLink>(),
+            InverseLinks = Array.Empty<PresentedResourceInverseLink>()
+        };
+
+        return new PresentedSemanticResourcePage(
+            resourceId,
+            portrait,
+            Array.Empty<SemanticPhotoCard>(),
+            Array.Empty<SemanticResourceLink>(),
+            Array.Empty<SemanticResourceLink>(),
+            Array.Empty<SemanticResourceLink>(),
+            Array.Empty<SemanticResourceLink>())
+        {
+            Links = Array.Empty<SemanticResourceLink>(),
+            Entries = entries
+        };
+    }
+
     public async ValueTask<PresentedSemanticResourcePage?> GetAsync(
         string resourceId,
         ProjectAccessSnapshot access,
         string preferredLanguage = "ru",
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(resourceId);
-        ArgumentNullException.ThrowIfNull(access);
-        ArgumentException.ThrowIfNullOrWhiteSpace(preferredLanguage);
-
-        SemanticResourceGraph graph = new(
-            reads,
-            presenter,
-            ontology,
-            access,
-            preferredLanguage);
-        ProjectResourcePortrait? requested = await graph.GetAsync(resourceId, cancellationToken);
-        if (requested is null)
+        (SemanticResourceGraph Graph, ProjectResourcePortrait Root)? resolved =
+            await ResolveAsync(
+                resourceId,
+                access,
+                preferredLanguage,
+                cancellationToken);
+        if (resolved is null)
         {
             return null;
         }
 
-        ProjectResourcePortrait root = await graph.ResolveCanonicalAsync(
-            requested,
-            cancellationToken);
-        if (graph.IsTechnical(root))
-        {
-            return null;
-        }
-
+        SemanticResourceGraph graph = resolved.Value.Graph;
+        ProjectResourcePortrait root = resolved.Value.Root;
         IReadOnlyList<SemanticPhotoCard> photos = await new SemanticPhotoCollector(graph)
             .CollectAsync(root, cancellationToken);
         IReadOnlyList<SemanticResourceLink> participants = await CollectParticipantsAsync(
@@ -81,6 +113,34 @@ public sealed class SemanticResourcePageService(
             Links = links,
             Entries = entries
         };
+    }
+
+    private async ValueTask<(SemanticResourceGraph Graph, ProjectResourcePortrait Root)?> ResolveAsync(
+        string resourceId,
+        ProjectAccessSnapshot access,
+        string preferredLanguage,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(resourceId);
+        ArgumentNullException.ThrowIfNull(access);
+        ArgumentException.ThrowIfNullOrWhiteSpace(preferredLanguage);
+
+        SemanticResourceGraph graph = new(
+            reads,
+            presenter,
+            ontology,
+            access,
+            preferredLanguage);
+        ProjectResourcePortrait? requested = await graph.GetAsync(resourceId, cancellationToken);
+        if (requested is null)
+        {
+            return null;
+        }
+
+        ProjectResourcePortrait root = await graph.ResolveCanonicalAsync(
+            requested,
+            cancellationToken);
+        return graph.IsTechnical(root) ? null : (graph, root);
     }
 
     private static async Task<IReadOnlyList<SemanticResourceLink>> CollectParticipantsAsync(
