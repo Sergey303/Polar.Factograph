@@ -8,7 +8,7 @@ namespace Polar.Factograph.Application.Tests;
 public sealed class ProjectConfigurationLoaderTests
 {
     [Fact]
-    public async Task LoadAsync_ResolvesPathsAndAcceptsValidAccessConfiguration()
+    public async Task LoadAsync_ResolvesPathsAndCreatesBuiltInAccessConfiguration()
     {
         await using TemporaryProject project = await TemporaryProject.CreateAsync(ValidJson);
 
@@ -20,41 +20,42 @@ public sealed class ProjectConfigurationLoaderTests
         Assert.Equal(2, definition.Cassettes.Length);
         Assert.All(definition.Cassettes, cassette => Assert.True(Path.IsPathRooted(cassette.Path)));
         Assert.Equal(new[] { "history", "current" }, definition.Cassettes.Select(value => value.Id));
+
         CassetteDefinition writable = Assert.Single(definition.Cassettes, value => value.AllowWrite);
         Assert.Equal("current", writable.Id);
         Assert.Equal(writable.Id, writable.Name);
+
+        Assert.Empty(definition.Members);
+        Assert.Equal(
+            new[] { "administrator", "editor", "viewer" },
+            definition.Roles.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(
+            new[] { ProjectRights.Read, ProjectRights.Search },
+            definition.Roles["viewer"].ProjectRights);
+        Assert.Contains(
+            CassetteRights.WriteMetadata,
+            definition.Roles["editor"].CassetteRights["current"]);
+        Assert.Contains(
+            CassetteRights.Manage,
+            definition.Roles["administrator"].CassetteRights["*"]);
     }
 
     [Theory]
-    [InlineData("unknownProjectRight", "Unknown right 'unknownProjectRight'")]
-    [InlineData("unknownCassette", "Unknown cassette 'missing'")]
-    [InlineData("duplicateMember", "Duplicate project member: user")]
-    public async Task LoadAsync_RejectsInvalidAccessConfiguration(
-        string scenario,
-        string expectedMessage)
+    [InlineData("roles", "{}")]
+    [InlineData("members", "[]")]
+    [InlineData("writeRouting", "{}")]
+    public async Task LoadAsync_RejectsRemovedAccessSections(string name, string value)
     {
-        string json = scenario switch
-        {
-            "unknownProjectRight" => ValidJson.Replace(
-                "\"projectRights\": [\"read\", \"search\"]",
-                "\"projectRights\": [\"read\", \"unknownProjectRight\"]",
-                StringComparison.Ordinal),
-            "unknownCassette" => ValidJson.Replace(
-                "\"current\": [\"read\", \"writeMetadata\"]",
-                "\"missing\": [\"read\", \"writeMetadata\"]",
-                StringComparison.Ordinal),
-            "duplicateMember" => ValidJson.Replace(
-                "{ \"userId\": \"user\", \"roles\": [\"editor\"] }",
-                "{ \"userId\": \"user\", \"roles\": [\"editor\"] },\n    { \"userId\": \"user\", \"roles\": [\"viewer\"] }",
-                StringComparison.Ordinal),
-            _ => throw new InvalidOperationException($"Unknown test scenario: {scenario}")
-        };
+        string json = AddTopLevelSection(ValidJson, name, value);
         await using TemporaryProject project = await TemporaryProject.CreateAsync(json);
 
         InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
             () => new ProjectConfigurationLoader().LoadAsync(project.Path));
 
-        Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            "is no longer supported",
+            exception.InnerException?.Message ?? exception.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]
@@ -102,6 +103,20 @@ public sealed class ProjectConfigurationLoaderTests
         Assert.IsType<System.Text.Json.JsonException>(exception.InnerException);
     }
 
+    private static string AddTopLevelSection(string json, string name, string value)
+    {
+        int closingBrace = json.LastIndexOf('}');
+        if (closingBrace < 0)
+        {
+            throw new InvalidOperationException("Test JSON has no closing object brace.");
+        }
+
+        return string.Concat(
+            json.AsSpan(0, closingBrace),
+            $",\n  \"{name}\": {value}\n",
+            json.AsSpan(closingBrace));
+    }
+
     private const string ValidJson = """
         {
           "schemaVersion": 1,
@@ -115,22 +130,7 @@ public sealed class ProjectConfigurationLoaderTests
               "__ROOT__/current"
             ],
             "write": "__ROOT__/current"
-          },
-          "roles": {
-            "viewer": {
-              "projectRights": ["read", "search"],
-              "cassetteRights": {}
-            },
-            "editor": {
-              "projectRights": ["read", "search"],
-              "cassetteRights": {
-                "current": ["read", "writeMetadata"]
-              }
-            }
-          },
-          "members": [
-            { "userId": "user", "roles": ["editor"] }
-          ]
+          }
         }
         """;
 
