@@ -11,19 +11,31 @@ public sealed class SemanticResourcePageService(
         string preferredLanguage = "ru",
         CancellationToken cancellationToken = default)
     {
-        (SemanticResourceGraph Graph, ProjectResourcePortrait Root)? resolved =
-            await ResolveAsync(
-                resourceId,
-                access,
-                preferredLanguage,
-                cancellationToken);
-        if (resolved is null)
+        ArgumentException.ThrowIfNullOrWhiteSpace(resourceId);
+        ArgumentNullException.ThrowIfNull(access);
+        ArgumentException.ThrowIfNullOrWhiteSpace(preferredLanguage);
+
+        SemanticResourceGraph graph = new(
+            reads,
+            presenter,
+            ontology,
+            access,
+            preferredLanguage,
+            summaryOnly: true);
+        ProjectResourcePortrait? requested = await graph.GetAsync(resourceId, cancellationToken);
+        if (requested is null)
         {
             return null;
         }
 
-        SemanticResourceGraph graph = resolved.Value.Graph;
-        ProjectResourcePortrait root = resolved.Value.Root;
+        ProjectResourcePortrait root = await graph.ResolveCanonicalAsync(
+            requested,
+            cancellationToken);
+        if (graph.IsTechnical(root))
+        {
+            return null;
+        }
+
         PresentedProjectResourcePortrait portrait = graph.Present(root) with
         {
             DirectLinks = Array.Empty<PresentedResourceDirectLink>(),
