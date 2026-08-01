@@ -193,7 +193,7 @@ public sealed class ResourceHtmlMetadataProvider(
     private static IEnumerable<string> DocumentUris(PresentedProjectResourcePortrait portrait) =>
         portrait.Literals
             .Select(field => field.Value.Trim())
-            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
+            .Where(CassetteDocumentPathResolver.IsDocumentUri)
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal);
 
