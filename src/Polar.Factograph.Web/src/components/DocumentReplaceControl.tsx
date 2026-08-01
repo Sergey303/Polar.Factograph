@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { documentWriteApi } from "../api/documentWriteApi";
 import { errorText } from "../api/errorText";
+import { UiIcon } from "./UiIcon";
 
 interface DocumentReplaceControlProps {
   uri: string;
@@ -74,7 +75,8 @@ export function DocumentReplaceControl({
         disabled={busy}
         onClick={chooseReplacement}
       >
-        {busy ? "Замена…" : "Заменить изображение…"}
+        <UiIcon name="replace" spinning={busy} />
+        <span>{busy ? "Замена…" : "Заменить изображение…"}</span>
       </button>
       {message && <span className="muted">{message}</span>}
     </div>
