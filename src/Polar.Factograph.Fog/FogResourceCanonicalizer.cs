@@ -14,10 +14,10 @@ internal static class FogResourceCanonicalizer
         string? modifiedAtRaw)
     {
         string localName = element.Name.LocalName;
-        string resourceId = FogIdentifier.Require(
-            element.Attribute(Rdf + "about")?.Value,
-            source.FogPath,
-            localName);
+        string? about = element.Attribute(Rdf + "about")?.Value;
+        string resourceId = string.IsNullOrWhiteSpace(about)
+            ? FogAnonymousResourceIdentifier.Create(source, sourceOrdinal, localName)
+            : FogIdentifier.Clean(about);
         List<FogProperty> properties = new();
 
         foreach (XElement child in element.Elements())
