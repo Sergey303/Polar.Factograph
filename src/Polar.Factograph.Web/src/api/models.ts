@@ -16,7 +16,7 @@ export interface ProjectOverview {
   canAdmin: boolean;
   cassettes: ProjectCassetteOverview[];
   defaultWriteCassetteId: string | null;
-  homeResourceIds: string[];
+  homeResourceId: string | null;
 }
 
 export interface SearchEvidence {
