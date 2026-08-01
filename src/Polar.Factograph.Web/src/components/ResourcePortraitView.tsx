@@ -16,6 +16,7 @@ import { ResourceLiteralSummary } from "./ResourceLiteralSummary";
 import { SemanticResourceSections } from "./SemanticResourceSections";
 
 const photoDocumentType = "http://fogid.net/o/photo-doc";
+const videoDocumentType = "http://fogid.net/o/video-doc";
 
 interface ResourcePortraitViewProps {
   page: SemanticResourcePage | null;
@@ -101,7 +102,9 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const portrait = page.portrait;
   const documents = resourceDocumentUris(portrait);
   const documentBacked = documents.length > 0;
-  const photoDocument = portrait.type === photoDocumentType && documents.length > 0;
+  const photoDocument = portrait.type === photoDocumentType && documentBacked;
+  const videoDocument = portrait.type === videoDocumentType && documentBacked;
+  const focusedMediaDocument = photoDocument || videoDocument;
   const primaryDocument = singleResourceDocumentUri(portrait);
   const title = titleOf(page, documentBacked);
   const fields = publicFields(portrait.literals, documentBacked, title);
@@ -119,11 +122,11 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
         siteName={siteName}
         imageUrl={metadataImageUrl}
       />
-      <article className={`portrait${photoDocument ? " photo-document-portrait" : ""}`}>
+      <article className={`portrait${focusedMediaDocument ? " photo-document-portrait" : ""}`}>
         <header className="portrait-header public-portrait-header">
           <div className="portrait-title-block">
             <h1>{title}</h1>
-            {!photoDocument && <ResourceLiteralSummary fields={fields} />}
+            {!focusedMediaDocument && <ResourceLiteralSummary fields={fields} />}
           </div>
           <CopyResourceLinkButton resourceId={portrait.resourceId} />
         </header>
@@ -134,7 +137,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
           </div>
         )}
 
-        {photoDocument ? (
+        {focusedMediaDocument ? (
           <div className="photo-document-layout">
             <div className="photo-document-main">
               <DocumentSection
@@ -143,11 +146,14 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
                 project={props.project}
                 title={null}
                 previewPolicy="largest-preview"
-                imageDocument
+                imageDocument={photoDocument}
               />
               <DocumentLiteralSummary fields={fields} />
             </div>
-            <aside className="photo-document-relations" aria-label="Связи фотографии">
+            <aside
+              className="photo-document-relations"
+              aria-label={photoDocument ? "Связи фотографии" : "Связи видео"}
+            >
               <SemanticResourceSections page={page} token={props.token} textOnly />
             </aside>
           </div>
