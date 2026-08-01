@@ -3,6 +3,7 @@ import { type MouseEvent, useEffect, useState } from "react";
 export type ResourceRouteMode = "view" | "edit" | "relations" | "document";
 
 export type AppRoute =
+  | { page: "home" }
   | {
       page: "search";
       query: string;
@@ -235,9 +236,13 @@ function emptySearchRoute(): AppRoute {
 function currentRoute(): AppRoute {
   migrateLegacyHashRoute();
   const path = applicationPath();
-  if (path === null || path === "/") {
+  if (path === null) {
     window.history.replaceState(null, "", applicationHref("/search"));
     return emptySearchRoute();
+  }
+
+  if (path === "/") {
+    return { page: "home" };
   }
 
   if (path === "/search") {
