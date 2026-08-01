@@ -38,7 +38,10 @@ public sealed class ProjectIndexInitializationHostedServiceTests
             string projectPath = Path.Combine(root, "project.json");
             await File.WriteAllTextAsync(
                 projectPath,
-                ProjectJson,
+                ProjectJson.Replace(
+                    "__CASSETTE__",
+                    cassettePath.Replace('\\', '/'),
+                    StringComparison.Ordinal),
                 new UTF8Encoding(false));
 
             IConfiguration configuration = new ConfigurationBuilder()
@@ -94,16 +97,10 @@ public sealed class ProjectIndexInitializationHostedServiceTests
           "name": "Startup test",
           "ontology": { "path": "./ontology.xml" },
           "index": { "path": "./index", "rebuildMode": "whenSourcesChanged" },
-          "cassettes": [
-            {
-              "id": "demo",
-              "name": "Demo",
-              "path": "./cassette",
-              "enabled": true,
-              "defaultAccess": "read",
-              "allowWrite": false
-            }
-          ]
+          "cassettes": {
+            "items": ["__CASSETTE__"],
+            "write": "__CASSETTE__"
+          }
         }
         """;
 
