@@ -9,6 +9,7 @@ interface SearchPanelProps {
 
 export function SearchPanel(props: SearchPanelProps) {
   const [draft, setDraft] = useState(props.query);
+  const clearHidden = draft.length === 0;
 
   useEffect(() => {
     setDraft(props.query);
@@ -25,7 +26,7 @@ export function SearchPanel(props: SearchPanelProps) {
   }
 
   return (
-    <div className="search-box">
+    <div className="search-box" aria-busy={props.loading}>
       <div className="panel-heading compact">
         <span className="eyebrow">Поиск</span>
         <h2>Ресурсы проекта</h2>
@@ -37,15 +38,32 @@ export function SearchPanel(props: SearchPanelProps) {
           placeholder="Имя, название или слова из описания"
           aria-label="Поиск по ресурсам проекта"
         />
-        <button className="button primary" disabled={props.loading}>
-          {props.loading ? "Ищем…" : "Найти"}
+        <button
+          className="button primary search-submit-button"
+          type="submit"
+          disabled={props.loading}
+        >
+          {props.loading && <span className="button-spinner" aria-hidden="true" />}
+          <span>{props.loading ? "Ищем…" : "Найти"}</span>
         </button>
-        {draft.length > 0 && (
-          <button className="button ghost" type="button" onClick={clear}>
-            Сбросить
-          </button>
-        )}
+        <button
+          className={`button ghost search-clear-button${clearHidden ? " is-placeholder" : ""}`}
+          type="button"
+          disabled={props.loading || clearHidden}
+          aria-hidden={clearHidden}
+          tabIndex={clearHidden ? -1 : 0}
+          onClick={clear}
+        >
+          Сбросить
+        </button>
       </form>
+      <div
+        className={`search-progress${props.loading ? " is-active" : ""}`}
+        aria-label={props.loading ? "Идёт поиск" : undefined}
+        aria-hidden={!props.loading}
+      >
+        <span />
+      </div>
       {props.error && <div className="notice error">{props.error}</div>}
     </div>
   );
