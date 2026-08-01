@@ -74,7 +74,7 @@ function ResourceLoading() {
       <span className="resource-loading-spinner" aria-hidden="true" />
       <div className="resource-loading-copy">
         <strong>Загрузка страницы…</strong>
-        <span>Собираем сведения, фотографии и связи ресурса.</span>
+        <span>Собираем основные сведения ресурса.</span>
       </div>
       <div className="resource-loading-progress" aria-hidden="true"><span /></div>
     </div>
@@ -148,7 +148,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
               <DocumentLiteralSummary fields={fields} />
             </div>
             <aside className="photo-document-relations" aria-label="Связи фотографии">
-              <SemanticResourceSections page={page} textOnly />
+              <SemanticResourceSections page={page} token={props.token} textOnly />
             </aside>
           </div>
         ) : (
@@ -160,7 +160,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
               title={null}
               previewPolicy="largest-preview"
             />
-            <SemanticResourceSections page={page} />
+            <SemanticResourceSections page={page} token={props.token} />
           </>
         )}
       </article>
