@@ -13,7 +13,23 @@
 
 .photo-document-main {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.7rem;
+}
+
+.photo-document-portrait .document-preview {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+}
+
+.photo-document-portrait .document-preview img {
+  width: auto;
+  max-width: 100%;
+  max-height: min(54vh, 36rem);
+}
+
+.photo-document-portrait .document-card-actions {
+  padding-block: 0.55rem;
 }
 
 .photo-document-relations {
@@ -69,11 +85,20 @@
   .photo-document-layout {
     grid-template-columns: minmax(0, 2fr) minmax(17rem, 1fr);
   }
+
+  .photo-document-portrait .document-preview img {
+    max-height: min(50vh, 32rem);
+  }
 }
 
 @media (max-width: 760px) {
   .photo-document-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .photo-document-portrait .document-preview img {
+    width: 100%;
+    max-height: 58vh;
   }
 
   .photo-document-relations {
