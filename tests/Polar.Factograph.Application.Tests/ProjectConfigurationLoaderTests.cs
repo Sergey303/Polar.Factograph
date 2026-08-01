@@ -19,14 +19,16 @@ public sealed class ProjectConfigurationLoaderTests
         Assert.True(Path.IsPathRooted(definition.Index.Path));
         Assert.Equal(2, definition.Cassettes.Length);
         Assert.All(definition.Cassettes, cassette => Assert.True(Path.IsPathRooted(cassette.Path)));
-        Assert.Equal("current", definition.WriteRouting.DefaultCassetteByRole["editor"]);
+        Assert.Equal(new[] { "history", "current" }, definition.Cassettes.Select(value => value.Id));
+        CassetteDefinition writable = Assert.Single(definition.Cassettes.Where(value => value.AllowWrite));
+        Assert.Equal("current", writable.Id);
+        Assert.Equal(writable.Id, writable.Name);
     }
 
     [Theory]
     [InlineData("unknownProjectRight", "Unknown right 'unknownProjectRight'")]
     [InlineData("unknownCassette", "Unknown cassette 'missing'")]
     [InlineData("duplicateMember", "Duplicate project member: user")]
-    [InlineData("invalidRoute", "targets non-writable cassette 'history'")]
     public async Task LoadAsync_RejectsInvalidAccessConfiguration(
         string scenario,
         string expectedMessage)
@@ -45,10 +47,6 @@ public sealed class ProjectConfigurationLoaderTests
                 "{ \"userId\": \"user\", \"roles\": [\"editor\"] }",
                 "{ \"userId\": \"user\", \"roles\": [\"editor\"] },\n    { \"userId\": \"user\", \"roles\": [\"viewer\"] }",
                 StringComparison.Ordinal),
-            "invalidRoute" => ValidJson.Replace(
-                "\"editor\": \"current\"",
-                "\"editor\": \"history\"",
-                StringComparison.Ordinal),
             _ => throw new InvalidOperationException($"Unknown test scenario: {scenario}")
         };
         await using TemporaryProject project = await TemporaryProject.CreateAsync(json);
@@ -57,6 +55,39 @@ public sealed class ProjectConfigurationLoaderTests
             () => new ProjectConfigurationLoader().LoadAsync(project.Path));
 
         Assert.Contains(expectedMessage, exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("writeOutsideItems", "must exactly match one path")]
+    [InlineData("relativeItem", "must contain a full cassette path")]
+    [InlineData("duplicateFolderName", "folder name must be unique")]
+    public async Task LoadAsync_RejectsInvalidCassettePaths(
+        string scenario,
+        string expectedMessage)
+    {
+        string json = scenario switch
+        {
+            "writeOutsideItems" => ValidJson.Replace(
+                "\"write\": \"__ROOT__/current\"",
+                "\"write\": \"__ROOT__/other\"",
+                StringComparison.Ordinal),
+            "relativeItem" => ValidJson.Replace(
+                "\"__ROOT__/history\"",
+                "\"history\"",
+                StringComparison.Ordinal),
+            "duplicateFolderName" => ValidJson.Replace(
+                "\"__ROOT__/current\"",
+                "\"__ROOT__/nested/history\"",
+                StringComparison.Ordinal),
+            _ => throw new InvalidOperationException($"Unknown test scenario: {scenario}")
+        };
+        await using TemporaryProject project = await TemporaryProject.CreateAsync(json);
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => new ProjectConfigurationLoader().LoadAsync(project.Path));
+
+        Assert.Contains(expectedMessage, exception.InnerException?.Message ?? exception.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -78,24 +109,13 @@ public sealed class ProjectConfigurationLoaderTests
           "name": "Project",
           "ontology": { "path": "ontology.xml" },
           "index": { "path": "index" },
-          "cassettes": [
-            {
-              "id": "history",
-              "name": "History",
-              "path": "history",
-              "enabled": true,
-              "defaultAccess": "read",
-              "allowWrite": false
-            },
-            {
-              "id": "current",
-              "name": "Current",
-              "path": "current",
-              "enabled": true,
-              "defaultAccess": "none",
-              "allowWrite": true
-            }
-          ],
+          "cassettes": {
+            "items": [
+              "__ROOT__/history",
+              "__ROOT__/current"
+            ],
+            "write": "__ROOT__/current"
+          },
           "roles": {
             "viewer": {
               "projectRights": ["read", "search"],
@@ -110,12 +130,7 @@ public sealed class ProjectConfigurationLoaderTests
           },
           "members": [
             { "userId": "user", "roles": ["editor"] }
-          ],
-          "writeRouting": {
-            "defaultCassetteByRole": {
-              "editor": "current"
-            }
-          }
+          ]
         }
         """;
 
@@ -138,9 +153,10 @@ public sealed class ProjectConfigurationLoaderTests
                 Guid.NewGuid().ToString("N"));
             System.IO.Directory.CreateDirectory(directory);
             string path = System.IO.Path.Combine(directory, "project.json");
+            string root = directory.Replace('\\', '/');
             await File.WriteAllTextAsync(
                 path,
-                content,
+                content.Replace("__ROOT__", root, StringComparison.Ordinal),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             return new TemporaryProject(directory, path);
         }
