@@ -9,6 +9,7 @@ import "./styles/components.css";
 import "./styles/search-page.css";
 import "./styles/ontology-class-search.css";
 import "./styles/portrait.css";
+import "./styles/resource-page-state.css";
 import "./styles/semantic-resource.css";
 import "./styles/semantic-block-controls.css";
 import "./styles/semantic-sections-menu.css";
