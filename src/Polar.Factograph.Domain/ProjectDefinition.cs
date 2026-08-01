@@ -9,7 +9,7 @@ public sealed record ProjectDefinition
     public required string Name { get; init; }
     public required OntologyDefinition Ontology { get; init; }
     public required IndexDefinition Index { get; init; }
-    public string[] HomeResourceIds { get; init; } = Array.Empty<string>();
+    public string? HomeResourceId { get; init; }
     public CassetteDefinition[] Cassettes { get; init; } = Array.Empty<CassetteDefinition>();
 
     [JsonIgnore]
