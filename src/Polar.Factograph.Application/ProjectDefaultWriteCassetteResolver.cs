@@ -6,10 +6,8 @@ internal static class ProjectDefaultWriteCassetteResolver
 {
     public static string? Resolve(
         ProjectDefinition project,
-        MemberDefinition member,
         IReadOnlyDictionary<string, CassetteAccessSnapshot> cassetteAccess)
     {
-        _ = member;
         CassetteDefinition[] writable = project.Cassettes
             .Where(cassette => cassette.Enabled && cassette.AllowWrite)
             .ToArray();
