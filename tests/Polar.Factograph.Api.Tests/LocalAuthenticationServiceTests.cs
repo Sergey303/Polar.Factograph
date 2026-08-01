@@ -75,8 +75,8 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
             ["editor"],
             new IdentityFogReference
             {
-                CassetteId = "main",
-                DocumentUri = "iiss://main/0001/old",
+                CassetteId = "cassette",
+                DocumentUri = "iiss://cassette/0001/old",
                 RelativePath = "originals/0001/old.fog"
             });
         TestContext context = await CreateContextAsync(
@@ -134,7 +134,13 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
         string cassettePath = Path.Combine(_root, "cassette");
         Directory.CreateDirectory(cassettePath);
         string projectPath = Path.Combine(_root, "project.json");
-        await File.WriteAllTextAsync(projectPath, ProjectJson, Encoding.UTF8);
+        await File.WriteAllTextAsync(
+            projectPath,
+            ProjectJson.Replace(
+                "__CASSETTE__",
+                cassettePath.Replace('\\', '/'),
+                StringComparison.Ordinal),
+            Encoding.UTF8);
 
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -153,7 +159,7 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
             Path.Combine(_root, "identity.json"),
             Path.Combine(_root, "keys"),
             "test-session",
-            "main",
+            string.Empty,
             RegistrationEnabled: true,
             SessionDays: 30,
             MaxFogBytes: 1024 * 1024,
@@ -205,25 +211,19 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
             "path": "index",
             "rebuildMode": "whenSourcesChanged"
           },
-          "cassettes": [
-            {
-              "id": "main",
-              "name": "Main",
-              "path": "cassette",
-              "enabled": true,
-              "defaultAccess": "read",
-              "allowWrite": true
-            }
-          ],
+          "cassettes": {
+            "items": ["__CASSETTE__"],
+            "write": "__CASSETTE__"
+          },
           "roles": {
             "viewer": {
               "projectRights": ["read", "search"],
-              "cassetteRights": { "main": ["read"] }
+              "cassetteRights": { "cassette": ["read"] }
             },
             "editor": {
               "projectRights": ["read", "search"],
               "cassetteRights": {
-                "main": ["read", "writeMetadata", "addDocuments", "replaceDocuments"]
+                "cassette": ["read", "writeMetadata", "addDocuments", "replaceDocuments"]
               }
             },
             "administrator": {
@@ -236,7 +236,7 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
                 "rebuildIndex"
               ],
               "cassetteRights": {
-                "main": [
+                "cassette": [
                   "read",
                   "writeMetadata",
                   "addDocuments",
@@ -248,13 +248,7 @@ public sealed class LocalAuthenticationServiceTests : IDisposable
               }
             }
           },
-          "members": [],
-          "writeRouting": {
-            "defaultCassetteByRole": {
-              "editor": "main",
-              "administrator": "main"
-            }
-          }
+          "members": []
         }
         """;
 
