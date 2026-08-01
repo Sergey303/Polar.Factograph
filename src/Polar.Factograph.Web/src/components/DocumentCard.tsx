@@ -7,6 +7,7 @@ import {
   type DocumentPreviewPolicy
 } from "../app/useDocumentAsset";
 import { DocumentReplaceControl } from "./DocumentReplaceControl";
+import { UiIcon } from "./UiIcon";
 
 interface DocumentCardProps {
   uri: string;
@@ -32,6 +33,8 @@ export function DocumentCard({
     sourceCassetteId,
     "replaceDocuments"
   );
+  const isImage = imageDocument || asset.contentType.startsWith("image/");
+  const showMetadata = allowReplace && asset.location !== null;
 
   async function openFile(): Promise<void> {
     try {
@@ -45,47 +48,43 @@ export function DocumentCard({
   }
 
   return (
-    <article className="document-card">
-      <div className="document-preview">
-        {asset.loading && (
-          <span className="muted">
-            {imageDocument ? "Загрузка изображения…" : "Загрузка превью…"}
-          </span>
-        )}
-        {asset.error && <span className="notice error">{asset.error}</span>}
-        {!asset.loading && !asset.error && !asset.objectUrl && (
-          <span className="file-placeholder">
-            {imageDocument ? "Изображение недоступно" : "Превью недоступно"}
-          </span>
-        )}
-        {asset.objectUrl && asset.contentType.startsWith("image/") && (
-          <img
-            src={asset.objectUrl}
-            alt={imageDocument ? "Изображение" : "Предварительный просмотр документа"}
-          />
-        )}
-        {asset.objectUrl && asset.contentType === "application/pdf" && (
-          <iframe src={asset.objectUrl} title="Предварительный просмотр PDF" />
-        )}
-        {asset.objectUrl &&
-          !asset.contentType.startsWith("image/") &&
-          asset.contentType !== "application/pdf" && (
-            <span className="file-placeholder">Файл готов к открытию</span>
+    <article className={`document-card${showMetadata ? " with-metadata" : ""}`}>
+      <div className="document-card-content">
+        <div className="document-preview">
+          {asset.loading && <span className="muted">Загрузка просмотра…</span>}
+          {asset.error && <span className="notice error">{asset.error}</span>}
+          {!asset.loading && !asset.error && !asset.objectUrl && (
+            <span className="file-placeholder">Просмотр недоступен</span>
           )}
-      </div>
-      <div className="document-info">
-        <strong>{imageDocument ? "Изображение" : "Документ"}</strong>
-        {allowReplace && (
-          <>
-            <span className="muted mono">{uri}</span>
-            {asset.location?.cassetteName && (
-              <span className="muted">Кассета: {asset.location.cassetteName}</span>
+          {asset.objectUrl && asset.contentType.startsWith("image/") && (
+            <img src={asset.objectUrl} alt="Предварительный просмотр документа" />
+          )}
+          {asset.objectUrl && asset.contentType === "application/pdf" && (
+            <iframe src={asset.objectUrl} title="Предварительный просмотр PDF" />
+          )}
+          {asset.objectUrl &&
+            !asset.contentType.startsWith("image/") &&
+            asset.contentType !== "application/pdf" && (
+              <span className="file-placeholder">Файл готов к открытию</span>
             )}
-          </>
+        </div>
+        {showMetadata && (
+          <aside className="document-info">
+            <h3>О документе</h3>
+            <dl className="document-metadata">
+              {asset.location?.cassetteName && (
+                <div><dt>Кассета</dt><dd>{asset.location.cassetteName}</dd></div>
+              )}
+              <div><dt>Адрес</dt><dd className="mono">{uri}</dd></div>
+            </dl>
+          </aside>
         )}
+      </div>
+      <div className="document-card-actions">
         {asset.location?.originalAvailable && (
           <button className="button primary" type="button" onClick={openFile}>
-            {imageDocument ? "Открыть изображение" : "Открыть файл"}
+            <UiIcon name="external-link" />
+            <span>{isImage ? "Открыть изображение" : "Открыть файл"}</span>
           </button>
         )}
         <DocumentReplaceControl
