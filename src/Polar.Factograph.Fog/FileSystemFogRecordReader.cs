@@ -17,10 +17,14 @@ public sealed class FileSystemFogRecordReader : IFogRecordReader
                            cancellationToken)
                            .WithCancellation(cancellationToken))
         {
-            yield return LegacyFogCanonicalizer.Canonicalize(
+            FogSourceRecord? record = LegacyFogCanonicalizer.Canonicalize(
                 source,
                 sourceOrdinal++,
                 element);
+            if (record is not null)
+            {
+                yield return record;
+            }
         }
     }
 }
