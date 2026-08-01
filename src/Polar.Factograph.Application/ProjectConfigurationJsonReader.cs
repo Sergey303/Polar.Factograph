@@ -6,11 +6,6 @@ namespace Polar.Factograph.Application;
 internal static class ProjectConfigurationJsonReader
 {
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
-    private static readonly JsonDocumentOptions DocumentOptions = new()
-    {
-        AllowTrailingCommas = true,
-        CommentHandling = JsonCommentHandling.Skip
-    };
 
     public static async Task<ProjectDefinition> ReadAsync(
         string fullPath,
@@ -19,14 +14,14 @@ internal static class ProjectConfigurationJsonReader
         try
         {
             await using FileStream stream = File.OpenRead(fullPath);
-            using JsonDocument document = await JsonDocument.ParseAsync(
-                stream,
-                DocumentOptions,
-                cancellationToken);
-            RejectRemovedAccessSections(document.RootElement);
-
-            ProjectDefinition project = document.RootElement.Deserialize<ProjectDefinition>(JsonOptions)
+            ProjectDefinition project = await JsonSerializer.DeserializeAsync<ProjectDefinition>(
+                    stream,
+                    JsonOptions,
+                    cancellationToken)
                 ?? throw new InvalidDataException("Project configuration is empty.");
+
+            // Access is intentionally fixed by the application. Legacy roles, members,
+            // and write-routing values are overwritten during migration.
             return ProjectBuiltInAccess.Apply(project);
         }
         catch (JsonException exception)
@@ -34,26 +29,6 @@ internal static class ProjectConfigurationJsonReader
             throw new InvalidDataException(
                 $"Project configuration JSON cannot be read: {fullPath}",
                 exception);
-        }
-    }
-
-    private static void RejectRemovedAccessSections(JsonElement root)
-    {
-        if (root.ValueKind != JsonValueKind.Object)
-        {
-            throw new JsonException("Project configuration root must be an object.");
-        }
-
-        foreach (JsonProperty property in root.EnumerateObject())
-        {
-            if (property.Name.Equals("roles", StringComparison.OrdinalIgnoreCase) ||
-                property.Name.Equals("members", StringComparison.OrdinalIgnoreCase) ||
-                property.Name.Equals("writeRouting", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new JsonException(
-                    $"Project section '{property.Name}' is no longer supported. " +
-                    "Viewer, editor, and administrator access is built in.");
-            }
         }
     }
 
