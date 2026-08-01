@@ -40,11 +40,13 @@ public static class DocumentVariantSelector
                 location.MediumPreviewPath,
                 location.NormalPreviewPath,
                 location.OriginalPath),
+            // Legacy small previews can be square crops. Small display mode still uses
+            // a small CSS card, but receives a medium/normal source that preserves the frame.
             DocumentVariant.Small => FirstAvailable(
-                location.SmallPreviewPath,
-                location.IconPreviewPath,
                 location.MediumPreviewPath,
                 location.NormalPreviewPath,
+                location.SmallPreviewPath,
+                location.IconPreviewPath,
                 location.OriginalPath),
             DocumentVariant.Medium => FirstAvailable(
                 location.MediumPreviewPath,
