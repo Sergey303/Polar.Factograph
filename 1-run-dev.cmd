@@ -29,7 +29,6 @@ set "ASPNETCORE_ENVIRONMENT=Development"
 set "Project__ConfigPath=%PROJECT_CONFIG%"
 set "Authentication__Local__IdentityPath=%ROOT%project-data\identity.json"
 set "Authentication__Local__DataProtectionKeysPath=%ROOT%project-data\data-protection-keys"
-set "Authentication__Local__DefaultCassetteId=SypCassete"
 
 echo.
 echo Polar.Factograph development server
