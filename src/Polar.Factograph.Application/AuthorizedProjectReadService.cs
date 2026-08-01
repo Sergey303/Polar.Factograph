@@ -25,6 +25,15 @@ public sealed class AuthorizedProjectReadService
             ProjectAuthorization.RequireRead(access),
             cancellationToken);
 
+    public ValueTask<ProjectResourcePortrait?> GetPortraitSummaryAsync(
+        string resourceId,
+        ProjectAccessSnapshot access,
+        CancellationToken cancellationToken = default) =>
+        _portraitService.GetSummaryAsync(
+            resourceId,
+            ProjectAuthorization.RequireRead(access),
+            cancellationToken);
+
     public Task<IReadOnlyList<ProjectResourceSearchResult>> SearchByNameAsync(
         string query,
         ProjectAccessSnapshot access,
