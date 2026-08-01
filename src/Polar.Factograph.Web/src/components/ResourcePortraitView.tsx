@@ -11,8 +11,8 @@ import {
 import { CopyResourceLinkButton } from "./CopyResourceLinkButton";
 import { DocumentLiteralSummary } from "./DocumentLiteralSummary";
 import { DocumentSection } from "./DocumentSection";
-import { LiteralFields } from "./LiteralFields";
 import { ResourceDocumentMetadata } from "./ResourceDocumentMetadata";
+import { ResourceLiteralSummary } from "./ResourceLiteralSummary";
 import { SemanticResourceSections } from "./SemanticResourceSections";
 
 const photoDocumentType = "http://fogid.net/o/photo-doc";
@@ -40,11 +40,17 @@ function titleOf(page: SemanticResourcePage, documentBacked: boolean): string {
 
 function publicFields(
   fields: PresentedLiteral[],
-  documentBacked: boolean
+  documentBacked: boolean,
+  title: string
 ): PresentedLiteral[] {
-  return documentBacked
-    ? fields.filter(field => !isNamePredicate(field.predicate))
-    : fields;
+  const normalizedTitle = title.trim().toLocaleLowerCase("ru-RU");
+  return fields.filter(field => {
+    const value = field.displayValue.trim();
+    if (value.length === 0 || field.value.trim().startsWith("iiss://")) return false;
+    if (!isNamePredicate(field.predicate)) return true;
+    if (documentBacked) return false;
+    return value.toLocaleLowerCase("ru-RU") !== normalizedTitle;
+  });
 }
 
 function descriptionOf(page: SemanticResourcePage): string {
@@ -57,9 +63,27 @@ function descriptionOf(page: SemanticResourcePage): string {
   return value.length <= 240 ? value : `${value.slice(0, 237).trimEnd()}…`;
 }
 
+function ResourceLoading() {
+  return (
+    <div
+      className="resource-loading"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <span className="resource-loading-spinner" aria-hidden="true" />
+      <div className="resource-loading-copy">
+        <strong>Загрузка страницы…</strong>
+        <span>Собираем сведения, фотографии и связи ресурса.</span>
+      </div>
+      <div className="resource-loading-progress" aria-hidden="true"><span /></div>
+    </div>
+  );
+}
+
 export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   if (props.loading) {
-    return <div className="empty-state"><strong>Загрузка страницы…</strong></div>;
+    return <ResourceLoading />;
   }
   if (props.error) {
     return <div className="notice error portrait-error">{props.error}</div>;
@@ -80,7 +104,7 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
   const photoDocument = portrait.type === photoDocumentType && documents.length > 0;
   const primaryDocument = singleResourceDocumentUri(portrait);
   const title = titleOf(page, documentBacked);
-  const fields = publicFields(portrait.literals, documentBacked);
+  const fields = publicFields(portrait.literals, documentBacked, title);
   const siteName = props.project?.name ?? "Polar.Factograph";
   const metadataImageUrl = primaryDocument === null
     ? null
@@ -97,7 +121,10 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
       />
       <article className={`portrait${photoDocument ? " photo-document-portrait" : ""}`}>
         <header className="portrait-header public-portrait-header">
-          <h1>{title}</h1>
+          <div className="portrait-title-block">
+            <h1>{title}</h1>
+            {!photoDocument && <ResourceLiteralSummary fields={fields} />}
+          </div>
           <CopyResourceLinkButton resourceId={portrait.resourceId} />
         </header>
 
@@ -133,7 +160,6 @@ export function ResourcePortraitView(props: ResourcePortraitViewProps) {
               title={null}
               previewPolicy="largest-preview"
             />
-            <LiteralFields fields={fields} />
             <SemanticResourceSections page={page} />
           </>
         )}
