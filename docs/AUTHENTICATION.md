@@ -20,7 +20,6 @@ No bearer token or external identity provider is required for the first version.
         "editor-one",
         "редактор-два"
       ],
-      "DefaultCassetteId": "main-cassette",
       "SessionDays": 30,
       "MaxFogBytes": 1048576
     }
@@ -34,7 +33,7 @@ No bearer token or external identity provider is required for the first version.
 - every other registered login receives the project role `viewer` and no Fog;
 - an absent or empty `EditorLogins` list means that there are no local editors;
 - `viewer` and `editor` must exist in the loaded project once registered users need reconciliation;
-- `DefaultCassetteId` must identify an enabled writable cassette for editor Fogs. It may be omitted only when the project contains exactly one enabled writable cassette.
+- editor Fogs are created in the single cassette selected by `cassettes.write` in `project.json`.
 
 `PublicReadEnabled` opens project reads and searches to visitors without a cookie. `PublicUserId` is a stable synthetic project member id; it is not a login and is not stored in `identity.json`. On every anonymous request this member is overlaid with exactly the project role `viewer`, even if an explicit project member with the same id was accidentally assigned stronger roles. The `viewer` role therefore defines the public cassette boundary and must contain only the intended `read` and `search` rights.
 
@@ -81,7 +80,7 @@ Registration performs one serialized operation:
 1. normalize and reserve the login;
 2. load the current project;
 3. choose `editor` or `viewer` from `EditorLogins`;
-4. only for an editor, allocate a normal numbered cassette document and create an empty writable `.fog` under `originals/NNNN/`;
+4. only for an editor, allocate a normal numbered cassette document in the project write cassette and create an empty writable `.fog` under `originals/NNNN/`;
 5. store the user, password hash, device, role, and optional Fog mapping in `identity.json`;
 6. issue the application cookie.
 
