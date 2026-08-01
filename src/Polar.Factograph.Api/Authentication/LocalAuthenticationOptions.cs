@@ -75,7 +75,8 @@ public sealed record LocalAuthenticationOptions(
         };
     }
 
-    public bool IsEditor(string normalizedLogin) => EditorLogins.Contains(normalizedLogin);
+    public bool IsEditor(string normalizedLogin) =>
+        EditorLogins.Contains(normalizedLogin) || AdminLogins.Contains(normalizedLogin);
 
     public bool IsAdministrator(string normalizedLogin) => AdminLogins.Contains(normalizedLogin);
 
