@@ -35,7 +35,6 @@ public sealed record LocalAuthenticationOptions(
         string keyPath = ResolvePath(
             configuration[$"{Section}:DataProtectionKeysPath"] ?? "project-data/data-protection-keys",
             environment.ContentRootPath);
-        string defaultCassetteId = configuration[$"{Section}:DefaultCassetteId"]?.Trim() ?? string.Empty;
         int sessionDays = configuration.GetValue($"{Section}:SessionDays", 30);
         long maxFogBytes = configuration.GetValue($"{Section}:MaxFogBytes", 1024L * 1024L);
         bool publicReadEnabled = configuration.GetValue($"{Section}:PublicReadEnabled", false);
@@ -64,7 +63,7 @@ public sealed record LocalAuthenticationOptions(
             identityPath,
             keyPath,
             configuration[$"{Section}:CookieName"]?.Trim() ?? "Polar.Factograph.Session",
-            defaultCassetteId,
+            string.Empty,
             configuration.GetValue($"{Section}:RegistrationEnabled", true),
             sessionDays,
             maxFogBytes,
