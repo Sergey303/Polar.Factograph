@@ -47,7 +47,7 @@ public static class ResourceEndpoints
         ProjectReadContext context = await contextFactory.CreateReadAsync(
             httpContext,
             cancellationToken);
-        PresentedSemanticResourcePage? page = await context.SemanticPages.GetAsync(
+        PresentedSemanticResourcePage? page = await context.SemanticPages.GetCompactAsync(
             id,
             context.Access,
             NormalizeLanguage(lang),
