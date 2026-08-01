@@ -1,3 +1,5 @@
+using Polar.Factograph.Fog;
+
 namespace Polar.Factograph.Application;
 
 internal sealed class SemanticResourceGraph(
@@ -229,6 +231,6 @@ internal sealed class SemanticResourceGraph(
     private static IEnumerable<string> DocumentUris(ProjectResourcePortrait portrait) =>
         portrait.Literals
             .Select(field => field.Value.Trim())
-            .Where(value => value.StartsWith("iiss://", StringComparison.OrdinalIgnoreCase))
+            .Where(CassetteDocumentPathResolver.IsDocumentUri)
             .Distinct(StringComparer.Ordinal);
 }
