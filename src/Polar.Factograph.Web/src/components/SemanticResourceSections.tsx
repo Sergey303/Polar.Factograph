@@ -12,6 +12,7 @@ import {
 
 interface SemanticResourceSectionsProps {
   page: SemanticResourcePage;
+  textOnly?: boolean;
 }
 
 function linkIdentity(link: SemanticResourceLink): string {
@@ -133,6 +134,26 @@ function withoutCurrentResource(
   };
 }
 
+function asTextEntry(entry: SemanticRelationEntry): SemanticRelationEntry {
+  return {
+    ...entry,
+    documentUri: null,
+    members: entry.members.map(member => ({
+      ...member,
+      documentUri: null,
+      hasDocument: false
+    }))
+  };
+}
+
+function asTextLink(link: SemanticResourceLink): SemanticResourceLink {
+  return {
+    ...link,
+    documentUri: null,
+    hasDocument: false
+  };
+}
+
 function publicGroupTitle(entry: SemanticRelationEntry): string {
   if (/(^|[/#])reflection$/i.test(entry.relationType ?? "")) {
     return "Отражены";
@@ -168,16 +189,21 @@ function blocksFromEntries(entries: SemanticRelationEntry[]): SemanticContentBlo
   return blocks;
 }
 
-function blocksFromLinks(page: SemanticResourcePage): SemanticContentBlockDefinition[] {
+function blocksFromLinks(
+  page: SemanticResourcePage,
+  textOnly: boolean
+): SemanticContentBlockDefinition[] {
   const seen = new Set<string>();
-  const links = availableLinks(page).filter(link => {
-    if (link.resourceId === page.portrait.resourceId) return false;
+  const links = availableLinks(page)
+    .filter(link => {
+      if (link.resourceId === page.portrait.resourceId) return false;
 
-    const identity = linkIdentity(link);
-    if (seen.has(identity)) return false;
-    seen.add(identity);
-    return true;
-  });
+      const identity = linkIdentity(link);
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    })
+    .map(link => textOnly ? asTextLink(link) : link);
   const media = links.filter(hasDocument);
   const plain = links.filter(link => !hasDocument(link));
   const blocks: SemanticContentBlockDefinition[] = [];
@@ -201,14 +227,18 @@ function blocksFromLinks(page: SemanticResourcePage): SemanticContentBlockDefini
   return blocks;
 }
 
-export function SemanticResourceSections({ page }: SemanticResourceSectionsProps) {
+export function SemanticResourceSections({
+  page,
+  textOnly = false
+}: SemanticResourceSectionsProps) {
   const complete = completeEntries(page);
   const entries = complete
     .map(entry => withoutCurrentResource(entry, page.portrait.resourceId))
-    .filter((entry): entry is SemanticRelationEntry => entry !== null);
+    .filter((entry): entry is SemanticRelationEntry => entry !== null)
+    .map(entry => textOnly ? asTextEntry(entry) : entry);
   const blocks = complete.length > 0
     ? blocksFromEntries(entries)
-    : blocksFromLinks(page);
+    : blocksFromLinks(page, textOnly);
   return (
     <SemanticContentBlocks
       blocks={blocks}
