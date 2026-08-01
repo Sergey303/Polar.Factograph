@@ -1,3 +1,6 @@
+using Polar.Factograph.Fog;
+using Xunit;
+
 namespace Polar.Factograph.Fog.Tests;
 
 public sealed class CassetteDocumentUriTests
