@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 interface UiIconProps {
   name:
     | "plus"
@@ -12,7 +14,7 @@ interface UiIconProps {
   spinning?: boolean;
 }
 
-const paths: Record<UiIconProps["name"], React.ReactNode> = {
+const paths: Record<UiIconProps["name"], ReactNode> = {
   plus: <path d="M12 5v14M5 12h14" />,
   "file-plus": (
     <>
