@@ -24,10 +24,6 @@ public sealed class SemanticResourcePageService(
 
         SemanticResourceGraph graph = resolved.Value.Graph;
         ProjectResourcePortrait root = resolved.Value.Root;
-        IReadOnlyList<SemanticRelationEntry> entries =
-            await new SemanticRelationEntryCollector(graph).CollectAsync(
-                root,
-                cancellationToken);
         PresentedProjectResourcePortrait portrait = graph.Present(root) with
         {
             DirectLinks = Array.Empty<PresentedResourceDirectLink>(),
@@ -44,8 +40,30 @@ public sealed class SemanticResourcePageService(
             Array.Empty<SemanticResourceLink>())
         {
             Links = Array.Empty<SemanticResourceLink>(),
-            Entries = entries
+            Entries = Array.Empty<SemanticRelationEntry>()
         };
+    }
+
+    public async ValueTask<IReadOnlyList<SemanticRelationEntry>?> GetEntriesAsync(
+        string resourceId,
+        ProjectAccessSnapshot access,
+        string preferredLanguage = "ru",
+        CancellationToken cancellationToken = default)
+    {
+        (SemanticResourceGraph Graph, ProjectResourcePortrait Root)? resolved =
+            await ResolveAsync(
+                resourceId,
+                access,
+                preferredLanguage,
+                cancellationToken);
+        if (resolved is null)
+        {
+            return null;
+        }
+
+        return await new SemanticRelationEntryCollector(resolved.Value.Graph).CollectAsync(
+            resolved.Value.Root,
+            cancellationToken);
     }
 
     public async ValueTask<PresentedSemanticResourcePage?> GetAsync(
