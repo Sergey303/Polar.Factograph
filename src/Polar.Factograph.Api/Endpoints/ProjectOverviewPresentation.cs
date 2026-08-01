@@ -16,7 +16,7 @@ public sealed record ProjectOverview(
     IReadOnlyList<ProjectCassetteOverview> Cassettes,
     string? DefaultWriteCassetteId)
 {
-    public IReadOnlyList<string> HomeResourceIds { get; init; } = Array.Empty<string>();
+    public string? HomeResourceId { get; init; }
 }
 
 public static class ProjectOverviewPresentation
@@ -53,11 +53,9 @@ public static class ProjectOverviewPresentation
             exposedIds.Contains(defaultId)
             ? defaultId
             : null;
-        string[] homeResourceIds = project.HomeResourceIds
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Select(value => value.Trim())
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
+        string? homeResourceId = string.IsNullOrWhiteSpace(project.HomeResourceId)
+            ? null
+            : project.HomeResourceId.Trim();
 
         return new ProjectOverview(
             project.ProjectId,
@@ -66,7 +64,7 @@ public static class ProjectOverviewPresentation
             cassettes,
             defaultWriteCassetteId)
         {
-            HomeResourceIds = homeResourceIds
+            HomeResourceId = homeResourceId
         };
     }
 
