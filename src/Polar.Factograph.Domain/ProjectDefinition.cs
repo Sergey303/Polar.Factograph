@@ -11,7 +11,6 @@ public sealed record ProjectDefinition
     public CassetteDefinition[] Cassettes { get; init; } = Array.Empty<CassetteDefinition>();
     public Dictionary<string, RoleDefinition> Roles { get; init; } = new(StringComparer.Ordinal);
     public MemberDefinition[] Members { get; init; } = Array.Empty<MemberDefinition>();
-    public WriteRoutingDefinition WriteRouting { get; init; } = new();
 }
 
 public sealed record OntologyDefinition
@@ -46,11 +45,6 @@ public sealed record MemberDefinition
     public required string UserId { get; init; }
     public string[] Roles { get; init; } = Array.Empty<string>();
     public Dictionary<string, string[]> CassetteOverrides { get; init; } = new(StringComparer.Ordinal);
-}
-
-public sealed record WriteRoutingDefinition
-{
-    public Dictionary<string, string> DefaultCassetteByRole { get; init; } = new(StringComparer.Ordinal);
 }
 
 public static class ProjectRights
