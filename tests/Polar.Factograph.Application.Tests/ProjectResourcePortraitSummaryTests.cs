@@ -74,6 +74,9 @@ public sealed class ProjectResourcePortraitSummaryTests
                 "ru");
         }
 
+        public Task RebuildAsync(CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         private static TripleRow Triple(
             string predicate,
             TripleObjectKind objectKind,
