@@ -30,9 +30,22 @@ internal static class ProjectShapeValidator
             "Ontology path is required.");
         ProjectConfigurationValidation.RequireText(project.Index.Path, "Index path is required.");
 
+        if (project.Cassettes.Length == 0)
+        {
+            throw new InvalidDataException("At least one cassette is required.");
+        }
+
         foreach (CassetteDefinition cassette in project.Cassettes)
         {
             ValidateCassette(cassette);
+        }
+
+        int writableCount = project.Cassettes.Count(cassette =>
+            cassette.Enabled && cassette.AllowWrite);
+        if (writableCount != 1)
+        {
+            throw new InvalidDataException(
+                $"Project must contain exactly one writable cassette, found: {writableCount}.");
         }
 
         foreach ((string roleName, RoleDefinition role) in project.Roles)
