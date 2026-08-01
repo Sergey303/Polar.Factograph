@@ -2,10 +2,7 @@
   "schemaVersion": 1,
   "projectId": "polar-factograph-iis",
   "name": "Polar.Factograph IIS",
-  "homeResourceIds": [
-    "collection_Syp_2012_1fotki_marchuka",
-    "syp2001-p-marchuk_a"
-  ],
+  "homeResourceId": "collection_Syp_2012_1fotki_marchuka",
   "ontology": {
     "path": "./ontology.xml"
   },
