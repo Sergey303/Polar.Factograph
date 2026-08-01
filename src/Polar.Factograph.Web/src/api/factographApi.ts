@@ -8,6 +8,7 @@ import type {
   ResourcePortrait,
   ResourceSearchResult,
   ResourceTypeSearchPage,
+  SemanticRelationEntry,
   SemanticResourcePage
 } from "./models";
 import { mergeSearchResults } from "./searchResults";
@@ -122,6 +123,19 @@ export const factographApi = {
     const parameters = query({ id: resourceId, lang: "ru" });
     return requestJson<SemanticResourcePage>(
       `api/resources/page?${parameters}`,
+      token,
+      signal
+    );
+  },
+
+  getResourceEntries(
+    resourceId: string,
+    token: string,
+    signal?: AbortSignal
+  ): Promise<SemanticRelationEntry[]> {
+    const parameters = query({ id: resourceId, lang: "ru" });
+    return requestJson<SemanticRelationEntry[]>(
+      `api/resources/entries?${parameters}`,
       token,
       signal
     );
