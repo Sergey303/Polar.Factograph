@@ -13,24 +13,13 @@
     "featured-collection-1",
     "featured-photo-1"
   ],
-  "cassettes": [
-    {
-      "id": "archive-history",
-      "name": "ArchiveHistory",
-      "path": "D:/FactographProjects/ArchiveHistory",
-      "enabled": true,
-      "defaultAccess": "read",
-      "allowWrite": false
-    },
-    {
-      "id": "archive-current",
-      "name": "ArchiveCurrent",
-      "path": "D:/FactographProjects/ArchiveCurrent",
-      "enabled": true,
-      "defaultAccess": "read",
-      "allowWrite": true
-    }
-  ],
+  "cassettes": {
+    "items": [
+      "D:/FactographProjects/archive-history",
+      "D:/FactographProjects/archive-current"
+    ],
+    "write": "D:/FactographProjects/archive-current"
+  },
   "roles": {
     "viewer": {
       "projectRights": ["read", "search"],
@@ -60,11 +49,5 @@
       "roles": ["editor"],
       "cassetteOverrides": {}
     }
-  ],
-  "writeRouting": {
-    "defaultCassetteByRole": {
-      "editor": "archive-current",
-      "administrator": "archive-current"
-    }
-  }
+  ]
 }
