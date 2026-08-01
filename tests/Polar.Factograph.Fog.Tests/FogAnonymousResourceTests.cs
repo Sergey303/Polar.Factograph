@@ -12,7 +12,7 @@ public sealed class FogAnonymousResourceTests : IDisposable
         Guid.NewGuid().ToString("N"));
 
     [Fact]
-    public async Task Reader_assigns_stable_unique_ids_to_anonymous_reflections()
+    public async Task Reader_assigns_stable_unique_ids_and_ignores_empty_delete_marker()
     {
         string fogPath = Path.Combine(
             _root,
@@ -47,16 +47,16 @@ public sealed class FogAnonymousResourceTests : IDisposable
     }
 
     [Fact]
-    public async Task Reader_still_rejects_anonymous_delete_directive()
+    public async Task Reader_ignores_anonymous_delete_directive()
     {
         string fogPath = Path.Combine(_root, "PA_Users", "originals", "0001", "delete.fog");
         Directory.CreateDirectory(Path.GetDirectoryName(fogPath)!);
         await File.WriteAllTextAsync(fogPath, AnonymousDeleteFog, new UTF8Encoding(false));
 
-        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
-            ReadAllAsync(new FileSystemFogRecordReader().ReadAsync(Source(fogPath))));
+        FogSourceRecord[] records = await ReadAllAsync(
+            new FileSystemFogRecordReader().ReadAsync(Source(fogPath)));
 
-        Assert.Contains("delete record has no identifier", exception.Message, StringComparison.Ordinal);
+        Assert.Empty(records);
     }
 
     public void Dispose()
@@ -103,6 +103,7 @@ public sealed class FogAnonymousResourceTests : IDisposable
           <fog:reflection mT="2024-01-01T00:00:00">
             <fog:reflected rdf:resource="person-1" />
           </fog:reflection>
+          <fog:delete />
           <fog:reflection>
             <fog:reflected rdf:resource="person-2" />
           </fog:reflection>
