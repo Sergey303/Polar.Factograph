@@ -15,6 +15,7 @@ public sealed class ProjectConfigurationLoaderTests
         ProjectDefinition definition = await new ProjectConfigurationLoader().LoadAsync(project.Path);
 
         Assert.Equal("project", definition.ProjectId);
+        Assert.Equal("home-collection", definition.HomeResourceId);
         Assert.True(Path.IsPathRooted(definition.Ontology.Path));
         Assert.True(Path.IsPathRooted(definition.Index.Path));
         Assert.Equal(2, definition.Cassettes.Length);
@@ -26,6 +27,22 @@ public sealed class ProjectConfigurationLoaderTests
         Assert.Equal(writable.Id, writable.Name);
 
         AssertBuiltInAccess(definition);
+    }
+
+    [Fact]
+    public async Task LoadAsync_RejectsRemovedHomeResourceIdsField()
+    {
+        string json = AddTopLevelSection(
+            ValidJson,
+            "homeResourceIds",
+            "[\"home-collection\", \"other-resource\"]");
+        await using TemporaryProject project = await TemporaryProject.CreateAsync(json);
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => new ProjectConfigurationLoader().LoadAsync(project.Path));
+
+        Assert.Contains("homeResourceIds", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("homeResourceId", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -129,6 +146,7 @@ public sealed class ProjectConfigurationLoaderTests
           "schemaVersion": 1,
           "projectId": "project",
           "name": "Project",
+          "homeResourceId": "home-collection",
           "ontology": { "path": "ontology.xml" },
           "index": { "path": "index" },
           "cassettes": {
