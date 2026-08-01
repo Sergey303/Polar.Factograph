@@ -15,39 +15,9 @@
   ],
   "cassettes": {
     "items": [
-      "D:/FactographProjects/archive-history",
-      "D:/FactographProjects/archive-current"
+      "D:/FactographProjects/ArchiveHistory",
+      "D:/FactographProjects/ArchiveCurrent"
     ],
-    "write": "D:/FactographProjects/archive-current"
-  },
-  "roles": {
-    "viewer": {
-      "projectRights": ["read", "search"],
-      "cassetteRights": {}
-    },
-    "editor": {
-      "projectRights": ["read", "search"],
-      "cassetteRights": {
-        "archive-current": ["read", "writeMetadata", "addDocuments", "replaceDocuments"]
-      }
-    },
-    "administrator": {
-      "projectRights": ["read", "search", "export", "manageUsers", "manageCassettes", "rebuildIndex"],
-      "cassetteRights": {
-        "*": ["read", "writeMetadata", "addDocuments", "replaceDocuments", "delete", "substitute", "manage"]
-      }
-    }
-  },
-  "members": [
-    {
-      "userId": "admin",
-      "roles": ["administrator"],
-      "cassetteOverrides": {}
-    },
-    {
-      "userId": "editor",
-      "roles": ["editor"],
-      "cassetteOverrides": {}
-    }
-  ]
+    "write": "D:/FactographProjects/ArchiveCurrent"
+  }
 }
