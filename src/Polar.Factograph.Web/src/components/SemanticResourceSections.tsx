@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { errorText } from "../api/errorText";
+import { factographApi } from "../api/factographApi";
 import type {
   SemanticRelationEntry,
   SemanticResourceLink,
@@ -12,6 +15,7 @@ import {
 
 interface SemanticResourceSectionsProps {
   page: SemanticResourcePage;
+  token: string;
   textOnly?: boolean;
 }
 
@@ -88,8 +92,11 @@ function entryFromLink(link: SemanticResourceLink): SemanticRelationEntry {
   };
 }
 
-function completeEntries(page: SemanticResourcePage): SemanticRelationEntry[] {
-  const entries = page.entries ?? [];
+function completeEntries(
+  page: SemanticResourcePage,
+  loadedEntries: SemanticRelationEntry[]
+): SemanticRelationEntry[] {
+  const entries = loadedEntries.length > 0 ? loadedEntries : page.entries ?? [];
   if (entries.length === 0) return [];
 
   const missing = availableLinks(page)
@@ -229,9 +236,21 @@ function blocksFromLinks(
 
 export function SemanticResourceSections({
   page,
+  token,
   textOnly = false
 }: SemanticResourceSectionsProps) {
-  const complete = completeEntries(page);
+  const embeddedEntries = page.entries ?? [];
+  const deferred = useQuery({
+    queryKey: ["resource-entries", page.portrait.resourceId, token],
+    queryFn: ({ signal }) => factographApi.getResourceEntries(
+      page.portrait.resourceId,
+      token,
+      signal
+    ),
+    enabled: embeddedEntries.length === 0
+  });
+  const loadedEntries = deferred.data ?? embeddedEntries;
+  const complete = completeEntries(page, loadedEntries);
   const entries = complete
     .map(entry => withoutCurrentResource(entry, page.portrait.resourceId))
     .filter((entry): entry is SemanticRelationEntry => entry !== null)
@@ -239,6 +258,24 @@ export function SemanticResourceSections({
   const blocks = complete.length > 0
     ? blocksFromEntries(entries)
     : blocksFromLinks(page, textOnly);
+
+  if (deferred.isPending && embeddedEntries.length === 0) {
+    return (
+      <div className="semantic-sections-loading" role="status" aria-live="polite">
+        <span className="resource-loading-spinner" aria-hidden="true" />
+        <span>Загружаем фотографии и связи…</span>
+      </div>
+    );
+  }
+
+  if (deferred.error !== null) {
+    return (
+      <div className="notice error semantic-sections-error">
+        {errorText(deferred.error)}
+      </div>
+    );
+  }
+
   return (
     <SemanticContentBlocks
       blocks={blocks}
