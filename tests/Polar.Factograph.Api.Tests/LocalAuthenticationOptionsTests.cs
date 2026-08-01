@@ -26,10 +26,31 @@ public sealed class LocalAuthenticationOptionsTests
         Assert.Equal(2, options.EditorLogins.Count);
         Assert.True(options.IsEditor(LocalLoginName.Normalize("сергей")));
         Assert.True(options.IsEditor(LocalLoginName.Normalize("EDITOR.TWO")));
+        Assert.True(options.IsEditor(LocalLoginName.Normalize("admin")));
         Assert.False(options.IsEditor(LocalLoginName.Normalize("reader")));
         Assert.Single(options.AdminLogins);
         Assert.True(options.IsAdministrator(LocalLoginName.Normalize("admin")));
         Assert.False(options.IsAdministrator(LocalLoginName.Normalize("reader")));
+    }
+
+    [Fact]
+    public void Read_makes_administrator_an_editor_without_duplicate_configuration()
+    {
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:Local:AdminLogins:0"] = "ADMIN"
+            })
+            .Build();
+
+        LocalAuthenticationOptions options = LocalAuthenticationOptions.Read(
+            configuration,
+            new TestHostEnvironment());
+
+        string login = LocalLoginName.Normalize("admin");
+        Assert.Empty(options.EditorLogins);
+        Assert.True(options.IsEditor(login));
+        Assert.True(options.IsAdministrator(login));
     }
 
     [Fact]
