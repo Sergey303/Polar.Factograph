@@ -102,6 +102,30 @@
   animation: resource-loading-progress 1.45s ease-in-out infinite;
 }
 
+.semantic-sections-loading {
+  display: flex;
+  min-height: 6rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.75rem;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  font-size: 0.86rem;
+}
+
+.semantic-sections-loading .resource-loading-spinner {
+  width: 1.45rem;
+  height: 1.45rem;
+  border-width: 0.18rem;
+}
+
+.semantic-sections-error {
+  margin: 0;
+}
+
 @keyframes resource-loading-spin {
   to { transform: rotate(360deg); }
 }
