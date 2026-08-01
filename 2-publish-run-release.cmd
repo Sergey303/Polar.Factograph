@@ -46,7 +46,6 @@ set "ASPNETCORE_ENVIRONMENT=Production"
 set "Project__ConfigPath=%PROJECT_CONFIG%"
 set "Authentication__Local__IdentityPath=%ROOT%project-data\identity.json"
 set "Authentication__Local__DataProtectionKeysPath=%ROOT%project-data\data-protection-keys"
-set "Authentication__Local__DefaultCassetteId=SypCassete"
 
 echo.
 echo Published application:
