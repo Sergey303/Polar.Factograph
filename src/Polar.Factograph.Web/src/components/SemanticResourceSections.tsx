@@ -102,6 +102,37 @@ function completeEntries(page: SemanticResourcePage): SemanticRelationEntry[] {
   });
 }
 
+function withoutCurrentResource(
+  entry: SemanticRelationEntry,
+  currentResourceId: string
+): SemanticRelationEntry | null {
+  const currentMembers = entry.members.filter(member =>
+    member.resourceId === currentResourceId);
+  if (currentMembers.length === 0) return entry;
+
+  const currentDocumentUris = new Set(
+    currentMembers
+      .map(member => member.documentUri)
+      .filter((value): value is string => value !== null)
+  );
+  const members = entry.members.filter(member =>
+    member.resourceId !== currentResourceId);
+  const documentUri = entry.documentUri !== null &&
+    currentDocumentUris.has(entry.documentUri)
+    ? null
+    : entry.documentUri;
+
+  if (members.length === 0 && documentUri === null && entry.values.length === 0) {
+    return null;
+  }
+
+  return {
+    ...entry,
+    members,
+    documentUri
+  };
+}
+
 function publicGroupTitle(entry: SemanticRelationEntry): string {
   return entry.relationTypeLabel?.trim() ||
     entry.groupLabel.trim() ||
@@ -136,6 +167,8 @@ function blocksFromEntries(entries: SemanticRelationEntry[]): SemanticContentBlo
 function blocksFromLinks(page: SemanticResourcePage): SemanticContentBlockDefinition[] {
   const seen = new Set<string>();
   const links = availableLinks(page).filter(link => {
+    if (link.resourceId === page.portrait.resourceId) return false;
+
     const identity = linkIdentity(link);
     if (seen.has(identity)) return false;
     seen.add(identity);
@@ -165,8 +198,11 @@ function blocksFromLinks(page: SemanticResourcePage): SemanticContentBlockDefini
 }
 
 export function SemanticResourceSections({ page }: SemanticResourceSectionsProps) {
-  const entries = completeEntries(page);
-  const blocks = entries.length > 0
+  const complete = completeEntries(page);
+  const entries = complete
+    .map(entry => withoutCurrentResource(entry, page.portrait.resourceId))
+    .filter((entry): entry is SemanticRelationEntry => entry !== null);
+  const blocks = complete.length > 0
     ? blocksFromEntries(entries)
     : blocksFromLinks(page);
   return (
