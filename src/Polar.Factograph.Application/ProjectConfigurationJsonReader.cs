@@ -14,11 +14,13 @@ internal static class ProjectConfigurationJsonReader
         try
         {
             await using FileStream stream = File.OpenRead(fullPath);
-            return await JsonSerializer.DeserializeAsync<ProjectDefinition>(
-                stream,
-                JsonOptions,
-                cancellationToken)
+            ProjectDefinition project = await JsonSerializer.DeserializeAsync<ProjectDefinition>(
+                    stream,
+                    JsonOptions,
+                    cancellationToken)
                 ?? throw new InvalidDataException("Project configuration is empty.");
+
+            return ProjectBuiltInAccess.Apply(project);
         }
         catch (JsonException exception)
         {
