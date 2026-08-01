@@ -134,6 +134,10 @@ function withoutCurrentResource(
 }
 
 function publicGroupTitle(entry: SemanticRelationEntry): string {
+  if (/(^|[/#])reflection$/i.test(entry.relationType ?? "")) {
+    return "Отражены";
+  }
+
   return entry.relationTypeLabel?.trim() ||
     entry.groupLabel.trim() ||
     entry.title.trim() ||
