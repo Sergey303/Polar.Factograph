@@ -9,22 +9,23 @@ internal static class ProjectDefaultWriteCassetteResolver
         MemberDefinition member,
         IReadOnlyDictionary<string, CassetteAccessSnapshot> cassetteAccess)
     {
-        foreach (string roleName in member.Roles)
-        {
-            if (!project.WriteRouting.DefaultCassetteByRole.TryGetValue(
-                    roleName,
-                    out string? cassetteId) ||
-                !cassetteAccess.TryGetValue(cassetteId, out CassetteAccessSnapshot? access) ||
-                !access.Enabled ||
-                !access.AllowWrite ||
-                !ProjectWriteRights.HasAny(access.Rights))
-            {
-                continue;
-            }
+        _ = member;
+        CassetteDefinition[] writable = project.Cassettes
+            .Where(cassette => cassette.Enabled && cassette.AllowWrite)
+            .ToArray();
 
-            return cassetteId;
+        if (writable.Length != 1)
+        {
+            throw new InvalidDataException(
+                $"Project must contain exactly one writable cassette, found: {writable.Length}.");
         }
 
-        return null;
+        CassetteDefinition cassette = writable[0];
+        return cassetteAccess.TryGetValue(cassette.Id, out CassetteAccessSnapshot? access) &&
+               access.Enabled &&
+               access.AllowWrite &&
+               ProjectWriteRights.HasAny(access.Rights)
+            ? cassette.Id
+            : null;
     }
 }
