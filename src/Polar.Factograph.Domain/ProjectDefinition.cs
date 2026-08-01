@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Polar.Factograph.Domain;
 
 public sealed record ProjectDefinition
@@ -9,7 +11,11 @@ public sealed record ProjectDefinition
     public required IndexDefinition Index { get; init; }
     public string[] HomeResourceIds { get; init; } = Array.Empty<string>();
     public CassetteDefinition[] Cassettes { get; init; } = Array.Empty<CassetteDefinition>();
+
+    [JsonIgnore]
     public Dictionary<string, RoleDefinition> Roles { get; init; } = new(StringComparer.Ordinal);
+
+    [JsonIgnore]
     public MemberDefinition[] Members { get; init; } = Array.Empty<MemberDefinition>();
 }
 
