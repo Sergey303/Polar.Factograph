@@ -16,6 +16,7 @@ import "./styles/semantic-timeline.css";
 import "./styles/collections.css";
 import "./styles/document-actions.css";
 import "./styles/document-page.css";
+import "./styles/photo-document-page.css";
 import "./styles/document-intake.css";
 import "./styles/resource-editor.css";
 import "./styles/resource-properties.css";
