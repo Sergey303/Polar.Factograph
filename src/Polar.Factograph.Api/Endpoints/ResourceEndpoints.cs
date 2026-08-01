@@ -10,6 +10,7 @@ public static class ResourceEndpoints
     {
         endpoints.MapGet("/api/resources/portrait", GetPortraitAsync);
         endpoints.MapGet("/api/resources/page", GetPageAsync);
+        endpoints.MapGet("/api/resources/entries", GetEntriesAsync);
         return endpoints;
     }
 
@@ -56,6 +57,28 @@ public static class ResourceEndpoints
         return page is null
             ? NotFound(id)
             : Results.Ok(page);
+    }
+
+    private static async Task<IResult> GetEntriesAsync(
+        string id,
+        string? lang,
+        HttpContext httpContext,
+        ProjectRequestContextFactory contextFactory,
+        CancellationToken cancellationToken)
+    {
+        ProjectReadContext context = await contextFactory.CreateReadAsync(
+            httpContext,
+            cancellationToken);
+        IReadOnlyList<SemanticRelationEntry>? entries =
+            await context.SemanticPages.GetEntriesAsync(
+                id,
+                context.Access,
+                NormalizeLanguage(lang),
+                cancellationToken);
+
+        return entries is null
+            ? NotFound(id)
+            : Results.Ok(entries);
     }
 
     private static string NormalizeLanguage(string? language) =>
