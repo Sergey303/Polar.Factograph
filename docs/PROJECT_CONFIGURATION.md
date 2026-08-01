@@ -2,10 +2,33 @@
 
 `project.json` is application configuration, not cassette data. It declares which existing cassettes form one RDF cloud and how users may read or write them.
 
+## Cassette paths
+
+The `cassettes` section has exactly two fields:
+
+```json
+"cassettes": {
+  "items": [
+    "D:/FactographProjects/archive-history",
+    "D:/FactographProjects/archive-current"
+  ],
+  "write": "D:/FactographProjects/archive-current"
+}
+```
+
+- `items` is a non-empty list of full cassette directory paths;
+- `write` is one full path and must exactly match an entry in `items`;
+- all listed cassettes are enabled and readable by default;
+- the folder name becomes both the cassette id and display name;
+- folder names must therefore be unique, including differences only in letter case;
+- exactly one cassette is writable: the path in `write`.
+
+There is no separate `enabled`, `defaultAccess`, `allowWrite`, or per-role write-routing configuration. To remove a cassette from the project, remove its path from `items`. To change the write target, change `write` to another path already present in `items`.
+
 ## Separation of concerns
 
 - User credentials and password hashes belong to the authentication store.
-- Project membership, roles, cassette permissions, and write routing belong to `project.json`.
+- Project membership, roles, cassette permissions, and cassette paths belong to `project.json`.
 - Fog/XML files remain authoritative for factographic records.
 - Polar.DB files remain rebuildable derived indexes.
 
@@ -14,15 +37,14 @@
 `ProjectAccessService` calculates one immutable access snapshot for a project member.
 
 1. Project rights from all member roles are combined.
-2. Cassette rights from the wildcard `"*"` and the exact cassette id are combined across all roles.
-3. `defaultAccess: "read"` grants cassette `read` only to a member who also has the project right `read`.
+2. Cassette rights from the wildcard `"*"` and the exact derived cassette id are combined across all roles.
+3. Every configured cassette grants `read` only to a member who also has the project right `read`.
 4. A member wildcard override replaces the calculated rights for every cassette.
 5. A member exact cassette override replaces the wildcard override and all role/default rights for that cassette.
-6. A disabled cassette has no effective rights.
-7. When `allowWrite` is `false`, all write rights are removed even if a role declared them.
-8. Unknown users receive no project or cassette access.
+6. Write rights are retained only for the one cassette selected by `cassettes.write`.
+7. Unknown users receive no project or cassette access.
 
-This gives search and portrait services an explicit set of readable cassette identifiers. Source cassette identifiers are retained in all index rows so visibility is enforced before returning data.
+The effective default write cassette is the single configured write cassette when the current member has at least one write right for it. A member override may still remove those rights, in which case that member has no default write target.
 
 ## Project rights
 
@@ -34,8 +56,6 @@ Supported project rights are:
 - `manageUsers`;
 - `manageCassettes`;
 - `rebuildIndex`.
-
-Project rights apply to the complete configured project, but they do not by themselves expose a cassette whose effective cassette rights lack `read`.
 
 ## Cassette rights
 
@@ -49,7 +69,7 @@ Supported cassette rights are:
 - `substitute`;
 - `manage`.
 
-The wildcard key `"*"` is permitted in role rights and member overrides. All other keys must identify a configured cassette.
+The wildcard key `"*"` is permitted in role rights and member overrides. All other keys must identify a cassette by the final folder name from its configured path.
 
 An empty exact member override deliberately removes all rights for that cassette:
 
@@ -58,37 +78,26 @@ An empty exact member override deliberately removes all rights for that cassette
   "userId": "restricted-user",
   "roles": ["editor"],
   "cassetteOverrides": {
-    "archive-private": []
+    "archive-current": []
   }
 }
 ```
 
-## Write routing
-
-`writeRouting.defaultCassetteByRole` selects the first usable default cassette according to the order of the member's roles.
-
-A configured route is valid only when:
-
-- the role exists;
-- the cassette exists and is enabled;
-- the cassette has `allowWrite: true`;
-- the role declares at least one write right for that cassette or through `"*"`.
-
-The effective member snapshot may still have no default write cassette when a member override removes the required write rights.
-
-Before modifying Fog/XML, the server must additionally verify that the selected source has a compatible writable Fog with both `prefix` and `counter`.
+Before modifying Fog/XML, the server additionally verifies that the selected source has a compatible writable Fog with both `prefix` and `counter`.
 
 ## Validation
 
 Configuration loading rejects:
 
 - unsupported schema versions;
-- missing project, ontology, index, cassette, role, or member identifiers;
-- duplicate cassette ids or member user ids;
+- missing project, ontology, index, role, or member identifiers;
+- a missing or empty cassette list;
+- relative cassette paths;
+- duplicate cassette paths or duplicate folder names;
+- a `write` path absent from `items`;
+- fields in `cassettes` other than `items` and `write`;
 - unknown or duplicate rights;
 - unknown role and cassette references;
-- unsupported `defaultAccess` values;
-- routes to disabled or read-only cassettes;
 - malformed JSON, reported as an `InvalidDataException` suitable for API error handling.
 
 See `examples/project.sample.json` and `examples/syp.project.json`.
