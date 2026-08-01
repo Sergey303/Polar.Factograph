@@ -29,6 +29,8 @@ interface TopBarProps {
   onAdmin: () => void;
 }
 
+const homeHref = new URL(".", searchHref).href;
+
 export function TopBar(props: TopBarProps) {
   const [expanded, setExpanded] = useState(false);
   const auth = props.authentication;
@@ -39,7 +41,7 @@ export function TopBar(props: TopBarProps) {
 
   return (
     <header className="top-bar">
-      <a className="brand-block" href={searchHref} onClick={followAppLink}>
+      <a className="brand-block" href={homeHref} onClick={followAppLink}>
         <span className="brand-mark">PF</span>
         <div>
           <strong>Polar.Factograph</strong>
