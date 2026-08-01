@@ -9,10 +9,10 @@ public sealed class DocumentVariantSelectorTests
     [Theory]
     [InlineData("original", DocumentVariant.Original, "original.jpg")]
     [InlineData("ICON", DocumentVariant.Icon, "icon.jpg")]
-    [InlineData("SMALL", DocumentVariant.Small, "small.jpg")]
+    [InlineData("SMALL", DocumentVariant.Small, "medium.jpg")]
     [InlineData("medium", DocumentVariant.Medium, "medium.jpg")]
     [InlineData("normal", DocumentVariant.Normal, "normal.jpg")]
-    public void ParseAndSelect_ReturnsTheRequestedPathWhenAvailable(
+    public void ParseAndSelect_ReturnsThePreferredPath(
         string value,
         DocumentVariant expectedVariant,
         string expectedPath)
@@ -25,29 +25,44 @@ public sealed class DocumentVariantSelectorTests
     }
 
     [Fact]
-    public void Select_SmallFallsBackToIcon()
+    public void Select_SmallPrefersNormalBeforeLegacySmallWhenMediumIsMissing()
     {
         CassetteDocumentLocation location = CreateLocation() with
         {
-            SmallPreviewPath = null
+            MediumPreviewPath = null
         };
 
         Assert.Equal(
-            "icon.jpg",
+            "normal.jpg",
             DocumentVariantSelector.Select(location, DocumentVariant.Small));
     }
 
     [Fact]
-    public void Select_SmallFallsBackToLargerPreviewWhenSmallAndIconAreMissing()
+    public void Select_SmallFallsBackToLegacySmallWhenLargerPreviewsAreMissing()
+    {
+        CassetteDocumentLocation location = CreateLocation() with
+        {
+            MediumPreviewPath = null,
+            NormalPreviewPath = null
+        };
+
+        Assert.Equal(
+            "small.jpg",
+            DocumentVariantSelector.Select(location, DocumentVariant.Small));
+    }
+
+    [Fact]
+    public void Select_SmallFallsBackToIconWhenOnlyIconPreviewExists()
     {
         CassetteDocumentLocation location = CreateLocation() with
         {
             SmallPreviewPath = null,
-            IconPreviewPath = null
+            MediumPreviewPath = null,
+            NormalPreviewPath = null
         };
 
         Assert.Equal(
-            "medium.jpg",
+            "icon.jpg",
             DocumentVariantSelector.Select(location, DocumentVariant.Small));
     }
 
