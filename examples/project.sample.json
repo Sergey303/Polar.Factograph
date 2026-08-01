@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "projectId": "sample-archive",
   "name": "Sample Factographic Archive",
+  "homeResourceId": "featured-collection",
   "ontology": {
     "path": "./ontology.xml"
   },
@@ -9,10 +10,6 @@
     "path": "./project-data/index",
     "rebuildMode": "whenSourcesChanged"
   },
-  "homeResourceIds": [
-    "featured-collection-1",
-    "featured-photo-1"
-  ],
   "cassettes": {
     "items": [
       "D:/FactographProjects/ArchiveHistory",
