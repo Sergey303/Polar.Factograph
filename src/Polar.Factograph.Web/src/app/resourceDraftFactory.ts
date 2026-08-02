@@ -1,14 +1,11 @@
 import type { OntologyWriteProperty } from "../api/ontologyModels";
 import type { ResourcePortrait } from "../api/models";
 import type { ResourceWriteRequest } from "../api/resourceWriteModels";
+import { createClientId } from "./clientId";
 import type {
   ResourceDraft,
   ResourcePropertyDraft
 } from "./resourceDraftModels";
-
-function rowId(): string {
-  return crypto.randomUUID();
-}
 
 export function emptyResourceDraft(cassetteId: string): ResourceDraft {
   return {
@@ -26,7 +23,7 @@ export function resourceDraftFromPortrait(
   const literals: ResourcePropertyDraft[] = portrait.literals
     .filter(field => field.value.length > 0)
     .map(field => ({
-      rowId: rowId(),
+      rowId: createClientId(),
       predicate: field.predicate,
       value: field.value,
       kind: "literal",
@@ -34,7 +31,7 @@ export function resourceDraftFromPortrait(
       dataType: field.dataType ?? ""
     }));
   const links: ResourcePropertyDraft[] = portrait.directLinks.map(link => ({
-    rowId: rowId(),
+    rowId: createClientId(),
     predicate: link.predicate,
     value: link.targetResourceId,
     kind: "resource",
@@ -53,7 +50,7 @@ export function newPropertyDraft(
   property: OntologyWriteProperty
 ): ResourcePropertyDraft {
   return {
-    rowId: rowId(),
+    rowId: createClientId(),
     predicate: property.id,
     value: property.options[0]?.value ?? "",
     kind: property.kind,
