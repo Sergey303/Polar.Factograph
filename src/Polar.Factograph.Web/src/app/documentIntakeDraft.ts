@@ -4,6 +4,7 @@ import type {
   OntologyWriteSchema
 } from "../api/ontologyModels";
 import type { DocumentWriteResponse } from "../api/documentWriteModels";
+import { createClientId } from "./clientId";
 import type { ResourceDraft } from "./resourceDraftModels";
 
 function localName(id: string): string {
@@ -48,7 +49,7 @@ export function documentResourceDraft(
     resourceId: "",
     cassetteId: upload.cassetteId,
     properties: [{
-      rowId: crypto.randomUUID(),
+      rowId: createClientId(),
       predicate: uriPredicate,
       value: upload.documentUri,
       kind: "literal",
